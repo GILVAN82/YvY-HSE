@@ -11,6 +11,23 @@ YVY HSE is a domain-specific HSE/QHSE AI application built with LangGraph that
 combines operational PostgreSQL tools, Agentic RAG, persistent conversation state,
 controlled long-term memory, human-in-the-loop workflows and security guardrails.
 
+## Application screenshots
+
+### HSE operations dashboard
+
+![YVY HSE operations dashboard in English](docs/images/yvy-hse-dashboard-en.png)
+
+### Portfolio dashboard
+
+![YVY HSE portfolio dashboard in English](docs/images/yvy-hse-portfolio-dashboard-en.png)
+
+### AI Agent — grounded operational query
+
+The agent is shown answering an English query about overdue actions using the
+application's internal operational data.
+
+![YVY HSE AI Agent answering an operational query in English](docs/images/yvy-hse-ai-agent-en.png)
+
 Current validated baseline:
 
 - PostgreSQL 16.14 and pgvector 0.8.6
