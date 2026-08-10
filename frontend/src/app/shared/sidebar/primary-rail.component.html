@@ -1,0 +1,68 @@
+<nav class="rail" [attr.aria-label]="i18n.t('Modules')">
+  <a class="rail-brand"
+     [routerLink]="brandRoute"
+     title="YVY HSE"
+     aria-label="YVY HSE"
+     (mouseenter)="showTip('YVY HSE', $event)"
+     (mouseleave)="hideTip()"
+     (focus)="showTip('YVY HSE', $event)"
+     (blur)="hideTip()">
+    <!-- The blue/teal mark is the default in both themes; the white variant is
+         reserved for the AI agent button and other low-contrast surfaces. -->
+    <img src="branding/yvy-hse/logo-icon.png" alt="YVY HSE">
+  </a>
+
+  <button type="button"
+          class="rail-btn"
+          *ngFor="let m of state.modules()"
+          [id]="'rail-' + m.id"
+          [class.is-active]="state.isModuleActive(m)"
+          (click)="select(m, $event)"
+          (mouseenter)="showTip(m.label, $event)"
+          (mouseleave)="hideTip()"
+          (focus)="showTip(m.label, $event)"
+          (blur)="hideTip()"
+          [title]="i18n.t(m.label)"
+          [attr.aria-label]="i18n.t(m.label)"
+          [attr.aria-expanded]="state.isModuleActive(m) && state.isSecondaryPanelOpen()"
+          [attr.aria-controls]="state.isSecondaryPanelOpen() ? 'module-panel' : null"
+          [attr.aria-current]="state.isModuleActive(m) ? 'true' : null">
+    <lucide-icon [img]="m.icon" [size]="30"></lucide-icon>
+  </button>
+
+  <!-- Utility group, pinned to the foot of the rail and split off by a divider. -->
+  <span class="rail-divider" aria-hidden="true"></span>
+
+  <ng-container *ngFor="let u of utilities">
+    <a *ngIf="u.route; else pending"
+       class="rail-btn rail-util"
+       [id]="'rail-util-' + u.id"
+       [routerLink]="u.route"
+       routerLinkActive="is-active"
+       [title]="utilityTip(u)"
+       [attr.aria-label]="utilityTip(u)"
+       (mouseenter)="showTip(u.label, $event)"
+       (mouseleave)="hideTip()"
+       (focus)="showTip(u.label, $event)"
+       (blur)="hideTip()">
+      <lucide-icon [img]="u.icon" [size]="24"></lucide-icon>
+    </a>
+    <ng-template #pending>
+      <span class="rail-btn rail-util is-pending"
+            [id]="'rail-util-' + u.id"
+            [title]="utilityTip(u)"
+            [attr.aria-label]="utilityTip(u)"
+            aria-disabled="true"
+            (mouseenter)="showTip(utilityTip(u), $event)"
+            (mouseleave)="hideTip()">
+        <lucide-icon [img]="u.icon" [size]="24"></lucide-icon>
+      </span>
+    </ng-template>
+  </ng-container>
+</nav>
+
+<div class="rail-tip"
+     *ngIf="tip() as t"
+     role="tooltip"
+     [style.left.px]="t.x"
+     [style.top.px]="t.y">{{ t.label }}</div>

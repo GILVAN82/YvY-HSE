@@ -1,0 +1,30 @@
+<h2 class="pagetitle">{{ i18n.t('Lists') }}</h2>
+<p class="pagedesc">{{ i18n.t('Dropdown source lists and system settings. These lists feed every dropdown across the system.') }}</p>
+
+<div class="card">
+  <header><h3>{{ i18n.t('System Settings') }}</h3></header>
+  <div class="tblwrap">
+    <table class="data">
+      <thead><tr><th>{{ i18n.t('Named Range') }}</th><th>{{ i18n.t('Value') }}</th><th>{{ i18n.t('Used For') }}</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let s of settings">
+          <td class="range-cell">{{ s.named_range }}</td>
+          <td class="num">{{ s.value }}</td>
+          <td class="wrap">{{ s.used_for }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" *ngFor="let g of objKeys(groups)">
+  <header><h3>{{ i18n.t(g) }}</h3></header>
+  <div class="body">
+    <div *ngFor="let title of objKeys(groups[g])" class="list-group">
+      <h4 class="list-group-title">{{ i18n.t(title) }}</h4>
+      <div class="list-group-items">
+        <span class="badge n" *ngFor="let item of groups[g][title]">{{ i18n.t(item) }}</span>
+      </div>
+    </div>
+  </div>
+</div>

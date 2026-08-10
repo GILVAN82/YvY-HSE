@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "migrate": "node migrate.js",
+    "validate:pgvector": "node validate-pgvector.js",
+    "validate:operational-integrity": "node validate-operational-integrity.js",
+    "demo:reset": "node demo/reset.js",
+    "demo:seed": "node demo/seed.js",
+    "demo:validate": "node demo/validate.js",
+    "demo:test": "node --test demo/demo.test.js demo/start-safety.test.js"
+  },
+  "dependencies": {
+    "pg": "^8.22.0"
+  }
+}

@@ -1,0 +1,301 @@
+/* ── YVY HSE brand palette ────────────────────────────────────────────────
+   Raw brand ramps, then the semantic tokens the app consumes. Blue drives
+   navigation and actions; teal/green mark selection and positive states;
+   orange is reserved for attention and badges; red for critical HSE states. */
+:root{
+  --brand-blue-900:#082A5E; --brand-blue-700:#0B4FD3; --brand-blue-500:#1769E0;
+  --brand-teal-700:#087E88; --brand-teal-500:#12A9A2; --brand-teal-400:#20BFA9;
+  --brand-green-600:#15966A; --brand-green-500:#19A974;
+  --brand-orange-600:#EA580C; --brand-orange-500:#F97316; --brand-orange-400:#FB923C;
+  --brand-graphite-900:#202833; --brand-graphite-800:#2E3742; --brand-graphite-600:#5E6A78;
+  --brand-white:#FFFFFF;
+  --brand-gray-50:#F7F9FC; --brand-gray-100:#EEF2F6; --brand-gray-200:#DDE4EC; --brand-gray-300:#CBD5E1;
+  --brand-gradient: linear-gradient(135deg,#0B4FD3 0%,#12A9A2 58%,#19A974 100%);
+  --brand-gradient-accent: linear-gradient(90deg,#0B4FD3 0%,#12A9A2 70%,#F97316 100%);
+
+  --ink:var(--brand-graphite-900); --ink2:#334155; --muted:var(--brand-graphite-600);
+  --card:var(--brand-white); --card2:var(--brand-gray-100);
+  --line:var(--brand-gray-200); --bg:var(--brand-gray-50);
+  --brand:var(--brand-blue-700); --brand-ink:#ffffff; --brand-soft:#E7EFFC;
+  --hv:var(--brand-teal-700); --hv-ink:#ffffff;
+  --blue:var(--brand-blue-500); --green:var(--brand-green-600);
+  --amber:var(--brand-orange-500); --red:#C2382B;
+  --shadow: 0 1px 2px rgba(8,42,94,.04), 0 8px 24px -14px rgba(8,42,94,.16);
+  --radius: 12px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Glow system — the lit border used by the AI agent button, generalised.
+     Applied to clickable containers only, never to the logo images. Light
+     theme runs at reduced intensity; the dark values live in the yvy-dark mixin. */
+  --yvy-glow-blue:#1769E0; --yvy-glow-teal:#12A9A2; --yvy-glow-green:#19A974;
+  --yvy-glow-gradient: linear-gradient(90deg,#1769E0 0%,#12A9A2 68%,#19A974 100%);
+  --yvy-glow-soft: 0 0 0 1px rgba(18,169,162,.32), 0 4px 12px rgba(8,42,94,.08);
+  --yvy-glow-medium: 0 0 0 1px rgba(11,79,211,.38), 0 6px 16px rgba(8,42,94,.12);
+  --yvy-glow-focus: 0 0 0 2px rgba(79,141,255,.75), 0 0 0 5px rgba(18,169,162,.18);
+  --yvy-glow-wash: rgba(18,169,162,.07);
+  --yvy-glow-wash-soft: rgba(18,169,162,.035);
+  --yvy-ease: 180ms ease;
+
+  /* The orange from the mark, used only to light the sidebar's vertical rule.
+     It stays decorative — HSE status still owns orange everywhere else. */
+  --yvy-glow-orange:#F97316;
+  /* Flat colour, not a gradient: the rule must read identically top to bottom. */
+  --yvy-vrule-color: rgba(249,115,22,.55);
+  --yvy-vrule-glow: drop-shadow(0 0 3px rgba(249,115,22,.30));
+  --yvy-vrule-color-hot: rgba(251,146,60,.95);
+  --yvy-vrule-glow-hot: drop-shadow(0 0 5px rgba(251,146,60,1)) drop-shadow(0 0 14px rgba(249,115,22,.75))
+    drop-shadow(0 0 28px rgba(249,115,22,.5)) drop-shadow(0 0 50px rgba(234,88,12,.28));
+  /* Table rows: same idea as the vertical rule, one notch quieter. */
+  --yvy-row-line: rgba(249,115,22,.80);
+  --yvy-row-glow: 0 1px 5px 0 rgba(249,115,22,.50);
+}
+/* Dark theme: follows the OS by default; the topbar toggle stamps data-theme
+   on <html> to override explicitly in either direction. */
+@mixin yvy-dark {
+  --ink:#F4F7FB; --ink2:#B7C3D1; --muted:#8EA0B4;
+  --card:#0D1A2B; --card2:#122238; --line:#233952; --bg:#07111F;
+  --brand:#4F8DFF; --brand-ink:#04101D; --brand-soft:#12294A;
+  --hv:#2DD4BF;
+  --blue:#5B9BFF; --green:#34C48A; --amber:#FB923C; --red:#F0776A;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 28px -12px rgba(0,0,0,.55);
+  /* Dark surfaces carry the glow at full strength. */
+  --yvy-glow-soft: 0 0 0 1px rgba(18,169,162,.45), 0 0 12px rgba(18,169,162,.20);
+  --yvy-glow-medium: 0 0 0 1px rgba(23,105,224,.55), 0 0 16px rgba(18,169,162,.28);
+  --yvy-vrule-color: rgba(249,115,22,.82);
+  --yvy-vrule-glow: drop-shadow(0 0 5px rgba(249,115,22,.45));
+  --yvy-vrule-color-hot: #FDBA74;
+  --yvy-vrule-glow-hot: drop-shadow(0 0 6px rgba(253,186,116,1)) drop-shadow(0 0 16px rgba(249,115,22,.85))
+    drop-shadow(0 0 34px rgba(249,115,22,.6)) drop-shadow(0 0 60px rgba(234,88,12,.35));
+  --yvy-row-line: rgba(251,146,60,.92);
+  --yvy-row-glow: 0 1px 6px 0 rgba(249,115,22,.62);
+}
+@media (prefers-color-scheme: dark){ :root{ @include yvy-dark; } }
+:root[data-theme="dark"]{ @include yvy-dark; }
+:root[data-theme="light"]{
+  --ink:var(--brand-graphite-900); --ink2:#334155; --muted:var(--brand-graphite-600);
+  --card:var(--brand-white); --card2:var(--brand-gray-100);
+  --line:var(--brand-gray-200); --bg:var(--brand-gray-50);
+  --brand:var(--brand-blue-700); --brand-ink:#ffffff; --brand-soft:#E7EFFC;
+  --hv:var(--brand-teal-700); --hv-ink:#ffffff;
+  --blue:var(--brand-blue-500); --green:var(--brand-green-600);
+  --amber:var(--brand-orange-500); --red:#C2382B;
+  --shadow: 0 1px 2px rgba(8,42,94,.04), 0 8px 24px -14px rgba(8,42,94,.16);
+  --yvy-glow-soft: 0 0 0 1px rgba(18,169,162,.32), 0 4px 12px rgba(8,42,94,.08);
+  --yvy-glow-medium: 0 0 0 1px rgba(11,79,211,.38), 0 6px 16px rgba(8,42,94,.12);
+  --yvy-vrule-color: rgba(249,115,22,.55);
+  --yvy-vrule-glow: drop-shadow(0 0 3px rgba(249,115,22,.30));
+  --yvy-vrule-color-hot: rgba(251,146,60,.95);
+  --yvy-vrule-glow-hot: drop-shadow(0 0 5px rgba(251,146,60,1)) drop-shadow(0 0 14px rgba(249,115,22,.75))
+    drop-shadow(0 0 28px rgba(249,115,22,.5)) drop-shadow(0 0 50px rgba(234,88,12,.28));
+  /* Table rows: same idea as the vertical rule, one notch quieter. */
+  --yvy-row-line: rgba(249,115,22,.80);
+  --yvy-row-glow: 0 1px 5px 0 rgba(249,115,22,.50);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+::selection{background:color-mix(in srgb, var(--hv) 30%, transparent);color:var(--ink)}
+
+/* The sidebar is position:fixed and publishes the width the page must reserve
+   through --sb-reserved (0 on mobile, rail width while it overlays). */
+:root{--sb-reserved:280px}
+.shell{display:flex;min-height:100vh}
+.shell>.main{margin-left:var(--sb-reserved);transition:margin-left 220ms cubic-bezier(0.4,0,0.2,1)}
+body.sb-locked{overflow:hidden}
+@media (prefers-reduced-motion: reduce){.shell>.main{transition:none}}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{background:var(--card);border-bottom:1px solid var(--line)}
+#topbar .tape{height:3px;background:linear-gradient(90deg,var(--hv),var(--brand))}
+#topbar .inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 26px}
+.crumbbox{display:flex;flex-direction:column;gap:3px;min-width:0}
+.crumb-title{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+#topbar #crumb{font-size:11.5px;color:var(--muted)}
+#topbar #crumb .sep{margin:0 5px;opacity:.6}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+/* Drawer trigger — only reachable below 768px, where the sidebar is off-canvas. */
+.menubtn{
+  display:none;flex:0 0 auto;width:36px;height:36px;align-items:center;justify-content:center;
+  background:var(--card2);color:var(--ink2);border:1px solid var(--line);border-radius:8px;cursor:pointer
+}
+.menubtn:hover{background:var(--line)}
+.menubtn:focus-visible{outline:2px solid var(--hv);outline-offset:2px}
+@media (max-width:767px){
+  .menubtn{display:flex}
+  #topbar .inner{padding:11px 16px;gap:12px}
+  #page{padding:16px}
+}
+.iconbtn{
+  background:var(--card2);color:var(--ink2);border:1px solid var(--line);border-radius:8px;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer
+}
+.iconbtn:hover{background:var(--line)}
+
+/* ---- Topbar identity block ---------------------------------------------- */
+.userblock{position:relative}
+.userbtn{
+  display:flex;align-items:center;gap:9px;padding:4px 8px 4px 4px;border:none;border-radius:999px;
+  background:transparent;color:var(--ink);cursor:pointer;font:inherit
+}
+.userbtn:hover{background:var(--card2)}
+.userbtn:focus-visible{outline:2px solid var(--brand-blue-700);outline-offset:2px}
+.userbtn .avatar{
+  width:32px;height:32px;flex:0 0 auto;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brand-soft);color:var(--brand);font-size:11.5px;font-weight:700;letter-spacing:.02em
+}
+.userbtn .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.userbtn .uname{font-size:13px;font-weight:600;white-space:nowrap}
+.userbtn .uchev{color:var(--muted);display:flex;transition:transform .18s cubic-bezier(.4,0,.2,1)}
+.userbtn .uchev.is-open{transform:rotate(180deg)}
+
+.usermenu{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:60;min-width:212px;padding:6px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)
+}
+.usermenu-head{padding:8px 10px 9px;border-bottom:1px solid var(--line);margin-bottom:5px;display:flex;flex-direction:column;gap:2px}
+.usermenu-head strong{font-size:13px;font-weight:700;color:var(--ink)}
+.usermenu-head span{font-size:11px;color:var(--muted)}
+.usermenu-item{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:36px;padding:0 10px;
+  border:none;border-radius:8px;background:transparent;color:var(--ink2);
+  font:inherit;font-size:12.5px;text-align:left;text-decoration:none;cursor:pointer
+}
+.usermenu-item lucide-icon{display:flex;color:var(--muted)}
+.usermenu-item:hover{background:var(--card2);color:var(--ink)}
+.usermenu-item:focus-visible{outline:2px solid var(--brand-blue-700);outline-offset:-2px}
+
+/* ---- Language picker ------------------------------------------------------
+   A custom menu rather than a native <select>: the OS dropdown ignores the
+   app's sizing and reads oversized next to the topbar controls. */
+.langpick{position:relative}
+.langbtn{
+  display:flex;align-items:center;gap:8px;padding:0 11px;height:38px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);
+  color:var(--ink2);font:600 12.5px/1 inherit;cursor:pointer
+}
+.langbtn:hover{background:var(--brand-soft);border-color:var(--brand)}
+.langbtn:focus-visible{outline:2px solid var(--brand-blue-700);outline-offset:2px}
+.langbtn .lp-label{white-space:nowrap}
+.langbtn .lp-chev{color:var(--muted);display:flex;flex:0 0 auto;transition:transform .18s cubic-bezier(.4,0,.2,1)}
+.langbtn .lp-chev.is-open{transform:rotate(180deg)}
+
+.langmenu{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:60;width:240px;padding:6px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)
+}
+.langmenu-head{
+  margin:2px 4px 6px;padding:6px 6px 8px;border-bottom:1px solid var(--line);
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700
+}
+.langitem{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:0 10px;
+  border:none;border-radius:9px;background:transparent;color:var(--ink2);
+  font:inherit;font-size:13px;text-align:left;cursor:pointer
+}
+.langitem:hover{background:var(--card2);color:var(--ink)}
+.langitem:focus-visible{outline:2px solid var(--brand-blue-700);outline-offset:-2px}
+.langitem .lang-code{
+  flex:0 0 30px;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)
+}
+.langitem .lang-name{flex:1 1 auto;min-width:0}
+.langitem .lang-check{flex:0 0 auto;display:flex;color:var(--hv)}
+.langitem.is-active{background:color-mix(in srgb, var(--hv) 12%, transparent);color:var(--ink);font-weight:600}
+.langitem.is-active .lang-code{color:var(--hv)}
+
+@media (max-width:767px){
+  .userbtn .uname{display:none}
+  .langbtn{padding:0 9px;gap:6px}
+  .langmenu{width:212px}
+}
+
+#page{padding:22px 26px;flex:1}
+
+/* The page name now lives in the topbar (uppercase title + breadcrumb), so the
+   in-page <h2> would repeat it. The markup stays; only the duplicate is hidden. */
+.pagetitle{display:none}
+.pagedesc{color:var(--muted);margin:0 0 18px;font-size:12.5px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.card header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.card header h3{margin:0;font-size:13.5px;font-weight:700}
+.card .body{padding:14px 16px}
+.card .count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---- KPI card: tinted icon tile, label beside it, value under the label ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:20px}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:15px 16px 14px;display:flex;flex-wrap:wrap;column-gap:12px;row-gap:0;align-items:center
+}
+.kpi::before{
+  content:"▦";order:0;flex:0 0 auto;width:38px;height:38px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  background:var(--brand-soft);color:var(--brand)
+}
+.kpi label{order:1;flex:1 1 0;min-width:0;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:650}
+.kpi .v{order:2;flex:0 0 100%;margin-left:50px;font-size:26px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-.015em;line-height:1.15}
+.kpi small{order:3;flex:0 0 100%;color:var(--muted);font-size:11px;margin-top:9px;line-height:1.35}
+.kpi.g::before{content:"✓";background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green)}
+.kpi.a::before{content:"!";background:color-mix(in srgb, var(--amber) 15%, transparent);color:var(--amber)}
+.kpi.r::before{content:"▲";background:color-mix(in srgb, var(--red) 12%, transparent);color:var(--red)}
+.kpi.b::before{content:"▦";background:color-mix(in srgb, var(--blue) 12%, transparent);color:var(--blue)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+
+.tblwrap{overflow-x:auto}
+table.data{border-collapse:collapse;width:100%;font-size:12.5px}
+table.data th{position:sticky;top:0;background:var(--card);text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+table.data td{padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--ink2)}
+table.data tbody tr:last-child td{border-bottom:none}
+table.data tbody tr:hover{background:var(--card2)}
+/* Row-level echo of the sidebar's lit rule: the row's own separator picks up the
+   brand orange so the row under the pointer is unmistakable. Deliberately thinner
+   and shorter-reaching than the sidebar — one shadow layer, small radius, no pulse. */
+table.data tbody tr{position:relative}
+table.data tbody tr td{transition:border-color 140ms ease}
+table.data tbody tr:hover td{border-bottom-color:var(--yvy-row-line)}
+/* The last row has no separator of its own, so hovering it draws one. */
+table.data tbody tr:last-child:hover td{border-bottom:1px solid var(--yvy-row-line)}
+/* The glow rides on the row, not on each cell — per-cell shadows leak at the
+   column joins and read as orange tick marks between the columns. */
+table.data tbody tr:hover::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  box-shadow:var(--yvy-row-glow);pointer-events:none
+}
+@media (prefers-reduced-motion: reduce){table.data tbody tr td{transition:none}}
+table.data td.wrap{white-space:normal;max-width:320px}
+table.data td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:10.5px;font-weight:650}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.g{background:color-mix(in srgb, var(--green) 14%, transparent);color:var(--green)}
+.badge.a{background:color-mix(in srgb, var(--amber) 16%, transparent);color:var(--amber)}
+.badge.r{background:color-mix(in srgb, var(--red) 14%, transparent);color:var(--red)}
+.badge.b{background:color-mix(in srgb, var(--blue) 14%, transparent);color:var(--blue)}
+.badge.n{background:var(--card2);color:var(--ink2)}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:7px 11px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:var(--card);color:var(--ink)}
+.btn{padding:7px 13px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-size:12.5px;font-weight:600}
+.btn:hover{background:var(--card2)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.primary:hover{filter:brightness(1.12)}
+
+.selrow{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.selrow .f{display:flex;flex-direction:column;gap:4px}
+.selrow .f label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:650}
+.selrow select{padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+
+.infotbl{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.infotbl .cell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.infotbl .cell label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:block;margin-bottom:3px;font-weight:650}
+
+.modalback{position:fixed;inset:0;background:rgba(9,22,28,.5);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal{background:var(--card);color:var(--ink);border-radius:var(--radius);padding:20px;width:min(640px,92vw);max-height:85vh;overflow:auto;box-shadow:var(--shadow)}
+.modal .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal .f label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--card);color:var(--ink)}
+.modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.note{color:var(--ink2)}

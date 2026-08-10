@@ -1,0 +1,41 @@
+.empty-cell {
+  padding: 18px;
+}
+
+// KPI strip above each table. Slightly tighter than the dashboard strips, since a
+// sheet page can stack several of them (one per sub-table).
+.sheet-kpis {
+  // Flex instead of the dashboard's grid: a sub-table with only one or two cards
+  // should not stretch them across the full page width.
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  .kpi {
+    flex: 1 1 175px;
+    max-width: 250px;
+    padding: 13px 14px 12px;
+  }
+
+  .kpi::before {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+
+  .kpi .v {
+    font-size: 22px;
+    margin-left: 44px;
+  }
+
+  .kpi small {
+    margin-top: 7px;
+  }
+}
+
+.db-note {
+  margin-top: 12px;
+  font-size: 12px;
+}

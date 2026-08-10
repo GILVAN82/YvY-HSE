@@ -1,0 +1,50 @@
+.purpose-note {
+  font-size: 13px;
+}
+
+.legend-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  display: inline-block;
+}
+
+.legend-label {
+  min-width: 140px;
+}
+
+.legend-desc {
+  color: var(--ink2);
+}
+
+.note-block {
+  font-size: 13px;
+  line-height: 1.7;
+
+  p {
+    margin-bottom: 8px;
+  }
+}
+
+.switcher-note {
+  margin-top: 10px;
+  color: var(--ink2);
+}
+
+.sheet-link {
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sheet-purpose {
+  color: var(--ink2);
+}

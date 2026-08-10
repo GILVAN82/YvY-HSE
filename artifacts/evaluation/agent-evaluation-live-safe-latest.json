@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "executionMode": "LIVE_SAFE_PUBLIC_ONLY",
+  "completedAt": "2026-08-10T12:12:56.294Z",
+  "total": 9,
+  "passed": 9,
+  "failed": 0,
+  "operationalActionDataUsed": false,
+  "incidentDataUsed": false,
+  "results": [
+    {
+      "id": "loto-rag",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 1,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "ptw-rag",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 1,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "risk-assessment-rag",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 3,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "emergency-rag",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 1,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "no-relevant-evidence",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 0,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "jurisdiction",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 1,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "thread-continuity",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "COMPLETED",
+        "ragUsed": true,
+        "citationCount": 1,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE",
+        "sameThread": true
+      }
+    },
+    {
+      "id": "hitl-pending",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "AWAITING_HUMAN_APPROVAL",
+        "ragUsed": true,
+        "citationCount": 0,
+        "toolsUsed": "search_hse_knowledge",
+        "stepCount": 2,
+        "safeErrorCode": "NONE"
+      }
+    },
+    {
+      "id": "domain-scope-refusal",
+      "passed": true,
+      "evidence": {
+        "httpStatus": 200,
+        "status": "REFUSED",
+        "ragUsed": false,
+        "citationCount": 0,
+        "toolsUsed": "",
+        "stepCount": 0,
+        "safeErrorCode": "NONE"
+      }
+    }
+  ],
+  "capturedTemporaryIds": {
+    "threadCount": 9,
+    "memoryCount": 0,
+    "approvalCount": 1
+  },
+  "cleanup": {
+    "temporaryThreadRows": 0,
+    "temporaryMemoryRows": 0,
+    "temporaryApprovalRows": 0,
+    "passed": true
+  }
+}

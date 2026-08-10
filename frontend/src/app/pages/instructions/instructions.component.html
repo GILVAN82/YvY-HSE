@@ -1,0 +1,48 @@
+<h2 class="pagetitle">{{ i18n.t('Instructions') }}</h2>
+<p class="pagedesc">{{ i18n.t('User guide, color/status legend, sheet index, version notes') }}</p>
+
+<div class="grid2">
+  <div class="card"><header><h3>{{ i18n.t('Purpose') }}</h3></header><div class="body note purpose-note">{{ i18n.t(purpose) }}</div></div>
+  <div class="card"><header><h3>{{ i18n.t('Color and Status Legend') }}</h3></header>
+    <div class="body">
+      <div *ngFor="let l of legend" class="legend-row">
+        <span class="legend-swatch" [style.background]="l[2]"></span>
+        <b class="legend-label">{{ i18n.t(l[0]) }}</b><span class="legend-desc">{{ i18n.t(l[1]) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card"><header><h3>{{ i18n.t('How to Add a New Project') }}</h3></header>
+    <div class="body note note-block">
+      <p *ngFor="let s of howto">{{ i18n.t(s) }}</p>
+      <p class="switcher-note">{{ i18n.t(switcher) }}</p>
+    </div>
+  </div>
+  <div class="card"><header><h3>{{ i18n.t('Admin Notes') }}</h3></header>
+    <div class="body note note-block">{{ i18n.t(admin) }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <header><h3>{{ i18n.t('Clickable Sheet Index') }}</h3><span class="count">{{ totalSheets() }} {{ i18n.t('sheets') }}</span></header>
+  <div class="tblwrap">
+    <table class="data">
+      <thead><tr><th>#</th><th>{{ i18n.t('Sheet Name') }}</th><th>{{ i18n.t('Purpose') }}</th></tr></thead>
+      <tbody>
+        <ng-container *ngFor="let g of nav">
+          <tr *ngFor="let item of g.items">
+            <td>{{ item.icon }}</td>
+            <td>
+              <a [routerLink]="item.route ? ['/', item.route] : ['/sheet', item.sheet]" class="sheet-link">
+                {{ i18n.lang()==='en' ? item.sheet : i18n.t(item.sheet) }}
+              </a>
+            </td>
+            <td class="wrap sheet-purpose">{{ i18n.t(purposeMap[item.sheet] || '') }}</td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

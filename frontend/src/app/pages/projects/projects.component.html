@@ -1,0 +1,26 @@
+<h2 class="pagetitle">{{ i18n.t('Project Register') }}</h2>
+<p class="pagedesc">{{ i18n.t('Master list of projects; anchor table for all project dropdowns') }}</p>
+
+<div class="card">
+  <header><h3>{{ i18n.t('Project Register') }}</h3><span class="count">{{ projects.length }} {{ i18n.t('records') }}</span></header>
+  <div class="tblwrap">
+    <table class="data">
+      <thead><tr>
+        <th>{{ i18n.t('Project Code') }}</th><th>{{ i18n.t('Project Name') }}</th><th>{{ i18n.t('Client') }}</th>
+        <th>{{ i18n.t('Location/Site') }}</th><th>{{ i18n.t('Project Manager') }}</th><th>{{ i18n.t('Status') }}</th>
+        <th>{{ i18n.t('Start Date') }}</th>
+      </tr></thead>
+      <tbody>
+        <tr *ngFor="let p of projects">
+          <td class="code-cell">{{ p.code }}</td>
+          <td><b>{{ p.name }}</b></td>
+          <td>{{ p.client }}</td>
+          <td>{{ p.location }}</td>
+          <td>{{ p.project_manager }}</td>
+          <td><span class="badge" [ngClass]="p.status==='Active' ? 'g' : 'n'">{{ i18n.t(p.status) }}</span></td>
+          <td>{{ p.start_date | date:'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

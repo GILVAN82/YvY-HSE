@@ -1,0 +1,27 @@
+import '../config/env.bootstrap';
+import { pool } from '../db/pool';
+import { ACTION_OVERDUE_SQL } from '../domain/actions';
+import { ACTION_MODEL_VISIBLE_FIELDS } from './operationalDataProjection';
+import { hseTools } from './tools';
+
+void (async () => {
+  const result = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM action_tracker_capa WHERE ${ACTION_OVERDUE_SQL}`
+  );
+  const toolResult = await (hseTools.list_actions as any).execute(
+    { overdue: true, limit: 50 }, { toolCallId: 'local-egress-audit', messages: [] }
+  );
+  if (!Array.isArray(toolResult)) throw new Error('list_actions audit did not return rows');
+  const expected = JSON.stringify([...ACTION_MODEL_VISIBLE_FIELDS]);
+  if (!toolResult.every((row) => JSON.stringify(Object.keys(row)) === expected)) {
+    throw new Error('list_actions projection does not match the reviewed allowlist');
+  }
+  console.log(`ROWS MATCHED: ${Number(result.rows[0]?.count ?? 0)}`);
+  console.log('MODEL-VISIBLE FIELDS:');
+  for (const field of ACTION_MODEL_VISIBLE_FIELDS) console.log(field);
+  console.log('PERSONAL FIELDS EXCLUDED: YES');
+  await pool.end();
+})().catch(() => {
+  console.log('EGRESS AUDIT: FAILED');
+  process.exitCode = 1;
+});

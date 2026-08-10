@@ -1,0 +1,43 @@
+<h2 class="pagetitle">{{ i18n.t('Portfolio Dashboard') }}</h2>
+<p class="pagedesc">{{ i18n.t('Live, all-projects executive overview') }}</p>
+
+<div class="kpis" *ngIf="kpi as k">
+  <div class="kpi g"><label>{{ i18n.t('Active Projects') }}</label><div class="v">{{ projects.length }}</div></div>
+  <div class="kpi b"><label>{{ i18n.t('YTD Man-Hours') }}</label><div class="v">{{ k.manHours | number:'1.0-0':i18n.locale() }}</div></div>
+  <div class="kpi" [class.r]="k.trir && k.trir > 1" [class.g]="!k.trir || k.trir <= 1"><label>{{ i18n.t('Portfolio TRIR') }}</label><div class="v">{{ k.trir | number:'1.2-2':i18n.locale() }}</div></div>
+  <div class="kpi" [class.r]="k.ltifr && k.ltifr > 0.5" [class.g]="!k.ltifr || k.ltifr <= 0.5"><label>{{ i18n.t('Portfolio LTIFR') }}</label><div class="v">{{ k.ltifr | number:'1.2-2':i18n.locale() }}</div></div>
+  <div class="kpi a"><label>{{ i18n.t('Open Actions') }}</label><div class="v">{{ k.openActions }}</div></div>
+  <div class="kpi" [class.r]="k.overdueActions" [class.g]="!k.overdueActions"><label>{{ i18n.t('Overdue Actions') }}</label><div class="v">{{ k.overdueActions }}</div></div>
+</div>
+
+<div class="grid2">
+  <div class="card"><header><h3>{{ i18n.t('Incidents by Project') }}</h3></header><div class="body"><app-bar-chart [items]="incByProject"></app-bar-chart></div></div>
+  <div class="card"><header><h3>{{ i18n.t('Incident Trend - All Projects') }}</h3></header><div class="body"><app-line-chart [series]="incidentTrend"></app-line-chart></div></div>
+  <div class="card"><header><h3>{{ i18n.t('Severity Breakdown') }}</h3></header><div class="body"><app-donut-chart [items]="severityDonut"></app-donut-chart></div></div>
+  <div class="card"><header><h3>{{ i18n.t('High/Critical Actions') }}</h3></header><div class="body"><app-bar-chart [items]="highCriticalActions"></app-bar-chart></div></div>
+</div>
+
+<div class="card">
+  <header><h3>{{ i18n.t('Portfolio RAG Grid') }}</h3><span class="count">{{ projects.length }} {{ i18n.t('projects') }}</span></header>
+  <div class="tblwrap">
+    <table class="data">
+      <thead><tr>
+        <th>{{ i18n.t('Project') }}</th><th>{{ i18n.t('Incidents') }}</th><th>{{ i18n.t('Open Actions') }}</th>
+        <th>{{ i18n.t('Training') }}</th><th>{{ i18n.t('Audit') }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        <tr *ngFor="let p of projects">
+          <td><b>{{ p.name }}</b><br><span class="project-code">{{ p.code }}</span></td>
+          <ng-container *ngIf="perProjectKpi[p.code] as k; else loading">
+            <td><span class="badge" [ngClass]="rag(k.totalIncidents, k.totalIncidents===0, k.totalIncidents<=1)">{{ k.totalIncidents }}</span></td>
+            <td><span class="badge" [ngClass]="rag(k.openActions+k.overdueActions, (k.openActions+k.overdueActions)===0, k.overdueActions===0)">{{ k.openActions + k.overdueActions }}</span></td>
+            <td><span class="badge" [ngClass]="rag(k.trainingCompliance, (k.trainingCompliance||0)>=0.9, (k.trainingCompliance||0)>=0.72)">{{ (k.trainingCompliance||0) * 100 | number:'1.0-0' }}%</span></td>
+            <td><span class="badge" [ngClass]="rag(k.auditScoreAvg, (k.auditScoreAvg||0)>=0.85, (k.auditScoreAvg||0)>=0.72)">{{ (k.auditScoreAvg||0) * 100 | number:'1.0-0' }}%</span></td>
+          </ng-container>
+          <ng-template #loading><td colspan="4" class="note">…</td></ng-template>
+          <td><a class="btn" [routerLink]="['/project']" [queryParams]="{project: p.code}">{{ i18n.t('Open ▶') }}</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

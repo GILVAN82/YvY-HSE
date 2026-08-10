@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6Z" fill="#32d1c2"/></marker><style>.t{font:700 34px Arial;fill:#eef7ff}.s{font:500 22px Arial;fill:#a9bfd2}.b{fill:#11263d;stroke:#2e6f9e;stroke-width:3;rx:18}.g{fill:#123d43;stroke:#32d1c2;stroke-width:3;rx:18}.l{stroke:#32d1c2;stroke-width:4;fill:none;marker-end:url(#a)}</style></defs>
+<rect width="1600" height="900" fill="#081727"/><text x="80" y="70" class="t" font-size="44">YVY HSE — Final Agent Architecture</text>
+<rect class="g" x="80" y="120" width="230" height="80"/><text class="t" x="150" y="170">Angular</text><path class="l" d="M310 160H380"/>
+<rect class="b" x="390" y="120" width="270" height="80"/><text class="t" x="445" y="170">Node / Express</text><path class="l" d="M660 160H730"/>
+<rect class="g" x="740" y="120" width="240" height="80"/><text class="t" x="790" y="170">LangGraph</text><path class="l" d="M980 160H1050"/>
+<rect class="b" x="1060" y="120" width="430" height="80"/><text class="t" x="1125" y="170">Guard + Domain Scope</text>
+<path class="l" d="M1275 200V265"/><rect class="b" x="1060" y="275" width="430" height="70"/><text class="t" x="1230" y="320">Agent</text>
+<path class="l" d="M1060 160H930V310H850"/><rect class="b" x="520" y="275" width="320" height="70"/><text class="t" x="555" y="320">OUT OF SCOPE → Refuse</text>
+<path class="l" d="M1275 345V415"/><rect class="g" x="70" y="430" width="270" height="130"/><text class="t" x="105" y="480">Operational Tools</text><text class="s" x="120" y="525">→ PostgreSQL</text>
+<rect class="g" x="370" y="430" width="270" height="130"/><text class="t" x="455" y="480">RAG</text><text class="s" x="400" y="525">→ Embeddings → pgvector</text>
+<rect class="g" x="670" y="430" width="270" height="130"/><text class="t" x="710" y="480">Thread State</text><text class="s" x="725" y="525">→ PostgreSQL</text>
+<rect class="g" x="970" y="430" width="270" height="130"/><text class="t" x="1000" y="480">Long-Term Memory</text><text class="s" x="1025" y="525">→ PostgreSQL</text>
+<rect class="g" x="1270" y="430" width="260" height="130"/><text class="t" x="1360" y="480">HITL</text><text class="s" x="1325" y="525">→ PostgreSQL</text>
+<path class="l" d="M1275 345V390H205V430"/><path class="l" d="M1275 390H505V430"/><path class="l" d="M1275 390H805V430"/><path class="l" d="M1275 390H1105V430"/><path class="l" d="M1275 390H1400V430"/>
+<path class="l" d="M800 560V650"/><rect class="b" x="650" y="660" width="300" height="75"/><text class="t" x="745" y="708">Verify</text><path class="l" d="M800 735V790"/><rect class="g" x="650" y="800" width="300" height="70"/><text class="t" x="725" y="845">Finalize</text>
+</svg>

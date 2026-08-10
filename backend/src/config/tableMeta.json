@@ -1,0 +1,3011 @@
+{
+  "Manpower Log": {
+    "desc": "Single source of truth for man-hours and rate denominators.",
+    "tables": [
+      {
+        "db_table": "manpower_log",
+        "title": "Manpower Log",
+        "columns": [
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "project_code",
+            "header": "Project Code",
+            "type": "TEXT"
+          },
+          {
+            "name": "contractorcompany",
+            "header": "Contractor/Company",
+            "type": "TEXT"
+          },
+          {
+            "name": "tradediscipline",
+            "header": "Trade/Discipline",
+            "type": "TEXT"
+          },
+          {
+            "name": "number_of_workers",
+            "header": "Number of Workers",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "hours_per_worker",
+            "header": "Hours per Worker",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "total_manhours",
+            "header": "Total Man-Hours",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "month",
+            "header": "Month",
+            "type": "TEXT"
+          },
+          {
+            "name": "cumulative_manhours_project",
+            "header": "Cumulative Man-Hours (Project)",
+            "type": "NUMERIC"
+          }
+        ]
+      }
+    ]
+  },
+  "Dashboard Data Engine": {
+    "desc": "Hidden pre-aggregation engine for live dashboard formulas.",
+    "tables": [
+      {
+        "db_table": "dashboard_data_engine",
+        "title": "Dashboard Data Engine",
+        "columns": [
+          {
+            "name": "project_code",
+            "header": "Project Code",
+            "type": "TEXT"
+          },
+          {
+            "name": "month",
+            "header": "Month",
+            "type": "TEXT"
+          },
+          {
+            "name": "month_label",
+            "header": "Month Label",
+            "type": "TEXT"
+          },
+          {
+            "name": "manhours",
+            "header": "Man-Hours",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "near_misses",
+            "header": "Near Misses",
+            "type": "TEXT"
+          },
+          {
+            "name": "recordable_incidents",
+            "header": "Recordable Incidents",
+            "type": "TEXT"
+          },
+          {
+            "name": "lost_time_injuries",
+            "header": "Lost Time Injuries",
+            "type": "TEXT"
+          },
+          {
+            "name": "lost_days",
+            "header": "Lost Days",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "open_actions",
+            "header": "Open Actions",
+            "type": "TEXT"
+          },
+          {
+            "name": "overdue_actions",
+            "header": "Overdue Actions",
+            "type": "TEXT"
+          },
+          {
+            "name": "training_compliance",
+            "header": "Training Compliance %",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "audit_score_avg",
+            "header": "Audit Score Avg",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "observations_safe",
+            "header": "Observations Safe",
+            "type": "TEXT"
+          },
+          {
+            "name": "observations_unsafe",
+            "header": "Observations Unsafe",
+            "type": "TEXT"
+          },
+          {
+            "name": "permits_active",
+            "header": "Permits Active",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Incident Register": {
+    "desc": "Incident register with live links to investigations and CAPA.",
+    "tables": [
+      {
+        "db_table": "incident_register",
+        "title": "Incident Register",
+        "columns": [
+          {
+            "name": "incident_id",
+            "header": "Incident ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project_code",
+            "header": "Project Code",
+            "type": "TEXT"
+          },
+          {
+            "name": "date_of_incident",
+            "header": "Date of Incident",
+            "type": "DATE"
+          },
+          {
+            "name": "time",
+            "header": "Time",
+            "type": "TEXT"
+          },
+          {
+            "name": "locationarea",
+            "header": "Location/Area",
+            "type": "TEXT"
+          },
+          {
+            "name": "incident_type",
+            "header": "Incident Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "severity",
+            "header": "Severity",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "header": "Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "injured_person_name",
+            "header": "Injured Person Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "employeecontractor",
+            "header": "Employee/Contractor",
+            "type": "TEXT"
+          },
+          {
+            "name": "departmenttrade",
+            "header": "Department/Trade",
+            "type": "TEXT"
+          },
+          {
+            "name": "body_part_affected",
+            "header": "Body Part Affected",
+            "type": "TEXT"
+          },
+          {
+            "name": "immediate_cause",
+            "header": "Immediate Cause",
+            "type": "TEXT"
+          },
+          {
+            "name": "investigation_status",
+            "header": "Investigation Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_investigation_id",
+            "header": "Linked Investigation ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_ids",
+            "header": "Linked Action ID(s)",
+            "type": "TEXT"
+          },
+          {
+            "name": "lost_days",
+            "header": "Lost Days",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "medical_treatment_required",
+            "header": "Medical Treatment Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "reportable_to_authority",
+            "header": "Reportable to Authority",
+            "type": "TEXT"
+          },
+          {
+            "name": "days_open",
+            "header": "Days Open",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "closed_date",
+            "header": "Closed Date",
+            "type": "DATE"
+          }
+        ]
+      }
+    ]
+  },
+  "Investigation & RCA": {
+    "desc": "Root cause analysis records linked to Incident Register.",
+    "tables": [
+      {
+        "db_table": "investigation_rca",
+        "title": "Investigation & RCA",
+        "columns": [
+          {
+            "name": "investigation_id",
+            "header": "Investigation ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_incident_id",
+            "header": "Linked Incident ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "investigation_team",
+            "header": "Investigation Team",
+            "type": "TEXT"
+          },
+          {
+            "name": "investigation_date",
+            "header": "Investigation Date",
+            "type": "DATE"
+          },
+          {
+            "name": "methodology",
+            "header": "Methodology",
+            "type": "TEXT"
+          },
+          {
+            "name": "immediate_cause",
+            "header": "Immediate Cause",
+            "type": "TEXT"
+          },
+          {
+            "name": "root_cause_man",
+            "header": "Root Cause - Man",
+            "type": "TEXT"
+          },
+          {
+            "name": "root_cause_machine",
+            "header": "Root Cause - Machine",
+            "type": "TEXT"
+          },
+          {
+            "name": "root_cause_method",
+            "header": "Root Cause - Method",
+            "type": "TEXT"
+          },
+          {
+            "name": "root_cause_material",
+            "header": "Root Cause - Material",
+            "type": "TEXT"
+          },
+          {
+            "name": "root_cause_environment",
+            "header": "Root Cause - Environment",
+            "type": "TEXT"
+          },
+          {
+            "name": "findings_summary",
+            "header": "Findings Summary",
+            "type": "TEXT"
+          },
+          {
+            "name": "recommendations",
+            "header": "Recommendations",
+            "type": "TEXT"
+          },
+          {
+            "name": "responsible_person",
+            "header": "Responsible Person",
+            "type": "TEXT"
+          },
+          {
+            "name": "target_completion",
+            "header": "Target Completion",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "signoff_investigator",
+            "header": "Sign-off (Investigator)",
+            "type": "TEXT"
+          },
+          {
+            "name": "signoff_hse_manager",
+            "header": "Sign-off (HSE Manager)",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Action Tracker (CAPA)": {
+    "desc": "Single master CAPA tracker for all modules.",
+    "tables": [
+      {
+        "db_table": "action_tracker_capa",
+        "title": "Action Tracker (CAPA)",
+        "columns": [
+          {
+            "name": "action_id",
+            "header": "Action ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "source_module",
+            "header": "Source Module",
+            "type": "TEXT"
+          },
+          {
+            "name": "source_reference",
+            "header": "Source Reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_description",
+            "header": "Action Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "responsible_person",
+            "header": "Responsible Person",
+            "type": "TEXT"
+          },
+          {
+            "name": "priority",
+            "header": "Priority",
+            "type": "TEXT"
+          },
+          {
+            "name": "target_date",
+            "header": "Target Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "computed_status",
+            "header": "Computed Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "days_remainingoverdue",
+            "header": "Days Remaining/Overdue",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "closure_date",
+            "header": "Closure Date",
+            "type": "DATE"
+          },
+          {
+            "name": "verified_by",
+            "header": "Verified By",
+            "type": "TEXT"
+          },
+          {
+            "name": "evidence_of_closure",
+            "header": "Evidence of Closure",
+            "type": "TEXT"
+          },
+          {
+            "name": "comments",
+            "header": "Comments",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "HIRA Register": {
+    "desc": "Hazard identification and risk assessment with residual risk formulas.",
+    "tables": [
+      {
+        "db_table": "hira_register",
+        "title": "HIRA Register",
+        "columns": [
+          {
+            "name": "hira_id",
+            "header": "HIRA ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "activitytask",
+            "header": "Activity/Task",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "date_assessed",
+            "header": "Date Assessed",
+            "type": "DATE"
+          },
+          {
+            "name": "assessed_by",
+            "header": "Assessed By",
+            "type": "TEXT"
+          },
+          {
+            "name": "hazard_description",
+            "header": "Hazard Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "hazard_category",
+            "header": "Hazard Category",
+            "type": "TEXT"
+          },
+          {
+            "name": "existing_controls",
+            "header": "Existing Controls",
+            "type": "TEXT"
+          },
+          {
+            "name": "likelihood",
+            "header": "Likelihood",
+            "type": "TEXT"
+          },
+          {
+            "name": "consequence",
+            "header": "Consequence",
+            "type": "TEXT"
+          },
+          {
+            "name": "risk_rating",
+            "header": "Risk Rating",
+            "type": "TEXT"
+          },
+          {
+            "name": "risk_level",
+            "header": "Risk Level",
+            "type": "TEXT"
+          },
+          {
+            "name": "additional_controls_required",
+            "header": "Additional Controls Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "residual_likelihood",
+            "header": "Residual Likelihood",
+            "type": "TEXT"
+          },
+          {
+            "name": "residual_consequence",
+            "header": "Residual Consequence",
+            "type": "TEXT"
+          },
+          {
+            "name": "residual_risk_rating",
+            "header": "Residual Risk Rating",
+            "type": "TEXT"
+          },
+          {
+            "name": "residual_risk_level",
+            "header": "Residual Risk Level",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_owner",
+            "header": "Action Owner",
+            "type": "TEXT"
+          },
+          {
+            "name": "review_date",
+            "header": "Review Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "JSA Log": {
+    "desc": "JSA header records; steps live on the detail sheet.",
+    "tables": [
+      {
+        "db_table": "jsa_log",
+        "title": "JSA Log",
+        "columns": [
+          {
+            "name": "jsa_id",
+            "header": "JSA ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "taskactivity",
+            "header": "Task/Activity",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "prepared_by",
+            "header": "Prepared By",
+            "type": "TEXT"
+          },
+          {
+            "name": "approved_by",
+            "header": "Approved By",
+            "type": "TEXT"
+          },
+          {
+            "name": "number_of_steps",
+            "header": "Number of Steps",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "permit_required",
+            "header": "Permit Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_permit_no",
+            "header": "Linked Permit No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "crew_briefed",
+            "header": "Crew Briefed",
+            "type": "TEXT"
+          },
+          {
+            "name": "briefing_date",
+            "header": "Briefing Date",
+            "type": "DATE"
+          },
+          {
+            "name": "revision_number",
+            "header": "Revision Number",
+            "type": "TEXT"
+          },
+          {
+            "name": "valid_until",
+            "header": "Valid Until",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "JSA Steps Detail": {
+    "desc": "Step-level hazards and controls linked to JSA Log.",
+    "tables": [
+      {
+        "db_table": "jsa_steps_detail",
+        "title": "JSA Steps Detail",
+        "columns": [
+          {
+            "name": "jsa_id",
+            "header": "JSA ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "step_number",
+            "header": "Step Number",
+            "type": "TEXT"
+          },
+          {
+            "name": "job_step_description",
+            "header": "Job Step Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "potential_hazards",
+            "header": "Potential Hazards",
+            "type": "TEXT"
+          },
+          {
+            "name": "control_measures",
+            "header": "Control Measures",
+            "type": "TEXT"
+          },
+          {
+            "name": "ppe_required_this_step",
+            "header": "PPE Required (this step)",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Permit to Work Register": {
+    "desc": "Permit status is formula-driven from Valid To and Closed Date.",
+    "tables": [
+      {
+        "db_table": "permit_to_work_register",
+        "title": "Permit to Work Register",
+        "columns": [
+          {
+            "name": "permit_no",
+            "header": "Permit No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "permit_type",
+            "header": "Permit Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "work_description",
+            "header": "Work Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "requested_by",
+            "header": "Requested By",
+            "type": "TEXT"
+          },
+          {
+            "name": "issued_by_authorized_person",
+            "header": "Issued By (Authorized Person)",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_jsa_id",
+            "header": "Linked JSA ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "isolationloto_reference",
+            "header": "Isolation/LOTO Reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "gas_test_required",
+            "header": "Gas Test Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "gas_test_reading",
+            "header": "Gas Test Reading",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "issue_datetime",
+            "header": "Issue Date/Time",
+            "type": "DATE"
+          },
+          {
+            "name": "valid_from",
+            "header": "Valid From",
+            "type": "TEXT"
+          },
+          {
+            "name": "valid_to",
+            "header": "Valid To",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "closed_by",
+            "header": "Closed By",
+            "type": "TEXT"
+          },
+          {
+            "name": "closed_date",
+            "header": "Closed Date",
+            "type": "DATE"
+          },
+          {
+            "name": "remarks",
+            "header": "Remarks",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Safety Observations (BBS)": {
+    "desc": "Behavior-based safety observations feed leading-indicator KPIs.",
+    "tables": [
+      {
+        "db_table": "safety_observations_bbs",
+        "title": "Safety Observations (BBS)",
+        "columns": [
+          {
+            "name": "observation_id",
+            "header": "Observation ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "observer_name",
+            "header": "Observer Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "observed_personcrew",
+            "header": "Observed Person/Crew",
+            "type": "TEXT"
+          },
+          {
+            "name": "area",
+            "header": "Area",
+            "type": "TEXT"
+          },
+          {
+            "name": "observation_type",
+            "header": "Observation Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "category",
+            "header": "Category",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "header": "Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "immediate_action_taken",
+            "header": "Immediate Action Taken",
+            "type": "TEXT"
+          },
+          {
+            "name": "risk_level",
+            "header": "Risk Level",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "closure_date",
+            "header": "Closure Date",
+            "type": "DATE"
+          }
+        ]
+      }
+    ]
+  },
+  "Toolbox Talks": {
+    "desc": "Toolbox talk register for leading indicator tracking.",
+    "tables": [
+      {
+        "db_table": "toolbox_talks",
+        "title": "Toolbox Talks",
+        "columns": [
+          {
+            "name": "tbt_id",
+            "header": "TBT ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "topic",
+            "header": "Topic",
+            "type": "TEXT"
+          },
+          {
+            "name": "conducted_by",
+            "header": "Conducted By",
+            "type": "TEXT"
+          },
+          {
+            "name": "duration_minutes",
+            "header": "Duration (minutes)",
+            "type": "TEXT"
+          },
+          {
+            "name": "number_of_attendees",
+            "header": "Number of Attendees",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "key_points_discussed",
+            "header": "Key Points Discussed",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "photoattendance_reference",
+            "header": "Photo/Attendance Reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "questions_raised",
+            "header": "Questions Raised",
+            "type": "TEXT"
+          },
+          {
+            "name": "next_topic_planned",
+            "header": "Next Topic Planned",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Training & Competency": {
+    "desc": "Training log feeds the live competency matrix and dashboard compliance KPIs.",
+    "tables": [
+      {
+        "db_table": "training_competency",
+        "title": "Training & Competency",
+        "columns": [
+          {
+            "name": "training_id",
+            "header": "Training ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "employee_name",
+            "header": "Employee Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "employee_id",
+            "header": "Employee ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "traderole",
+            "header": "Trade/Role",
+            "type": "TEXT"
+          },
+          {
+            "name": "coursetraining_name",
+            "header": "Course/Training Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "training_provider",
+            "header": "Training Provider",
+            "type": "TEXT"
+          },
+          {
+            "name": "date_completed",
+            "header": "Date Completed",
+            "type": "DATE"
+          },
+          {
+            "name": "certificate_no",
+            "header": "Certificate No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "validity_months",
+            "header": "Validity (months)",
+            "type": "TEXT"
+          },
+          {
+            "name": "expiry_date",
+            "header": "Expiry Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "trainer",
+            "header": "Trainer",
+            "type": "TEXT"
+          },
+          {
+            "name": "scoreresult",
+            "header": "Score/Result",
+            "type": "NUMERIC"
+          }
+        ]
+      }
+    ]
+  },
+  "PPE Register": {
+    "desc": "PPE issue and replacement due tracking.",
+    "tables": [
+      {
+        "db_table": "ppe_register",
+        "title": "PPE Register",
+        "columns": [
+          {
+            "name": "issue_id",
+            "header": "Issue ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "employee_name",
+            "header": "Employee Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "ppe_item",
+            "header": "PPE Item",
+            "type": "TEXT"
+          },
+          {
+            "name": "size",
+            "header": "Size",
+            "type": "TEXT"
+          },
+          {
+            "name": "quantity",
+            "header": "Quantity",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "issue_date",
+            "header": "Issue Date",
+            "type": "DATE"
+          },
+          {
+            "name": "expected_lifespan_months",
+            "header": "Expected Lifespan (months)",
+            "type": "TEXT"
+          },
+          {
+            "name": "replacement_due",
+            "header": "Replacement Due",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "condition_at_issue",
+            "header": "Condition at Issue",
+            "type": "TEXT"
+          },
+          {
+            "name": "acknowledged_signature",
+            "header": "Acknowledged (Signature)",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Contractor Management": {
+    "desc": "Contractor HSE prequalification and performance register.",
+    "tables": [
+      {
+        "db_table": "contractor_management",
+        "title": "Contractor Management",
+        "columns": [
+          {
+            "name": "contractor_id",
+            "header": "Contractor ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "contractor_name",
+            "header": "Contractor Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "projects",
+            "header": "Project(s)",
+            "type": "TEXT"
+          },
+          {
+            "name": "hse_policy_on_file",
+            "header": "HSE Policy on File",
+            "type": "TEXT"
+          },
+          {
+            "name": "prequalification_score",
+            "header": "Prequalification Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "approved",
+            "header": "Approved",
+            "type": "TEXT"
+          },
+          {
+            "name": "approval_date",
+            "header": "Approval Date",
+            "type": "DATE"
+          },
+          {
+            "name": "reviewexpiry_date",
+            "header": "Review/Expiry Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "manhours_this_month",
+            "header": "Man-Hours This Month",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "incidents_this_contractor",
+            "header": "Incidents (This Contractor)",
+            "type": "TEXT"
+          },
+          {
+            "name": "observations_this_contractor",
+            "header": "Observations (This Contractor)",
+            "type": "TEXT"
+          },
+          {
+            "name": "overall_rating",
+            "header": "Overall Rating",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Site Inspection": {
+    "desc": "Site Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "site_inspection",
+        "title": "Site Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "area_inspected",
+            "header": "Area Inspected",
+            "type": "TEXT"
+          },
+          {
+            "name": "housekeeping",
+            "header": "Housekeeping",
+            "type": "TEXT"
+          },
+          {
+            "name": "walkwaysaccess_clear",
+            "header": "Walkways/Access Clear",
+            "type": "TEXT"
+          },
+          {
+            "name": "signage_adequate",
+            "header": "Signage Adequate",
+            "type": "TEXT"
+          },
+          {
+            "name": "ppe_compliance_observed",
+            "header": "PPE Compliance Observed",
+            "type": "TEXT"
+          },
+          {
+            "name": "barricadingexclusion_zones",
+            "header": "Barricading/Exclusion Zones",
+            "type": "TEXT"
+          },
+          {
+            "name": "waste_segregation",
+            "header": "Waste Segregation",
+            "type": "TEXT"
+          },
+          {
+            "name": "electrical_cablespanels_safe",
+            "header": "Electrical Cables/Panels Safe",
+            "type": "TEXT"
+          },
+          {
+            "name": "lighting_adequate",
+            "header": "Lighting Adequate",
+            "type": "TEXT"
+          },
+          {
+            "name": "emergency_exits_clear",
+            "header": "Emergency Exits Clear",
+            "type": "TEXT"
+          },
+          {
+            "name": "fire_equipment_accessible",
+            "header": "Fire Equipment Accessible",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Scaffold Inspection": {
+    "desc": "Scaffold Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "scaffold_inspection",
+        "title": "Scaffold Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "scaffold_tag_nolocation",
+            "header": "Scaffold Tag No./Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "scaffold_type",
+            "header": "Scaffold Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "base_platessole_boards_sound",
+            "header": "Base Plates/Sole Boards Sound",
+            "type": "TEXT"
+          },
+          {
+            "name": "standards_plumb",
+            "header": "Standards Plumb",
+            "type": "TEXT"
+          },
+          {
+            "name": "tiesbracing_adequate",
+            "header": "Ties/Bracing Adequate",
+            "type": "TEXT"
+          },
+          {
+            "name": "platform_boards_fully_decked",
+            "header": "Platform Boards Fully Decked",
+            "type": "TEXT"
+          },
+          {
+            "name": "guardrails_toe_boards_fitted",
+            "header": "Guardrails & Toe Boards Fitted",
+            "type": "TEXT"
+          },
+          {
+            "name": "access_ladder_secure",
+            "header": "Access Ladder Secure",
+            "type": "TEXT"
+          },
+          {
+            "name": "load_rating_tag_displayed",
+            "header": "Load Rating Tag Displayed",
+            "type": "TEXT"
+          },
+          {
+            "name": "overloading_signs",
+            "header": "Overloading Signs",
+            "type": "TEXT"
+          },
+          {
+            "name": "weathercorrosion_damage",
+            "header": "Weather/Corrosion Damage",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Lifting Equipment Inspection": {
+    "desc": "Lifting Equipment Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "lifting_equipment_inspection",
+        "title": "Lifting Equipment Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "equipment_id",
+            "header": "Equipment ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "equipment_type",
+            "header": "Equipment Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "thirdparty_certifying_body",
+            "header": "Third-Party Certifying Body",
+            "type": "TEXT"
+          },
+          {
+            "name": "structuralvisual_condition",
+            "header": "Structural/Visual Condition",
+            "type": "TEXT"
+          },
+          {
+            "name": "load_chartswl_marking_legible",
+            "header": "Load Chart/SWL Marking Legible",
+            "type": "TEXT"
+          },
+          {
+            "name": "hookslatches_functional",
+            "header": "Hooks/Latches Functional",
+            "type": "TEXT"
+          },
+          {
+            "name": "wire_ropechain_condition",
+            "header": "Wire Rope/Chain Condition",
+            "type": "TEXT"
+          },
+          {
+            "name": "certification_current",
+            "header": "Certification Current",
+            "type": "TEXT"
+          },
+          {
+            "name": "load_test_current",
+            "header": "Load Test Current",
+            "type": "TEXT"
+          },
+          {
+            "name": "operator_certification_current",
+            "header": "Operator Certification Current",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Fire Equipment Inspection": {
+    "desc": "Fire Equipment Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "fire_equipment_inspection",
+        "title": "Fire Equipment Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "extinguisherequipment_id",
+            "header": "Extinguisher/Equipment ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "type",
+            "header": "Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "pressure_gauge_in_green_zone",
+            "header": "Pressure Gauge in Green Zone",
+            "type": "TEXT"
+          },
+          {
+            "name": "pinseal_intact",
+            "header": "Pin/Seal Intact",
+            "type": "TEXT"
+          },
+          {
+            "name": "no_physical_damage",
+            "header": "No Physical Damage",
+            "type": "TEXT"
+          },
+          {
+            "name": "signagelocation_visible",
+            "header": "Signage/Location Visible",
+            "type": "TEXT"
+          },
+          {
+            "name": "access_not_obstructed",
+            "header": "Access Not Obstructed",
+            "type": "TEXT"
+          },
+          {
+            "name": "service_tag_current",
+            "header": "Service Tag Current",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Vehicle & Plant Inspection": {
+    "desc": "Vehicle & Plant Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "vehicle_plant_inspection",
+        "title": "Vehicle & Plant Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "vehicleplant_id",
+            "header": "Vehicle/Plant ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "driveroperator",
+            "header": "Driver/Operator",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "odometerhourmeter_reading",
+            "header": "Odometer/Hour-Meter Reading",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "tirestracks_condition",
+            "header": "Tires/Tracks Condition",
+            "type": "TEXT"
+          },
+          {
+            "name": "brakes_functional",
+            "header": "Brakes Functional",
+            "type": "TEXT"
+          },
+          {
+            "name": "lightsindicatorsreverse_alarm",
+            "header": "Lights/Indicators/Reverse Alarm",
+            "type": "TEXT"
+          },
+          {
+            "name": "mirrorsvisibility",
+            "header": "Mirrors/Visibility",
+            "type": "TEXT"
+          },
+          {
+            "name": "seatbelt_functional",
+            "header": "Seatbelt Functional",
+            "type": "TEXT"
+          },
+          {
+            "name": "fire_extinguisher_on_board",
+            "header": "Fire Extinguisher on Board",
+            "type": "TEXT"
+          },
+          {
+            "name": "leaks_oilfuelhydraulic",
+            "header": "Leaks (Oil/Fuel/Hydraulic)",
+            "type": "TEXT"
+          },
+          {
+            "name": "horn_functional",
+            "header": "Horn Functional",
+            "type": "TEXT"
+          },
+          {
+            "name": "load_securing_equipment",
+            "header": "Load Securing Equipment",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Ladder Inspection": {
+    "desc": "Ladder Inspection checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "ladder_inspection",
+        "title": "Ladder Inspection",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "ladder_idtag",
+            "header": "Ladder ID/Tag",
+            "type": "TEXT"
+          },
+          {
+            "name": "type",
+            "header": "Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "rungssteps_intact",
+            "header": "Rungs/Steps Intact",
+            "type": "TEXT"
+          },
+          {
+            "name": "feetnonslip_base_present",
+            "header": "Feet/Non-Slip Base Present",
+            "type": "TEXT"
+          },
+          {
+            "name": "locking_mechanism_functional",
+            "header": "Locking Mechanism Functional",
+            "type": "TEXT"
+          },
+          {
+            "name": "no_crackscorrosionbends",
+            "header": "No Cracks/Corrosion/Bends",
+            "type": "TEXT"
+          },
+          {
+            "name": "duty_rating_label_legible",
+            "header": "Duty Rating Label Legible",
+            "type": "TEXT"
+          },
+          {
+            "name": "stored_correctly",
+            "header": "Stored Correctly",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "First Aid & Emergency Equip.": {
+    "desc": "First Aid & Emergency Equip. checklist with automatic scoring and CAPA link.",
+    "tables": [
+      {
+        "db_table": "first_aid_emergency_equip",
+        "title": "First Aid & Emergency Equip.",
+        "columns": [
+          {
+            "name": "inspection_id",
+            "header": "Inspection ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "equipment_type",
+            "header": "Equipment Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "inspector",
+            "header": "Inspector",
+            "type": "TEXT"
+          },
+          {
+            "name": "contents_complete_vs_checklist",
+            "header": "Contents Complete vs. Checklist",
+            "type": "TEXT"
+          },
+          {
+            "name": "no_expired_items",
+            "header": "No Expired Items",
+            "type": "TEXT"
+          },
+          {
+            "name": "boxcabinet_in_good_condition",
+            "header": "Box/Cabinet in Good Condition",
+            "type": "TEXT"
+          },
+          {
+            "name": "location_signposted",
+            "header": "Location Signposted",
+            "type": "TEXT"
+          },
+          {
+            "name": "access_clear",
+            "header": "Access Clear",
+            "type": "TEXT"
+          },
+          {
+            "name": "score",
+            "header": "Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_result",
+            "header": "Overall Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "action_required",
+            "header": "Action Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Equipment & Plant Register": {
+    "desc": "Master asset register; inspection sheets can reference Equipment ID.",
+    "tables": [
+      {
+        "db_table": "equipment_plant_register",
+        "title": "Equipment & Plant Register",
+        "columns": [
+          {
+            "name": "equipment_id",
+            "header": "Equipment ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "equipment_type",
+            "header": "Equipment Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "makemodel",
+            "header": "Make/Model",
+            "type": "TEXT"
+          },
+          {
+            "name": "serial_no",
+            "header": "Serial No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "ownership",
+            "header": "Ownership",
+            "type": "TEXT"
+          },
+          {
+            "name": "last_calibrationcertification",
+            "header": "Last Calibration/Certification",
+            "type": "TEXT"
+          },
+          {
+            "name": "certifying_body",
+            "header": "Certifying Body",
+            "type": "TEXT"
+          },
+          {
+            "name": "certificate_expiry",
+            "header": "Certificate Expiry",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "next_maintenance_due",
+            "header": "Next Maintenance Due",
+            "type": "TEXT"
+          },
+          {
+            "name": "operator_assigned",
+            "header": "Operator Assigned",
+            "type": "TEXT"
+          },
+          {
+            "name": "inservice_status",
+            "header": "In-Service Status",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Waste Management Log": {
+    "desc": "Waste generation and disposal tracking.",
+    "tables": [
+      {
+        "db_table": "waste_management_log",
+        "title": "Waste Management Log",
+        "columns": [
+          {
+            "name": "waste_id",
+            "header": "Waste ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "waste_type",
+            "header": "Waste Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "header": "Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "quantity",
+            "header": "Quantity",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "unit",
+            "header": "Unit",
+            "type": "TEXT"
+          },
+          {
+            "name": "disposal_method",
+            "header": "Disposal Method",
+            "type": "TEXT"
+          },
+          {
+            "name": "disposal_company",
+            "header": "Disposal Company",
+            "type": "TEXT"
+          },
+          {
+            "name": "manifestwaste_transfer_note_no",
+            "header": "Manifest/Waste Transfer Note No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "disposal_date",
+            "header": "Disposal Date",
+            "type": "DATE"
+          },
+          {
+            "name": "certificate_reference",
+            "header": "Certificate Reference",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Chemical Inventory & MSDS": {
+    "desc": "Chemical inventory and MSDS review status.",
+    "tables": [
+      {
+        "db_table": "chemical_inventory_msds",
+        "title": "Chemical Inventory & MSDS",
+        "columns": [
+          {
+            "name": "chemical_id",
+            "header": "Chemical ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "chemical_name",
+            "header": "Chemical Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "location_stored",
+            "header": "Location Stored",
+            "type": "TEXT"
+          },
+          {
+            "name": "quantity_on_site",
+            "header": "Quantity on Site",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "unit",
+            "header": "Unit",
+            "type": "TEXT"
+          },
+          {
+            "name": "ghs_hazard_class",
+            "header": "GHS Hazard Class",
+            "type": "TEXT"
+          },
+          {
+            "name": "msds_on_file",
+            "header": "MSDS on File",
+            "type": "TEXT"
+          },
+          {
+            "name": "msds_last_updated",
+            "header": "MSDS Last Updated",
+            "type": "TEXT"
+          },
+          {
+            "name": "msds_review_due",
+            "header": "MSDS Review Due",
+            "type": "TEXT"
+          },
+          {
+            "name": "storage_conditions",
+            "header": "Storage Conditions",
+            "type": "TEXT"
+          },
+          {
+            "name": "handling_precautions",
+            "header": "Handling Precautions",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Spill Environmental Incident": {
+    "desc": "Specialized spill and environmental incident log.",
+    "tables": [
+      {
+        "db_table": "spill_environmental_incident",
+        "title": "Spill Environmental Incident",
+        "columns": [
+          {
+            "name": "spill_id",
+            "header": "Spill ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "datetime",
+            "header": "Date/Time",
+            "type": "DATE"
+          },
+          {
+            "name": "substance",
+            "header": "Substance",
+            "type": "TEXT"
+          },
+          {
+            "name": "quantity_spilled",
+            "header": "Quantity Spilled",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "unit",
+            "header": "Unit",
+            "type": "TEXT"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "cause",
+            "header": "Cause",
+            "type": "TEXT"
+          },
+          {
+            "name": "immediate_response_taken",
+            "header": "Immediate Response Taken",
+            "type": "TEXT"
+          },
+          {
+            "name": "reported_to_authority",
+            "header": "Reported to Authority",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Environmental Monitoring": {
+    "desc": "Environmental monitoring readings against permissible limits.",
+    "tables": [
+      {
+        "db_table": "environmental_monitoring",
+        "title": "Environmental Monitoring",
+        "columns": [
+          {
+            "name": "monitoring_id",
+            "header": "Monitoring ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "parameter",
+            "header": "Parameter",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "location",
+            "header": "Location",
+            "type": "TEXT"
+          },
+          {
+            "name": "measured_value",
+            "header": "Measured Value",
+            "type": "TEXT"
+          },
+          {
+            "name": "permissible_limit",
+            "header": "Permissible Limit",
+            "type": "TEXT"
+          },
+          {
+            "name": "result",
+            "header": "Result",
+            "type": "TEXT"
+          },
+          {
+            "name": "corrective_action_if_exceedance",
+            "header": "Corrective Action (if exceedance)",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Audit Tracker": {
+    "desc": "Audit Header Register",
+    "tables": [
+      {
+        "db_table": "audit_tracker",
+        "title": "Audit Header Register",
+        "columns": [
+          {
+            "name": "audit_id",
+            "header": "Audit ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "audit_type",
+            "header": "Audit Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "audit_date",
+            "header": "Audit Date",
+            "type": "DATE"
+          },
+          {
+            "name": "auditors",
+            "header": "Auditor(s)",
+            "type": "TEXT"
+          },
+          {
+            "name": "scope",
+            "header": "Scope",
+            "type": "TEXT"
+          },
+          {
+            "name": "standardreference",
+            "header": "Standard/Reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "number_of_findings",
+            "header": "Number of Findings",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "overall_audit_score",
+            "header": "Overall Audit Score",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "next_audit_due",
+            "header": "Next Audit Due",
+            "type": "TEXT"
+          }
+        ]
+      },
+      {
+        "db_table": "audit_tracker__audit_findings_detail_register",
+        "title": "Audit Findings Detail Register",
+        "columns": [
+          {
+            "name": "finding_id",
+            "header": "Finding ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "audit_id",
+            "header": "Audit ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "clause_reference",
+            "header": "Clause Reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "finding_description",
+            "header": "Finding Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "classification",
+            "header": "Classification",
+            "type": "TEXT"
+          },
+          {
+            "name": "responsible_person",
+            "header": "Responsible Person",
+            "type": "TEXT"
+          },
+          {
+            "name": "target_close_date",
+            "header": "Target Close Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "evidencelink",
+            "header": "Evidence/Link",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_action_id",
+            "header": "Linked Action ID",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Legal Compliance Register": {
+    "desc": "Legal and regulatory compliance register.",
+    "tables": [
+      {
+        "db_table": "legal_compliance_register",
+        "title": "Legal Compliance Register",
+        "columns": [
+          {
+            "name": "requirement_id",
+            "header": "Requirement ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "applicability",
+            "header": "Applicability",
+            "type": "TEXT"
+          },
+          {
+            "name": "regulationstandard_name",
+            "header": "Regulation/Standard Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "authorityjurisdiction",
+            "header": "Authority/Jurisdiction",
+            "type": "TEXT"
+          },
+          {
+            "name": "requirement_description",
+            "header": "Requirement Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "applicable_clause",
+            "header": "Applicable Clause",
+            "type": "TEXT"
+          },
+          {
+            "name": "compliance_status",
+            "header": "Compliance Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "evidence_of_compliance",
+            "header": "Evidence of Compliance",
+            "type": "TEXT"
+          },
+          {
+            "name": "responsible_person",
+            "header": "Responsible Person",
+            "type": "TEXT"
+          },
+          {
+            "name": "review_frequency_months",
+            "header": "Review Frequency (months)",
+            "type": "TEXT"
+          },
+          {
+            "name": "last_review_date",
+            "header": "Last Review Date",
+            "type": "DATE"
+          },
+          {
+            "name": "next_review_date",
+            "header": "Next Review Date",
+            "type": "DATE"
+          },
+          {
+            "name": "comments",
+            "header": "Comments",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Management of Change": {
+    "desc": "Management of Change log with HIRA-missing flag.",
+    "tables": [
+      {
+        "db_table": "management_of_change",
+        "title": "Management of Change",
+        "columns": [
+          {
+            "name": "moc_id",
+            "header": "MOC ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "change_description",
+            "header": "Change Description",
+            "type": "TEXT"
+          },
+          {
+            "name": "change_type",
+            "header": "Change Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "initiated_by",
+            "header": "Initiated By",
+            "type": "TEXT"
+          },
+          {
+            "name": "date_initiated",
+            "header": "Date Initiated",
+            "type": "DATE"
+          },
+          {
+            "name": "risk_assessment_required",
+            "header": "Risk Assessment Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "linked_hira_id",
+            "header": "Linked HIRA ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "approval_level_required",
+            "header": "Approval Level Required",
+            "type": "TEXT"
+          },
+          {
+            "name": "approved_by",
+            "header": "Approved By",
+            "type": "TEXT"
+          },
+          {
+            "name": "approval_date",
+            "header": "Approval Date",
+            "type": "DATE"
+          },
+          {
+            "name": "implementation_date",
+            "header": "Implementation Date",
+            "type": "DATE"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "review_date",
+            "header": "Review Date",
+            "type": "DATE"
+          },
+          {
+            "name": "days_since_initiated",
+            "header": "Days Since Initiated",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "risk_assessment_flag",
+            "header": "Risk Assessment Flag",
+            "type": "TEXT"
+          },
+          {
+            "name": "comments",
+            "header": "Comments",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Document Control": {
+    "desc": "Document control register and review due dates.",
+    "tables": [
+      {
+        "db_table": "document_control",
+        "title": "Document Control",
+        "columns": [
+          {
+            "name": "document_id",
+            "header": "Document ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "document_name",
+            "header": "Document Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "category",
+            "header": "Category",
+            "type": "TEXT"
+          },
+          {
+            "name": "applicability",
+            "header": "Applicability",
+            "type": "TEXT"
+          },
+          {
+            "name": "version_no",
+            "header": "Version No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "prepared_by",
+            "header": "Prepared By",
+            "type": "TEXT"
+          },
+          {
+            "name": "reviewed_by",
+            "header": "Reviewed By",
+            "type": "TEXT"
+          },
+          {
+            "name": "approved_by",
+            "header": "Approved By",
+            "type": "TEXT"
+          },
+          {
+            "name": "issue_date",
+            "header": "Issue Date",
+            "type": "DATE"
+          },
+          {
+            "name": "review_frequency_months",
+            "header": "Review Frequency (months)",
+            "type": "TEXT"
+          },
+          {
+            "name": "next_review_due",
+            "header": "Next Review Due",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_locationlink",
+            "header": "File Location/Link",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Meeting Minutes": {
+    "desc": "HSE meetings with live action references.",
+    "tables": [
+      {
+        "db_table": "meeting_minutes",
+        "title": "Meeting Minutes",
+        "columns": [
+          {
+            "name": "meeting_id",
+            "header": "Meeting ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "meeting_type",
+            "header": "Meeting Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "attendees",
+            "header": "Attendees",
+            "type": "TEXT"
+          },
+          {
+            "name": "agenda_items",
+            "header": "Agenda Items",
+            "type": "TEXT"
+          },
+          {
+            "name": "key_discussion_points",
+            "header": "Key Discussion Points",
+            "type": "TEXT"
+          },
+          {
+            "name": "actions_raised",
+            "header": "Actions Raised",
+            "type": "TEXT"
+          },
+          {
+            "name": "next_meeting_date",
+            "header": "Next Meeting Date",
+            "type": "DATE"
+          }
+        ]
+      }
+    ]
+  },
+  "KPI Statistics Engine": {
+    "desc": "Rate-based KPI engine: one row per Project x Month, all formulas reference named RateBase.",
+    "tables": [
+      {
+        "db_table": "kpi_statistics_engine",
+        "title": "KPI Statistics Engine",
+        "columns": [
+          {
+            "name": "project_code",
+            "header": "Project Code",
+            "type": "TEXT"
+          },
+          {
+            "name": "month",
+            "header": "Month",
+            "type": "TEXT"
+          },
+          {
+            "name": "manhours",
+            "header": "Man-Hours",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "recordable_incidents",
+            "header": "Recordable Incidents",
+            "type": "TEXT"
+          },
+          {
+            "name": "lost_time_injuries",
+            "header": "Lost Time Injuries",
+            "type": "TEXT"
+          },
+          {
+            "name": "lost_days",
+            "header": "Lost Days",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "near_misses",
+            "header": "Near Misses",
+            "type": "TEXT"
+          },
+          {
+            "name": "trir",
+            "header": "TRIR",
+            "type": "TEXT"
+          },
+          {
+            "name": "ltifr",
+            "header": "LTIFR",
+            "type": "TEXT"
+          },
+          {
+            "name": "severity_rate",
+            "header": "Severity Rate",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "near_miss_ratio",
+            "header": "Near Miss Ratio",
+            "type": "TEXT"
+          },
+          {
+            "name": "training_compliance",
+            "header": "Training Compliance %",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "audit_score_avg",
+            "header": "Audit Score (Avg)",
+            "type": "NUMERIC"
+          },
+          {
+            "name": "observations_safe",
+            "header": "Observations (Safe)",
+            "type": "TEXT"
+          },
+          {
+            "name": "observations_unsafe",
+            "header": "Observations (Unsafe)",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Annual HSE Calendar": {
+    "desc": "Annual plan. Computed Status is live against TODAY().",
+    "tables": [
+      {
+        "db_table": "annual_hse_calendar",
+        "title": "Annual HSE Activity Plan",
+        "columns": [
+          {
+            "name": "activity",
+            "header": "Activity",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "planned_month",
+            "header": "Planned Month",
+            "type": "TEXT"
+          },
+          {
+            "name": "planned_date",
+            "header": "Planned Date",
+            "type": "DATE"
+          },
+          {
+            "name": "responsible_person",
+            "header": "Responsible Person",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "header": "Status",
+            "type": "TEXT"
+          },
+          {
+            "name": "actual_date",
+            "header": "Actual Date",
+            "type": "DATE"
+          },
+          {
+            "name": "remarks",
+            "header": "Remarks",
+            "type": "TEXT"
+          }
+        ]
+      },
+      {
+        "db_table": "annual_hse_calendar__12month_project_activity_matrix",
+        "title": "12-Month Project Activity Matrix",
+        "columns": [
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "january",
+            "header": "January",
+            "type": "TEXT"
+          },
+          {
+            "name": "february",
+            "header": "February",
+            "type": "TEXT"
+          },
+          {
+            "name": "march",
+            "header": "March",
+            "type": "TEXT"
+          },
+          {
+            "name": "april",
+            "header": "April",
+            "type": "TEXT"
+          },
+          {
+            "name": "may",
+            "header": "May",
+            "type": "TEXT"
+          },
+          {
+            "name": "june",
+            "header": "June",
+            "type": "TEXT"
+          },
+          {
+            "name": "july",
+            "header": "July",
+            "type": "TEXT"
+          },
+          {
+            "name": "august",
+            "header": "August",
+            "type": "TEXT"
+          },
+          {
+            "name": "september",
+            "header": "September",
+            "type": "TEXT"
+          },
+          {
+            "name": "october",
+            "header": "October",
+            "type": "TEXT"
+          },
+          {
+            "name": "november",
+            "header": "November",
+            "type": "TEXT"
+          },
+          {
+            "name": "december",
+            "header": "December",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Change Log": {
+    "desc": "System version history.",
+    "tables": [
+      {
+        "db_table": "change_log",
+        "title": "Change Log",
+        "columns": [
+          {
+            "name": "version_no",
+            "header": "Version No.",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "changed_by",
+            "header": "Changed By",
+            "type": "TEXT"
+          },
+          {
+            "name": "description_of_change",
+            "header": "Description of Change",
+            "type": "TEXT"
+          },
+          {
+            "name": "sheets_affected",
+            "header": "Sheets Affected",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  },
+  "Emergency Preparedness": {
+    "desc": "IN AN EMERGENCY, CALL:",
+    "tables": [
+      {
+        "db_table": "emergency_preparedness",
+        "title": "Emergency Contacts",
+        "columns": [
+          {
+            "name": "name",
+            "header": "Name",
+            "type": "TEXT"
+          },
+          {
+            "name": "role",
+            "header": "Role",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "phone_primary",
+            "header": "Phone (Primary)",
+            "type": "TEXT"
+          },
+          {
+            "name": "phone_alternate",
+            "header": "Phone (Alternate)",
+            "type": "TEXT"
+          },
+          {
+            "name": "available_247",
+            "header": "Available 24/7",
+            "type": "TEXT"
+          }
+        ]
+      },
+      {
+        "db_table": "emergency_preparedness__emergency_response_plan_summary",
+        "title": "Emergency Response Plan Summary",
+        "columns": [
+          {
+            "name": "scenario",
+            "header": "Scenario",
+            "type": "TEXT"
+          },
+          {
+            "name": "immediate_actions",
+            "header": "Immediate Actions",
+            "type": "TEXT"
+          },
+          {
+            "name": "assemblymuster_point",
+            "header": "Assembly/Muster Point",
+            "type": "TEXT"
+          },
+          {
+            "name": "responsible_team",
+            "header": "Responsible Team",
+            "type": "TEXT"
+          },
+          {
+            "name": "reference_document",
+            "header": "Reference Document",
+            "type": "TEXT"
+          }
+        ]
+      },
+      {
+        "db_table": "emergency_preparedness__emergency_drill_register",
+        "title": "Emergency Drill Register",
+        "columns": [
+          {
+            "name": "drill_id",
+            "header": "Drill ID",
+            "type": "TEXT"
+          },
+          {
+            "name": "project",
+            "header": "Project",
+            "type": "TEXT"
+          },
+          {
+            "name": "drill_type",
+            "header": "Drill Type",
+            "type": "TEXT"
+          },
+          {
+            "name": "date",
+            "header": "Date",
+            "type": "DATE"
+          },
+          {
+            "name": "participants_count",
+            "header": "Participants Count",
+            "type": "TEXT"
+          },
+          {
+            "name": "evacuationresponse_time_minutes",
+            "header": "Evacuation/Response Time (minutes)",
+            "type": "TEXT"
+          },
+          {
+            "name": "observations",
+            "header": "Observations",
+            "type": "TEXT"
+          },
+          {
+            "name": "improvement_actions",
+            "header": "Improvement Actions",
+            "type": "TEXT"
+          },
+          {
+            "name": "next_drill_due",
+            "header": "Next Drill Due",
+            "type": "TEXT"
+          }
+        ]
+      }
+    ]
+  }
+}
