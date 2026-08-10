@@ -5,22 +5,60 @@ LangGraph. It combines operational PostgreSQL tools, approved-source RAG,
 persistent thread state, explicit long-term memory, human-in-the-loop approval
 and security guardrails.
 
-## Application screenshots
+## Application Screenshots
 
-### HSE operations dashboard
+### HSE Operations Dashboard
 
-![YVY HSE operations dashboard in English](docs/images/yvy-hse-dashboard-en.png)
+Real-time visibility of HSE operational information, incidents and actions.
 
-### Portfolio dashboard
+<p align="center">
+  <img src="docs/screenshots/hse-operations-dashboard.png"
+       alt="YVY HSE Operations Dashboard"
+       width="100%">
+</p>
 
-![YVY HSE portfolio dashboard in English](docs/images/yvy-hse-portfolio-dashboard-en.png)
+### Portfolio Dashboard
 
-### AI Agent — grounded operational query
+Portfolio-level monitoring of projects, KPIs and operational performance.
 
-The agent is shown answering an English query about overdue actions using the
-application's internal operational data.
+<p align="center">
+  <img src="docs/screenshots/portfolio-dashboard.png"
+       alt="YVY HSE Portfolio Dashboard"
+       width="100%">
+</p>
 
-![YVY HSE AI Agent answering an operational query in English](docs/images/yvy-hse-ai-agent-en.png)
+### AI Agent — Operational Data
+
+The agent uses read-only tools to retrieve current HSE operational data from
+PostgreSQL and answer portfolio-level questions.
+
+<p align="center">
+  <img src="docs/screenshots/ai-agent-operational-data.png"
+       alt="YVY HSE AI Agent querying operational data"
+       width="100%">
+</p>
+
+### AI Agent — Agentic RAG
+
+The agent retrieves relevant evidence from the approved HSE knowledge base
+and generates grounded safety guidance with source attribution.
+
+<p align="center">
+  <img src="docs/screenshots/ai-agent-rag.png"
+       alt="YVY HSE Agentic RAG grounded answer"
+       width="100%">
+</p>
+
+### AI Agent — Human-in-the-Loop
+
+Critical safety decisions cannot be approved autonomously by the AI. The
+workflow pauses and requires human authorization before execution.
+
+<p align="center">
+  <img src="docs/screenshots/ai-agent-hitl.png"
+       alt="YVY HSE Human-in-the-Loop safety workflow"
+       width="100%">
+</p>
 
 ## Verified Sprint 3 baseline
 
