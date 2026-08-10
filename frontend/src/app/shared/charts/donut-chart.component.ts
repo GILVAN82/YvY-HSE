@@ -6,7 +6,7 @@ export interface DonutItem { l: string; v: number; c: string; }
 @Component({
   selector: 'app-donut-chart',
   standalone: true,
-  template: `<div [innerHTML]="svg"></div>`,
+  templateUrl: './donut-chart.component.html',
   styleUrl: './donut-chart.component.scss',
 })
 export class DonutChartComponent implements OnChanges {
@@ -43,7 +43,7 @@ export class DonutChartComponent implements OnChanges {
     const legend = items.map(it => {
       const pct = Math.round((it.v / total) * 100);
       return `<div class="legend-row">
-        <span class="legend-swatch" style="background:${it.c}"></span>
+        <svg class="legend-swatch" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" rx="2" fill="${it.c}"></rect></svg>
         <span>${this.esc(it.l)} — <b>${it.v}</b> (${pct}%)</span>
       </div>`;
     }).join('');

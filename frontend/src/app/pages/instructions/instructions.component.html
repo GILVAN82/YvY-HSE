@@ -6,7 +6,9 @@
   <div class="card"><header><h3>{{ i18n.t('Color and Status Legend') }}</h3></header>
     <div class="body">
       <div *ngFor="let l of legend" class="legend-row">
-        <span class="legend-swatch" [style.background]="l[2]"></span>
+        <svg class="legend-swatch" viewBox="0 0 16 16" aria-hidden="true">
+          <rect width="16" height="16" rx="4" [attr.fill]="l[2]"></rect>
+        </svg>
         <b class="legend-label">{{ i18n.t(l[0]) }}</b><span class="legend-desc">{{ i18n.t(l[1]) }}</span>
       </div>
     </div>

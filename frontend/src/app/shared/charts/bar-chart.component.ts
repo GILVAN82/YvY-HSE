@@ -7,7 +7,7 @@ export interface BarItem { l: string; v: number; c?: string; }
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
-  template: `<div [innerHTML]="svg"></div>`,
+  templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.scss',
 })
 export class BarChartComponent implements OnChanges {

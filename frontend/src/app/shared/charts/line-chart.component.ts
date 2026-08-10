@@ -15,7 +15,7 @@ const MONTH_LBL: Record<string, string[]> = {
 @Component({
   selector: 'app-line-chart',
   standalone: true,
-  template: `<div [innerHTML]="svg"></div>`,
+  templateUrl: './line-chart.component.html',
   styleUrl: './line-chart.component.scss',
 })
 export class LineChartComponent implements OnChanges {
@@ -54,7 +54,7 @@ export class LineChartComponent implements OnChanges {
     });
     const months = MONTH_LBL[this.i18n.lang()] || MONTH_LBL['en'];
     months.forEach((m, i) => { g += `<text x="${x(i)}" y="${h - 8}" text-anchor="middle" font-size="10" fill="#8a979b">${m}</text>`; });
-    const legend = series.map(s => `<span class="legend-item"><span class="legend-dot" style="background:${s.color}"></span>${this.esc(s.name)}</span>`).join('');
+    const legend = series.map(s => `<span class="legend-item"><svg class="legend-dot" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" rx="2" fill="${s.color}"></rect></svg>${this.esc(s.name)}</span>`).join('');
     return `<div class="chart-legend">${legend}</div><svg class="chart-svg" viewBox="0 0 ${w} ${h}">${g}</svg>`;
   }
 }

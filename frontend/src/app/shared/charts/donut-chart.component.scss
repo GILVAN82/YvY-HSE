@@ -29,9 +29,9 @@
   }
 
   .legend-swatch {
-    display: inline-block;
+    display: block;
     width: 10px;
     height: 10px;
-    border-radius: 2px;
+    flex: 0 0 auto;
   }
 }
