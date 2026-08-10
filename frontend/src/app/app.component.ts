@@ -146,7 +146,7 @@ export class AppComponent implements OnInit {
     try {
       localStorage.setItem(AppComponent.THEME_KEY, next);
     } catch {
-      // localStorage indisponível (modo privado, etc.) — preferência não persiste nessa sessão.
+      // localStorage is unavailable (private mode, etc.); the preference does not persist in this session.
     }
   }
 

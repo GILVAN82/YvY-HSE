@@ -9,7 +9,7 @@ This sprint builds ingestion capability only; it adds no retrieval, API, LangGra
 ## 2. Source classification
 
 The requested `docs/turing-sprint3-agentic-rag-audit.md` does not exist. Its authoritative
-material is the existing `docs/turing-sprint3-rag-audit/` report set, especially the executive
+material is the verified approved-source inventory and ingestion evidence, especially the
 summary, SQL-vs-RAG classification, collection analysis, privacy findings and backlog.
 
 That audit concludes that the current application has no defensible RAG knowledge documents:

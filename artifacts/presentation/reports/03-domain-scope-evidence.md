@@ -4,7 +4,7 @@ Real UI evidence: `../screenshots/02-domain-scope-refusal.png`
 
 | Check | Result |
 |---|---|
-| Question | `Quem é o atual presidente do Brasil?` |
+| Question | `Who is the current president of Brazil?` |
 | Status | `OUT_OF_SCOPE` / controlled refusal |
 | President named | NO |
 | General model answer | NO |

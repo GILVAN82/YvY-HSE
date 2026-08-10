@@ -750,5 +750,6 @@
   "The selected AI model is not available.": "O modelo de IA selecionado não está disponível.",
   "The AI service is not configured at this time.": "O serviço de IA não está configurado neste momento.",
   "The query took longer than expected.": "A consulta demorou mais do que o esperado.",
-  "The query could not be completed at this time.": "Não foi possível concluir a consulta neste momento."
+  "The query could not be completed at this time.": "Não foi possível concluir a consulta neste momento.",
+  "This record will be saved to the PostgreSQL database.": "Este registro será salvo no banco de dados PostgreSQL."
 }

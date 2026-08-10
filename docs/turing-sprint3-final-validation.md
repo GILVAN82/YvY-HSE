@@ -23,7 +23,7 @@ The denominator of five comes from the five principal criteria recorded in the r
 
 ## 1. Evidence provenance
 
-Reviewed sources include `docs/agent-purpose.md`, `docs/architecture.md`, `docs/langgraph-architecture.md`, the presentation map, all Sprint 2–5 implementation documents, the original audit under `docs/turing-sprint3-audit/`, RAG audit material, current source code, current tests and generated evaluation artifacts.
+Reviewed sources include `docs/agent-purpose.md`, `docs/architecture.md`, `docs/langgraph-architecture.md`, the presentation map, all Sprint 2–5 implementation documents, current source code, current tests and generated evaluation artifacts.
 
 Some early documents are historical snapshots and contain statements that were true before later sprints, such as “RAG not implemented”, “memory absent” or old test totals. They remain useful engineering history but are not current-state authority. This document and executable evidence take precedence for final validation.
 
@@ -100,7 +100,7 @@ Current counts/status/records -> typed operational tools -> PostgreSQL
 Reusable procedures/guidance -> search_hse_knowledge -> embedding -> pgvector
 ```
 
-Controlled evidence confirms `Quais ações estão atrasadas? -> list_actions -> RAG NO`; `Qual o TRIR... -> get_kpi`; `Quantos projetos Data Center... -> get_projects`; and `What precautions... LOTO? -> RAG`. This separation prevents semantic search from substituting exact operational queries.
+Controlled evidence confirms `Which actions are overdue? -> list_actions -> RAG NO`; `What is the portfolio TRIR? -> get_kpi`; `How many Data Center projects are active? -> get_projects`; and `What precautions apply to LOTO? -> RAG`. This separation prevents semantic search from substituting exact operational queries.
 
 ## 7. State, memory and scope boundaries
 

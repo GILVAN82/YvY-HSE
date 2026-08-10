@@ -367,7 +367,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ providerId: this.selectedProviderId, modelId }));
     } catch {
-      // localStorage indisponível (modo privado, etc.) — apenas ignora, a preferência não persiste.
+      // localStorage is unavailable (private mode, etc.); ignore it and do not persist the preference.
     }
   }
 

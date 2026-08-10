@@ -97,21 +97,21 @@ export function resolveModel(providerId: string, modelId: string): LanguageModel
   if (!isProviderAvailable(p.id)) {
     throw new ProviderUnavailableError(
       p.envKey
-        ? `O provedor "${p.label}" não está configurado no servidor.`
-        : `O provedor "${p.label}" não está disponível.`
+        ? `Provider "${p.label}" is not configured on the server.`
+        : `Provider "${p.label}" is not available.`
     );
   }
 
   if (p.allowCustomModel) {
     if (!modelId || !/^[a-zA-Z0-9._:\-/]{1,100}$/.test(modelId)) {
-      throw new Error('Nome de modelo inválido.');
+      throw new Error('Invalid model name.');
     }
     return p.resolveModel(modelId);
   }
 
   const known = p.models.some((m) => m.id === modelId);
   if (!known) {
-    throw new Error(`Modelo "${modelId}" não é permitido para o provedor "${p.label}".`);
+    throw new Error(`Model "${modelId}" is not allowed for provider "${p.label}".`);
   }
   return p.resolveModel(modelId);
 }

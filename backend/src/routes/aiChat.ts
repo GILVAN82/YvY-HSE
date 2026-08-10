@@ -96,7 +96,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const parsed = chatRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
-      error: parsed.error.issues[0]?.message ?? 'Requisição inválida',
+      error: parsed.error.issues[0]?.message ?? 'Invalid request',
       code: 'AI_INVALID_REQUEST',
     });
     return;

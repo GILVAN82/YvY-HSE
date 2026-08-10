@@ -24,7 +24,7 @@ logs/
 *.log
 npm-debug.log*
 
-# Bases de dados locais, dumps e uploads
+# Local databases, dumps and uploads
 *.sqlite
 *.sqlite3
 *.db
@@ -32,19 +32,19 @@ npm-debug.log*
 *.sql.gz
 uploads/
 
-# Traces e artefactos de avaliação com dados
+# Traces and evaluation artifacts containing data
 traces/
 *.trace.json
 eval-runs/
 
-# Temporários e sistema
+# Temporary and system files
 tmp/
 temp/
 *.tmp
 .DS_Store
 Thumbs.db
 
-# Configuração local do agente de desenvolvimento
+# Local development-agent configuration
 .claude/
 backups/
 backend/.tmp/

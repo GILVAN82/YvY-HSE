@@ -4,7 +4,7 @@ Source: completed Sprint 4.2 validation. Sprint 7 did not repeat external operat
 
 | Evidence | Verified result |
 |---|---|
-| User question | `Quais ações estão atrasadas?` |
+| User question | `Which actions are overdue?` |
 | Real overdue actions | 8 |
 | Agent tool | `list_actions` |
 | RAG used | NO |

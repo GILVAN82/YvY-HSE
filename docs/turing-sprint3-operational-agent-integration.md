@@ -4,7 +4,7 @@ Validation date: 2026-08-08
 
 ## 1. Problem discovered through UI testing
 
-The real Angular widget returned `Não consegui concluir essa consulta agora.` for `Quais ações estão atrasadas?`. Backend-only tests had not exercised the complete PostgreSQL tool-result → second model-step boundary.
+The real Angular widget returned a controlled query-failure message for `Which actions are overdue?`. Backend-only tests had not exercised the complete PostgreSQL tool-result → second model-step boundary.
 
 ## 2. Root-cause audit
 
@@ -37,7 +37,7 @@ The widget now stores `threadId` from SSE `done` metadata and includes it in sub
 
 ## 5. Portuguese operational classification
 
-The deterministic classifier normalizes accents and recognizes Portuguese action, incident and KPI/indicator variants. `Quais ações estão atrasadas?` is classified as structured operational data, so RAG is withheld.
+The deterministic classifier normalizes input and recognizes supported action, incident and KPI variants. `Which actions are overdue?` is classified as structured operational data, so RAG is withheld.
 
 ## 6. Shared overdue rule
 
@@ -77,7 +77,7 @@ Operational database rows are not passed through wholesale. `projectActionForMod
 
 The SQL/domain behavior remains read-only and unchanged. The outbound projection is a separate deterministic boundary. Adding a database column does not expose it automatically; a code and policy review must explicitly add it to the allowlist.
 
-Pre-authorization audit for `Quais ações estão atrasadas?`: 8 matching rows. Only the field names and count were printed; no action descriptions or personal fields were printed during the audit.
+Pre-authorization audit for `Which actions are overdue?`: 8 matching rows. Only the field names and count were printed; no action descriptions or personal fields were printed during the audit.
 
 ### Authorized live operational validation — Sprint 4.2C
 
@@ -168,7 +168,7 @@ Database integrity after validation: 42 operational tables and 784 operational r
 
 ## 16. Sprint 4.2E — final authorized operational validation
 
-The user granted fresh authorization for one real external-model validation of `Quais ações estão atrasadas?`, limited to the seven approved fields. The pre-egress audit passed with 8 rows and no personal, responsible-party, incident, or unexpected fields.
+The user granted fresh authorization for one real external-model validation of `Which actions are overdue?`, limited to the seven approved fields. The pre-egress audit passed with 8 rows and no personal, responsible-party, incident, or unexpected fields.
 
 The real HTTP/LangGraph execution selected structured operational routing, excluded RAG, invoked `list_actions`, returned a thread ID, and completed without controlled errors. Safe telemetry revealed the decisive defect: the model supplied `overdue=true`, `project="*"`, a blank status, and limit 20. The tool applied `project = '*'` literally and returned zero rows. The same-thread follow-up repeated the wildcard pattern with limit 50 and also returned zero rows. Consequently, no operational rows were sent externally, the final answer contained no real action data, and the optional third follow-up was not run.
 

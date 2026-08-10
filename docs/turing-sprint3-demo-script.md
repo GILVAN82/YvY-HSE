@@ -17,7 +17,7 @@ Target duration: approximately **8–10 minutes**. Use live execution only where
 
 **Synthetic demo expectation:** 12 total actions, exactly 8 overdue. `DEMO-ACT-001` (“Review LOTO isolation verification”) is deterministically the most overdue.
 
-- **Question:** `Quais ações estão atrasadas?`
+- **Question:** `Which actions are overdue?`
 - **What the user sees:** Do not rerun. Present the saved Sprint 4.2 evidence summary.
 - **What happens internally:** `list_actions(overdue=true)` → PostgreSQL → seven-field projection; RAG NO.
 - **Why it matters:** Shows real operational integration and personal-data minimization.
@@ -62,7 +62,7 @@ Target duration: approximately **8–10 minutes**. Use live execution only where
 
 ## Demo 7 — Domain Scope Refusal (about 45 seconds)
 
-- **Question:** `Quem é o atual presidente do Brasil?`
+- **Question:** `Who is the current president of Brazil?`
 - **What the user sees:** Controlled YVY HSE scope message; no president named.
 - **What happens internally:** Guard/preflight refuses before general answer, tools, RAG or HITL.
 - **Why it matters:** Prevents the embedded HSE agent from becoming a general-purpose chatbot.

@@ -15,10 +15,10 @@ import {
 import type { ChatTurn } from './graph/hseAgent.state';
 
 const REFUSAL_MESSAGES: Record<string, string> = {
-  [RefusalCode.EMPTY_INPUT]: 'Envie uma pergunta para eu poder ajudar.',
-  [RefusalCode.TOO_LONG]: 'Essa mensagem é longa demais. Resuma a pergunta e tente de novo.',
+  [RefusalCode.EMPTY_INPUT]: 'Please send a question so I can help.',
+  [RefusalCode.TOO_LONG]: 'This message is too long. Summarize the question and try again.',
   [RefusalCode.PROMPT_INJECTION]:
-    'Só posso responder a perguntas sobre os dados de HSE do sistema. Posso ajudar com KPIs, incidentes, ações ou projetos.',
+    'I can only answer questions about HSE system data. I can help with KPIs, incidents, actions or projects.',
 };
 
 /**
@@ -90,14 +90,14 @@ export async function runLegacyAgent(input: {
   } catch (err: any) {
     const timedOut = /timeout|aborted/i.test(err?.message ?? '');
     const code = timedOut ? AgentErrorCode.TIMEOUT : AgentErrorCode.MODEL_ERROR;
-    input.emit({ type: 'error', message: 'Não consegui concluir essa consulta agora.', code });
+    input.emit({ type: 'error', message: 'I could not complete this query right now.', code });
     return { runId, conversationId, status: AgentStatus.FAILED, text, toolsUsed, stepCount: steps, errorCode: code };
   }
 
   if (!text.trim()) {
     input.emit({
       type: 'error',
-      message: 'Não consegui produzir uma resposta para essa pergunta.',
+      message: 'I could not produce an answer for this question.',
       code: AgentErrorCode.EMPTY_ANSWER,
     });
     return {

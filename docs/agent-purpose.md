@@ -1,57 +1,61 @@
-# Propósito do agente
+# YVY HSE AI Agent — Purpose and Scope
 
-## O que é
+## Purpose
 
-**YVY HSE AI Agent** — assistente consultivo que responde a perguntas sobre os dados de
-Health, Safety & Environment do sistema, consultando-os em tempo real através de ferramentas.
+The YVY HSE AI Agent is a consultative assistant for HSE/QHSE professionals.
+It answers questions about the application's operational data and approved
+internal knowledge without changing operational records.
 
-## O problema
+The agent reduces the manual effort required to navigate multiple registers,
+combine KPI inputs and locate approved safety guidance. Deterministic
+calculations and current operational facts remain in PostgreSQL tools; approved
+procedures and reference material are handled by RAG.
 
-Os dados de HSE estão dispersos por **35 abas e mais de 30 tabelas**. Responder a "qual o TRIR
-do PRJ-003 em maio?" obriga a cruzar sete tabelas — `manpower_log`, `incident_register`,
-`action_tracker_capa`, `permit_to_work_register`, `training_competency`, `audit_tracker` e
-`settings`. É exactamente o que a função `computeKpi()` faz, e não é algo que se faça de cabeça
-nem em poucos cliques.
+## Intended users
 
-O agente expõe essa agregação em linguagem natural, sem que o utilizador tenha de saber em que
-aba está o número.
+- HSE managers
+- Safety professionals
+- Project managers
+- Auditors and reviewers
 
-## Utilizadores
+Authentication and verified user identity are not implemented in the current
+local application. Human approval records therefore represent a software
+workflow decision, not authenticated authorization for physical work.
 
-Profissionais de HSE que já usam o sistema: gestores de HSE, técnicos de segurança, gestores
-de projeto e auditores. Não há autenticação, portanto hoje não há distinção de papéis —
-ver [limitations.md](limitations.md).
+## Supported capabilities
 
-## O que resolve
+- Retrieve portfolio and project KPIs
+- List projects and project status
+- Find incidents using approved operational filters
+- List open or overdue corrective actions
+- Retrieve approved HSE knowledge with traceable citations
+- Maintain isolated conversation state by thread
+- Store only explicit, policy-compliant long-term memory
+- Pause critical LOTO execution requests for human review
+- Refuse requests outside the YVY HSE domain
 
-- Calcular KPIs (TRIR, LTIFR, homens-hora, conformidade de formação, nota de auditoria)
-- Localizar incidentes por projeto, tipo ou severidade
-- Listar ações CAPA abertas ou atrasadas
-- Consultar o portfólio de projetos
-- Dizer **o que o sistema não tem**, em vez de o inventar
+## Safety boundaries
 
-## Limites — deliberados e verificáveis
+- The agent never modifies operational HSE records.
+- The agent never self-approves critical LOTO execution.
+- RAG evidence is not a substitute for human authorization.
+- Operational tools use parameterized read-only SQL.
+- The agent does not answer general-knowledge questions outside HSE/QHSE.
+- Secrets, credentials, prompts, raw provider errors and database internals are
+  never disclosed.
+- A software approval does not authorize equipment operation or physical work.
 
-O agente é **estritamente consultivo**. Nenhuma das suas quatro ferramentas escreve na base:
-todas executam `SELECT`. Isto não é só uma instrução no prompt, é uma propriedade do código.
+## Grounding policy
 
-Não faz:
+The agent must use the correct internal source for every answer:
 
-| Não faz | Porquê |
+| Question type | Authoritative source |
 |---|---|
-| Criar, editar, aprovar ou apagar registos | Nenhuma tool escreve; toda a decisão é humana |
-| Fornecer procedimentos de LOTO ou PTW | **O sistema não os contém.** Guarda referências, não documentos |
-| Fornecer fichas de segurança (SDS/MSDS) | `msds_on_file` é uma flag; a ficha não está no sistema |
-| Citar o texto de normas ISO | Guarda o nome e a cláusula, não o texto |
-| Identificar pessoas feridas ou dar dados médicos | Privacidade; campos excluídos por regra |
-| Substituir julgamento profissional de HSE | Apresenta dados, não decisões |
-| Emitir diagnóstico médico | Fora de âmbito |
+| Current KPIs, projects, incidents and actions | Read-only PostgreSQL tools |
+| Approved procedures and safety guidance | Approved RAG collection |
+| Conversation continuity | PostgreSQL thread state |
+| User-requested persistent facts | Explicit long-term memory |
+| Critical execution authorization | Human approval workflow |
 
-O prompt de sistema instrui explicitamente a recusar cada um destes casos, e o guard bloqueia
-tentativas de o contornar antes de qualquer chamada ao modelo.
-
-## Como sabe que não sabe
-
-A regra mais importante do prompt: **nunca inventar**. Se uma ferramenta não devolver o dado,
-o agente diz isso em vez de estimar. Num domínio onde um procedimento de bloqueio de energia
-inventado pode matar alguém, recusar é a resposta correcta.
+When the required evidence is unavailable, the agent returns controlled
+no-data or no-relevant-evidence semantics. It must not invent an answer.

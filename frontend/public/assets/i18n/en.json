@@ -629,5 +629,6 @@
   "12-Month Project Activity Matrix": "12-Month Project Activity Matrix",
   "Toolbox Talk": "Toolbox Talk",
   "Drill": "Drill",
-  "Inspection": "Inspection"
+  "Inspection": "Inspection",
+  "This record will be saved to the PostgreSQL database.": "This record will be saved to the PostgreSQL database."
 }

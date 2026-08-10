@@ -84,7 +84,7 @@
         </div>
       </ng-container>
     </div>
-    <p class="note db-note">{{ i18n.lang()==='pt' ? 'Este registro será salvo no banco de dados PostgreSQL.' : (i18n.lang()==='es' ? 'Este registro se guardará en la base de datos PostgreSQL.' : (i18n.lang()==='fr' ? 'Cet enregistrement sera sauvegardé dans la base de données PostgreSQL.' : (i18n.lang()==='de' ? 'Dieser Datensatz wird in der PostgreSQL-Datenbank gespeichert.' : 'This record will be saved to the PostgreSQL database.'))) }}</p>
+    <p class="note db-note">{{ i18n.t('This record will be saved to the PostgreSQL database.') }}</p>
     <div class="actions">
       <button class="btn" (click)="closeModal()">{{ i18n.t('Cancel') }}</button>
       <button class="btn primary" (click)="save()">{{ i18n.t('Save record') }}</button>

@@ -24,7 +24,7 @@ app.use(
     origin: (origin, callback) => {
       // Same-origin and non-browser callers (curl, tests) send no Origin header.
       if (!origin || corsOrigins.includes(origin)) return callback(null, true);
-      callback(new Error('Origem não permitida por CORS'));
+      callback(new Error('Origin is not allowed by CORS'));
     },
   })
 );
@@ -44,7 +44,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   if (!isWrite || isChat || writesEnabled) return next();
   res.status(403).json({
     error:
-      'Escrita desativada: este servidor ainda não tem autenticação. Defina ALLOW_UNAUTHENTICATED_WRITES=true apenas em desenvolvimento local.',
+      'Writes are disabled because this server does not have authentication yet. Set ALLOW_UNAUTHENTICATED_WRITES=true for local development only.',
     code: 'WRITES_DISABLED',
   });
 });

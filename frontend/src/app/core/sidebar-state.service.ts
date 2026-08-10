@@ -178,7 +178,7 @@ export class SidebarStateService {
     try {
       localStorage.setItem(PANEL_KEY, String(closed));
     } catch {
-      // localStorage indisponível (modo privado, etc.) — preferência não persiste nessa sessão.
+      // localStorage is unavailable (private mode, etc.); the preference does not persist in this session.
     }
   }
 
@@ -196,7 +196,7 @@ export class SidebarStateService {
     try {
       localStorage.setItem(MODULE_KEY, id);
     } catch {
-      // localStorage indisponível (modo privado, etc.) — preferência não persiste nessa sessão.
+      // localStorage is unavailable (private mode, etc.); the preference does not persist in this session.
     }
   }
 }
