@@ -38,6 +38,21 @@ export function serializeToolRows<T extends Record<string, unknown>>(rows: T[]):
 
 export type ComputeKpi = (project: string, monthIdx: number | undefined) => Promise<unknown>;
 
+export type OperationalToolResult<T> = {
+  status: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA';
+  recordCount: number;
+  data: T;
+};
+
+function operationalResult<T>(data: T, recordCount: number): OperationalToolResult<T> {
+  return { status: recordCount > 0 ? 'SUCCESS_WITH_DATA' : 'SUCCESS_NO_DATA', recordCount, data };
+}
+
+function operationalRows<T extends Record<string, unknown>>(rows: T[]): OperationalToolResult<Array<Record<string, unknown>>> {
+  const data = serializeToolRows(rows);
+  return operationalResult(data, data.length);
+}
+
 export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: ComputeKpi, ragRetriever: RagRetriever, memoryService?: MemoryService, allowMemoryWrite = false) {
   return {
   get_kpi: tool({
@@ -52,7 +67,7 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
         .describe('Zero-based month index (0=January, 11=December), or "*" for the full year'),
     }),
     execute: async ({ project, month }) =>
-      safely('get_kpi', () => computeKpi(project, month === '*' ? undefined : month)),
+      safely('get_kpi', async () => operationalResult(await computeKpi(project, month === '*' ? undefined : month), 1)),
   }),
 
   list_incidents: tool({
@@ -78,7 +93,7 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
            LIMIT $${params.length}`,
           params
         );
-        return serializeToolRows(r.rows);
+        return operationalRows(r.rows);
       }),
   }),
 
@@ -138,7 +153,7 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
           modelVisibleFields: ['actionId', 'description', 'status', 'targetDate', 'daysOverdue', 'priority', 'sourceModule'],
           personalFieldsExcluded: true,
         }));
-        return modelRows;
+        return operationalResult(modelRows, modelRows.length);
       }),
   }),
 
@@ -150,7 +165,7 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
         const r = await database.query(
           'SELECT code, name, status, project_manager, hse_manager FROM projects ORDER BY code'
         );
-        return r.rows;
+        return operationalRows(r.rows);
       }),
   }),
   search_hse_knowledge: tool({

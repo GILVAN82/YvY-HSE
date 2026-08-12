@@ -34,6 +34,9 @@ function safeResultSummary(toolName: string, output: unknown): string {
   if (!output || typeof output !== 'object') return 'Result returned';
   const value = output as Record<string, unknown>;
   if (value.error === true) return 'Controlled tool error';
+  if ((value.status === 'SUCCESS_WITH_DATA' || value.status === 'SUCCESS_NO_DATA') && typeof value.recordCount === 'number') {
+    return `${value.recordCount} record(s) returned`;
+  }
   if (toolName === 'search_hse_knowledge') {
     const count = Array.isArray(value.evidence) ? value.evidence.length : 0;
     return `${String(value.status ?? 'UNKNOWN')}: ${count} chunk(s)`;

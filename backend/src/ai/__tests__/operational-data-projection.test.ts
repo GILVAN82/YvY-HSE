@@ -55,7 +55,7 @@ describe('operational action egress allowlist', () => {
     const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'tools.ts'), 'utf8');
     const block = source.slice(source.indexOf('list_actions:'), source.indexOf('get_projects:'));
     assert.match(block, /const modelRows = projectActionsForModel\(r\.rows\)/);
-    assert.match(block, /return modelRows/);
+    assert.match(block, /return operationalResult\(modelRows, modelRows\.length\)/);
     assert.doesNotMatch(block, /return serializeToolRows\(r\.rows\)/);
   });
 });

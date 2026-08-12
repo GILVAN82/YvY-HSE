@@ -113,12 +113,11 @@ describe('5. tool failure', () => {
       { toolCallId: 't', messages: [] }
     )) as unknown;
 
-    // It returns either rows (none because the project does not exist) or an error envelope.
+    // It returns either an operational result or an error envelope.
     // It never throws, and the injection attempt is treated as a parameter value.
-    const isRows = Array.isArray(out);
+    const isOperationalResult = !!out && typeof out === 'object' && 'status' in out;
     const isErrorEnvelope = !!out && typeof out === 'object' && (out as { error?: boolean }).error === true;
-    assert.ok(isRows || isErrorEnvelope, 'a tool tem de devolver linhas ou um envelope de erro');
-    if (isRows) assert.equal((out as unknown[]).length, 0, 'a nonexistent project returns no rows');
+    assert.ok(isOperationalResult || isErrorEnvelope, 'a tool must return an operational result or an error envelope');
   });
 });
 
@@ -601,17 +600,42 @@ describe('20. controlled error-handling validation', () => {
     assert.match(userOutput, /I could not query the system data right now/);
   });
 
+  test('successful incident result with records remains a normal completed answer', async () => {
+    resetGraphCache(); const { emit } = recorder();
+    const database = { query: async () => ({ rows: [{ project_code: 'PRJ-001', incident_type: 'Near Miss', severity: 'Low', description: 'Synthetic incident' }], rowCount: 1 }) };
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
+    const model = createMockModel([
+      { toolCall: { name: 'list_incidents', input: '{"limit":20}' } },
+      { text: 'There is 1 incident matching this query.' },
+    ]);
+    const result = await runHseAgent({ message: 'How many incidents are currently registered?', model, emit, tools });
+    assert.equal(result.status, AgentStatus.COMPLETED); assert.equal(result.errorCode, undefined);
+    assert.match(JSON.stringify(model.callInputs()), /SUCCESS_WITH_DATA/);
+    assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 record(s) returned');
+  });
+
   test('empty operational result is a valid no-data answer, not a system failure', async () => {
     resetGraphCache(); const { emit, events } = recorder();
     const database = { query: async () => ({ rows: [], rowCount: 0 }) };
     const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
     const model = createMockModel([
       { toolCall: { name: 'list_incidents', input: '{"limit":20}' } },
-      { text: 'I checked recent incidents and no records were returned.' },
+      { text: 'There are currently 0 incidents matching this query.' },
     ]);
-    const result = await runHseAgent({ message: 'List recent incidents.', model, emit, tools });
+    const result = await runHseAgent({ message: 'How many incidents are currently registered?', model, emit, tools });
     assert.equal(result.status, AgentStatus.COMPLETED); assert.equal(result.errorCode, undefined);
-    assert.equal(result.text, 'I checked recent incidents and no records were returned.');
+    assert.equal(result.text, 'There are currently 0 incidents matching this query.');
+    assert.match(JSON.stringify(model.callInputs()), /SUCCESS_NO_DATA/);
+    assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '0 record(s) returned');
     assert.doesNotMatch(JSON.stringify(events), forbidden);
+  });
+
+  test('another list-style tool exposes the same successful zero-result semantics', async () => {
+    const database = { query: async () => ({ rows: [], rowCount: 0 }) };
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
+    const output = await (tools.get_projects as any).execute({}, { toolCallId: 'projects-empty', messages: [] });
+    assert.deepEqual(output, { status: 'SUCCESS_NO_DATA', recordCount: 0, data: [] });
   });
 });

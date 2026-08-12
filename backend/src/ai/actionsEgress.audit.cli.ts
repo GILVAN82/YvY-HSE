@@ -12,9 +12,9 @@ void (async () => {
   const toolResult = await (tools.list_actions as any).execute(
     { overdue: true, limit: 50 }, { toolCallId: 'local-egress-audit', messages: [] }
   );
-  if (!Array.isArray(toolResult)) throw new Error('list_actions audit did not return rows');
+  if (!toolResult || !Array.isArray(toolResult.data)) throw new Error('list_actions audit did not return operational rows');
   const expected = JSON.stringify([...ACTION_MODEL_VISIBLE_FIELDS]);
-  if (!toolResult.every((row) => JSON.stringify(Object.keys(row)) === expected)) {
+  if (!toolResult.data.every((row: Record<string, unknown>) => JSON.stringify(Object.keys(row)) === expected)) {
     throw new Error('list_actions projection does not match the reviewed allowlist');
   }
   console.log(`ROWS MATCHED: ${Number(result.rows[0]?.count ?? 0)}`);
