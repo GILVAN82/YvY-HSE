@@ -16,6 +16,9 @@ export class AgentInspectorComponent {
 
   label(value: unknown): string { return value === true ? 'Yes' : value === false ? 'No' : String(value ?? 'NOT CURRENTLY OBSERVABLE'); }
   title(value: string): string { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+  semanticLabel(value?: string): string {
+    return ({ SUCCESS: 'Completed', NO_DATA: 'No Data', ERROR: 'Error', PENDING: 'Awaiting Human Approval', APPROVED: 'Approved', REJECTED: 'Rejected', REFUSED: 'Refused' } as Record<string, string>)[value ?? ''] ?? 'Not Currently Observable';
+  }
   entries(value?: Record<string, unknown>): Array<{ key: string; value: unknown }> {
     return value ? Object.entries(value).map(([key, item]) => ({ key, value: item })) : [];
   }

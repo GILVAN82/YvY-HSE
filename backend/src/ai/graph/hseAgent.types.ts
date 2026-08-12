@@ -4,6 +4,7 @@ import type { LongTermMemory, MemoryService } from '../memory/memory.types';
 import type { ApprovalRequest, ApprovalService } from '../hitl/hitl.types';
 import type { NormalizedAttachment } from '../attachments/attachment.types';
 import type { ResponseLanguage } from '../responseLanguage';
+import type { ResponseStatus } from '../responseStatus';
 
 /** Lifecycle of a single agent run. */
 export const AgentStatus = {
@@ -61,6 +62,7 @@ export interface AgentToolTrace {
   status: 'COMPLETED' | 'ERROR' | 'NOT_OBSERVABLE';
   arguments?: Record<string, string | number | boolean | null>;
   resultSummary?: string;
+  resultStatus?: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA';
 }
 
 export interface AgentExecutionTrace {
@@ -108,6 +110,7 @@ export interface AgentRunResult {
   runId: string;
   conversationId: string;
   status: AgentStatus;
+  responseStatus?: ResponseStatus;
   text: string;
   toolsUsed: string[];
   stepCount: number;

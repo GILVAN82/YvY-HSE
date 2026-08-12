@@ -610,6 +610,7 @@ describe('20. controlled error-handling validation', () => {
     ]);
     const result = await runHseAgent({ message: 'How many incidents are currently registered?', model, emit, tools });
     assert.equal(result.status, AgentStatus.COMPLETED); assert.equal(result.errorCode, undefined);
+    assert.equal(result.responseStatus, 'SUCCESS');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_WITH_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
     assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 record(s) returned');
@@ -625,6 +626,7 @@ describe('20. controlled error-handling validation', () => {
     ]);
     const result = await runHseAgent({ message: 'How many incidents are currently registered?', model, emit, tools });
     assert.equal(result.status, AgentStatus.COMPLETED); assert.equal(result.errorCode, undefined);
+    assert.equal(result.responseStatus, 'NO_DATA');
     assert.equal(result.text, 'There are currently 0 incidents matching this query.');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_NO_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');

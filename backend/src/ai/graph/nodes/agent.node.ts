@@ -144,11 +144,13 @@ export async function agentNode(
           // controlled state rather than letting the run look successful.
           const toolPart = part as { output?: unknown; toolName?: string };
           const output = toolPart.output as ({ error?: boolean } & Partial<RagRetrievalResult>) | undefined;
+          const outputRecord = output as Record<string, unknown> | undefined;
           if (output && typeof output === 'object' && output.error === true) toolFailed = true;
           const pendingTrace = [...toolTrace].reverse().find((item) => item.name === toolPart.toolName && item.status === 'NOT_OBSERVABLE');
           if (pendingTrace) {
             pendingTrace.status = output && typeof output === 'object' && output.error === true ? 'ERROR' : 'COMPLETED';
             pendingTrace.resultSummary = safeResultSummary(toolPart.toolName ?? pendingTrace.name, output);
+            if (outputRecord?.status === 'SUCCESS_WITH_DATA' || outputRecord?.status === 'SUCCESS_NO_DATA') pendingTrace.resultStatus = outputRecord.status;
           }
           if (toolPart.toolName === 'search_hse_knowledge') {
             ragUsed = true;

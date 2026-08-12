@@ -5,12 +5,16 @@ export interface AgentToolTrace {
   status: 'COMPLETED' | 'ERROR' | 'NOT_OBSERVABLE';
   arguments?: Record<string, string | number | boolean | null>;
   resultSummary?: string;
+  resultStatus?: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA';
 }
+
+export type AgentResponseStatus = 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
 
 export interface AgentInspectorSnapshot {
   runId: string;
   threadId: string;
   status: string;
+  responseStatus?: AgentResponseStatus;
   stepCount: number;
   toolsUsed: string[];
   ragUsed: boolean;
@@ -65,7 +69,7 @@ export class AgentInspectorService {
   recordApproval(approval: ApprovalSnapshot) {
     const current = this.latest();
     if (!current || current.threadId !== approval.threadId) return;
-    this.record({ ...current, status: approval.status, approvalRequest: approval });
+    this.record({ ...current, status: approval.status, responseStatus: approval.status === 'APPROVED' ? 'APPROVED' : approval.status === 'REJECTED' ? 'REJECTED' : 'PENDING', approvalRequest: approval });
   }
 
   private read(): AgentInspectorSnapshot | null {

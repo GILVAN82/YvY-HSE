@@ -14,6 +14,7 @@ import multer from 'multer';
 import { attachmentConfig } from '../ai/attachments/attachment.config';
 import { AttachmentError } from '../ai/attachments/attachment.types';
 import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
+import { resolveResponseStatus } from '../ai/responseStatus';
 
 export interface AiChatDependencies {
   resolveModel: (provider: string, model: string) => LanguageModel;
@@ -101,7 +102,7 @@ const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').Requ
       resolutionNote: body.data.resolutionNote, locale: body.data.locale,
       approvalService: dependencies.humanApprovalService, threadStore: dependencies.threadStateStore,
     });
-    res.json({ approval: result.approval, text: result.text });
+    res.json({ approval: result.approval, text: result.text, responseStatus: result.responseStatus });
   } catch (error) {
     if (error instanceof ApprovalResolutionError) {
       res.status(409).json({ error: 'Approval is unavailable or no longer pending for this thread.', code: 'AI_APPROVAL_NOT_PENDING' });
@@ -176,6 +177,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     conversationId: result.conversationId,
     threadId: result.conversationId,
     status: result.status,
+    responseStatus: result.responseStatus ?? resolveResponseStatus({ status: result.status, errorCode: result.errorCode, approvalStatus: result.approvalRequest?.status, tools: result.executionTrace?.tools, ragStatus: result.executionTrace?.rag.status }),
     toolsUsed: result.toolsUsed,
     stepCount: result.stepCount,
     ragUsed: result.ragUsed ?? false,

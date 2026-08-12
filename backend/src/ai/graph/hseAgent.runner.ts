@@ -18,6 +18,7 @@ import { classifyScopeWithThreadContext, inspectInput, isAttachmentContextReques
 import { controlledRefusalMessage } from './nodes/refuse.node';
 import type { NormalizedAttachment } from '../attachments/attachment.types';
 import { resolveResponseLanguage } from '../responseLanguage';
+import { resolveResponseStatus } from '../responseStatus';
 
 export interface RunAgentInput {
   message: string;
@@ -99,7 +100,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       const refusalReason = preflight.reason!;
       const text = controlledRefusalMessage(refusalReason, input.message, input.locale);
       input.emit({ type: 'text', text });
-      return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason, ragUsed: false, citations: [], executionTrace: {
+      return { runId, conversationId, status: AgentStatus.REFUSED, responseStatus: 'REFUSED', text, toolsUsed: [], stepCount: 0, refusalReason, ragUsed: false, citations: [], executionTrace: {
         timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
         rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
         conversation: { stateActive: false, messageCount: 0 },
@@ -112,7 +113,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
   if (input.attachmentContext && /\b(remember|save|store|memorize|lembre|guarde|salve|armazene)\b.*\b(document|file|attachment|spreadsheet|image|documento|arquivo|anexo|planilha|imagem|entire|whole|inteiro|completo)\b/i.test(input.message)) {
     const text = ({ en: 'Attachments are temporary and cannot be stored as long-term memory.', pt: 'Os anexos são temporários e não podem ser guardados na memória de longo prazo.', es: 'Los archivos adjuntos son temporales y no pueden guardarse en la memoria a largo plazo.', fr: 'Les pièces jointes sont temporaires et ne peuvent pas être enregistrées dans la mémoire à long terme.', de: 'Anhänge sind temporär und können nicht im Langzeitgedächtnis gespeichert werden.' } as const)[responseLanguage];
     input.emit({ type: 'text', text });
-    return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason: 'OUT_OF_SCOPE', ragUsed: false, citations: [], executionTrace: {
+    return { runId, conversationId, status: AgentStatus.REFUSED, responseStatus: 'REFUSED', text, toolsUsed: [], stepCount: 0, refusalReason: 'OUT_OF_SCOPE', ragUsed: false, citations: [], executionTrace: {
       timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
       rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
       conversation: { stateActive: false, messageCount: 0 },
@@ -159,6 +160,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       runId,
       conversationId,
       status: final.status,
+      responseStatus: resolveResponseStatus({ status: final.status, errorCode: final.errorCode, approvalStatus: final.approvalRequest?.status, tools: final.toolTrace, ragStatus: final.ragStatus }),
       text: final.finalText,
       toolsUsed: final.toolNames,
       stepCount: final.stepCount,
@@ -207,6 +209,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       runId,
       conversationId,
       status: AgentStatus.FAILED,
+      responseStatus: 'ERROR',
       text: '',
       toolsUsed: [],
       stepCount: 0,
@@ -246,5 +249,5 @@ export async function resumeHumanApproval(input: ResumeApprovalInput) {
     const state = await input.threadStore.load(input.threadId);
     if (state) await input.threadStore.save({ threadId: input.threadId, messages: [...state.messages, { role: 'assistant', content: text }], lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences });
   }
-  return { approval, text };
+  return { approval, text, responseStatus: resolveResponseStatus({ status: AgentStatus.COMPLETED, approvalStatus: approval.status }) };
 }

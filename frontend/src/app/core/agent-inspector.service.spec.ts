@@ -30,6 +30,7 @@ describe('AgentInspectorService', () => {
     expect(service.latest()?.status).toBe('AWAITING_HUMAN_APPROVAL');
     service.recordApproval({ approvalId: 'approval-1', threadId: 'thread-1', actionType: 'LOTO_SAFETY_EXECUTION', riskLevel: 'CRITICAL', status: 'APPROVED', resolvedAt: '2026-08-12T12:00:00.000Z' });
     expect(service.latest()?.status).toBe('APPROVED');
+    expect(service.latest()?.responseStatus).toBe('APPROVED');
     expect(service.latest()?.approvalRequest?.resolvedAt).toBe('2026-08-12T12:00:00.000Z');
   });
 });

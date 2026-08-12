@@ -122,6 +122,7 @@ describe('POST /api/ai/chat HTTP boundary', () => {
     const first = await post(port, { message: 'Reply with the word OK about HSE.', history: [], provider: 'openai', model: 'gpt-5.5' });
     const firstDone = first.find((event) => event.type === 'done');
     assert.equal(firstDone.status, 'COMPLETED');
+    assert.equal(firstDone.responseStatus, 'SUCCESS');
     assert.equal(firstDone.orchestrator, 'langgraph');
     assert.match(firstDone.threadId, /^[0-9a-f-]{36}$/i);
     assert.ok(!first.some((event) => event.code === 'AI_MODEL_ERROR'));
@@ -150,6 +151,7 @@ describe('POST /api/ai/chat HTTP boundary', () => {
     const events = await post(port, { message: 'Quais ações estão atrasadas?', history: [], provider: 'openai', model: 'gpt-5.5' });
     const done = events.find((event) => event.type === 'done');
     assert.equal(done.status, 'COMPLETED');
+    assert.equal(done.responseStatus, 'SUCCESS');
     assert.deepEqual(done.toolsUsed, ['list_actions']);
     assert.equal(done.ragUsed, false);
     assert.ok(events.some((event) => event.type === 'text'));
@@ -215,7 +217,7 @@ describe('POST /api/ai/approvals HTTP boundary', () => {
     const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
     const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);
     const first = await postJson(port, `/api/ai/approvals/${pending.approvalId}/approve`, { threadId, resolutionNote: 'Demo approval.' });
-    assert.equal(first.status, 200); assert.equal(first.body.approval.status, 'APPROVED'); assert.ok(first.body.approval.resolvedAt);
+    assert.equal(first.status, 200); assert.equal(first.body.approval.status, 'APPROVED'); assert.equal(first.body.responseStatus, 'APPROVED'); assert.ok(first.body.approval.resolvedAt);
     assert.match(first.body.text, /Field verification by competent personnel/); assert.doesNotMatch(first.body.text, /equipment is safe/i);
     const duplicate = await postJson(port, `/api/ai/approvals/${pending.approvalId}/approve`, { threadId });
     assert.equal(duplicate.status, 409); assert.equal(duplicate.body.code, 'AI_APPROVAL_NOT_PENDING');
@@ -225,7 +227,7 @@ describe('POST /api/ai/approvals HTTP boundary', () => {
     const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
     const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);
     const result = await postJson(port, `/api/ai/approvals/${pending.approvalId}/reject`, { threadId });
-    assert.equal(result.status, 200); assert.equal(result.body.approval.status, 'REJECTED'); assert.ok(result.body.approval.resolvedAt);
+    assert.equal(result.status, 200); assert.equal(result.body.approval.status, 'REJECTED'); assert.equal(result.body.responseStatus, 'REJECTED'); assert.ok(result.body.approval.resolvedAt);
     assert.match(result.body.text, /remains blocked and must not proceed/);
   });
 

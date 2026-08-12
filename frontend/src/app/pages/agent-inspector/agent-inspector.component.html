@@ -18,7 +18,8 @@
 
   <ng-container *ngIf="snapshot() as run">
     <section class="summary-grid">
-      <article class="metric"><span>Status</span><strong [class.error]="run.status === 'FAILED'">{{ run.status }}</strong></article>
+      <article class="metric"><span>Response</span><strong [class.error]="run.responseStatus === 'ERROR'">{{ semanticLabel(run.responseStatus) }}</strong></article>
+      <article class="metric"><span>Technical Status</span><strong [class.error]="run.status === 'FAILED'">{{ run.status }}</strong></article>
       <article class="metric"><span>Step Count</span><strong>{{ run.stepCount }}</strong></article>
       <article class="metric wide"><span>Thread ID</span><code>{{ run.threadId }}</code></article>
       <article class="metric"><span>Timestamp</span><strong>{{ trace()?.timestamp ? (trace()!.timestamp | date:'medium') : 'NOT CURRENTLY OBSERVABLE' }}</strong></article>

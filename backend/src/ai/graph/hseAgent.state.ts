@@ -50,6 +50,7 @@ export const hseAgentStateSchema = z.object({
     status: z.enum(['COMPLETED', 'ERROR', 'NOT_OBSERVABLE']),
     arguments: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
     resultSummary: z.string().optional(),
+    resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA']).optional(),
   })).default([]),
   ragUsed: z.boolean().default(false),
   ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
