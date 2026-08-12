@@ -1,4 +1,7 @@
 import type { LanguageModel } from 'ai';
+import { createHseTools } from '../tools';
+import type { RagRetriever } from '../rag/retrieval.types';
+import type { MemoryService } from '../memory/memory.types';
 
 /**
  * Scripted language model for tests. Implements just enough of the AI SDK v3 spec for
@@ -12,6 +15,13 @@ export interface ScriptedStep {
   text?: string;
   /** Throw instead of streaming, to exercise the failure path. */
   error?: string;
+}
+
+export function createHermeticToolFactory(options: { ragRetriever?: RagRetriever; memoryService?: MemoryService } = {}) {
+  const database = { query: async () => ({ rows: [], rowCount: 0 }) };
+  const computeKpi = async () => ({});
+  const ragRetriever = options.ragRetriever ?? { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE' as const, evidence: [] }) };
+  return (allowMemoryWrite: boolean) => createHseTools(database as any, computeKpi, ragRetriever, options.memoryService, allowMemoryWrite);
 }
 
 export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCount: () => number; callInputs: () => unknown[] } {

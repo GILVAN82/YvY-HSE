@@ -9,7 +9,7 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const review = await reviewRegisteredSources();
   const sources = review.approved;
-  const service = new RagIngestionService(new PostgresRagRepository(), new OpenAIEmbeddingService());
+  const service = new RagIngestionService(new PostgresRagRepository(pool), new OpenAIEmbeddingService());
   const result = await service.ingest(sources, { dryRun });
   console.log(JSON.stringify({
     ...result,

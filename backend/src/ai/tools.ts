@@ -1,8 +1,5 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { pool } from '../db/pool';
-import { computeKpi } from '../routes/kpi';
-import { RagRetrievalService } from './rag/retrieval.service';
 import type { RagRetriever } from './rag/retrieval.types';
 import type { MemoryService } from './memory/memory.types';
 import { MEMORY_CATEGORIES } from './memory/memory.types';
@@ -39,7 +36,9 @@ export function serializeToolRows<T extends Record<string, unknown>>(rows: T[]):
   ));
 }
 
-export function createHseTools(ragRetriever: RagRetriever = new RagRetrievalService(), memoryService?: MemoryService, allowMemoryWrite = false, database: Pick<Pool, 'query'> = pool) {
+export type ComputeKpi = (project: string, monthIdx: number | undefined) => Promise<unknown>;
+
+export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: ComputeKpi, ragRetriever: RagRetriever, memoryService?: MemoryService, allowMemoryWrite = false) {
   return {
   get_kpi: tool({
     description:
@@ -178,6 +177,4 @@ export function createHseTools(ragRetriever: RagRetriever = new RagRetrievalServ
   };
 }
 
-export const hseTools = createHseTools();
-
-export type HseToolName = keyof typeof hseTools;
+export type HseToolName = keyof ReturnType<typeof createHseTools>;

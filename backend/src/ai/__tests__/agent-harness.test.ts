@@ -8,7 +8,7 @@ import type { RagRetriever } from '../rag/retrieval.types';
 import { YVY_HSE_EVALUATION_CASES } from '../evaluation/evaluation.dataset';
 import { EvaluationDatasetError, evaluateObservation, runEvaluationHarness, validateEvaluationDataset } from '../evaluation/evaluation.harness';
 import type { AgentObservation, EvaluationCase } from '../evaluation/evaluation.types';
-import { createMockModel } from './mockModel';
+import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { assertSafeEvaluationReport, renderEvaluationMarkdown } from '../evaluation/evaluation.report';
 
 function observationFromExpected(item: EvaluationCase): AgentObservation {
@@ -75,7 +75,7 @@ describe('harness integration with the real LangGraph runner and mocked model', 
       if (item.id === 'integration-rag') model = createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: '{"query":"LOTO"}' } }, { text: `Use isolation [${label}].` }]);
       else if (item.id === 'integration-grounding-fail') model = createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: '{"query":"LOTO"}' } }, { text: 'Use isolation.' }]);
       else model = createMockModel([{ text: 'Controlled analysis.' }]);
-      const result = await runHseAgent({ message: item.input, model, emit: () => undefined, ragRetriever, approvalService: new ApprovalFake() });
+      const result = await runHseAgent({ message: item.input, model, emit: () => undefined, ragRetriever, approvalService: new ApprovalFake(), toolFactory: createHermeticToolFactory({ ragRetriever }) });
       return observe(result);
     });
     assert.equal(report.passed, cases.length); assert.equal(report.failed, 0);

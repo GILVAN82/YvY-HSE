@@ -7,7 +7,7 @@ import { classifyScopeWithThreadContext, inspectInput, isContextualFollowUp } fr
 import { AgentStatus, AgentErrorCode, RefusalCode, type AgentEvent } from '../graph/hseAgent.types';
 import { readOrchestrator, ConfigError, readCorsOrigins, readWritesEnabled } from '../config';
 import { listProvidersForClient, resolveModel, ProviderUnavailableError } from '../providers';
-import { createHseTools, hseTools, serializeToolRows } from '../tools';
+import { createHseTools, serializeToolRows } from '../tools';
 
 /** Collects the SSE events a run would push to the browser. */
 function recorder() {
@@ -73,7 +73,9 @@ describe('3. multi-step tool calling with a final answer', () => {
       { text: 'The portfolio has 12 projects.' },
     ]);
 
-    const result = await runHseAgent({ message: 'How many projects are there?', model, emit });
+    const database = { query: async () => ({ rows: Array.from({ length: 12 }, (_, index) => ({ code: `PRJ-${index + 1}` })) }) };
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
+    const result = await runHseAgent({ message: 'How many projects are there?', model, emit, tools });
 
     assert.equal(model.callCount(), 2, 'sem stopWhen o modelo seria chamado so uma vez');
     assert.equal(result.status, AgentStatus.COMPLETED);
@@ -92,7 +94,9 @@ describe('4. step limit', () => {
     const { emit } = recorder();
     const model = createMockModel([{ toolCall: { name: 'get_projects', input: '{}' } }]);
 
-    const result = await runHseAgent({ message: 'loop de ferramentas HSE', model, emit });
+    const database = { query: async () => ({ rows: [] }) };
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
+    const result = await runHseAgent({ message: 'loop de ferramentas HSE', model, emit, tools });
 
     assert.ok(model.callCount() <= 5, `parou em ${model.callCount()} chamadas`);
     assert.equal(result.status, AgentStatus.FAILED);
@@ -102,7 +106,9 @@ describe('4. step limit', () => {
 
 describe('5. tool failure', () => {
   test('a database error becomes a value rather than an exception', async () => {
-    const out = (await (hseTools.list_incidents as any).execute(
+    const database = { query: async () => { throw new Error('database unavailable'); } };
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
+    const out = (await (tools.list_incidents as any).execute(
       { project: "'; DROP TABLE x; --", limit: 5 },
       { toolCallId: 't', messages: [] }
     )) as unknown;
@@ -583,7 +589,7 @@ describe('20. controlled error-handling validation', () => {
   test('tool failure cannot expose database details or fabricate operational data', async () => {
     resetGraphCache(); const { emit, events } = recorder();
     const database = { query: async () => { throw new Error('SELECT * FROM secret_table at C:\\private\\db sk-test-error-sentinel'); } };
-    const tools = createHseTools(undefined, undefined, false, database as any);
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
     const model = createMockModel([
       { toolCall: { name: 'list_incidents', input: '{"limit":20}' } },
       { text: 'Fabricated result: 99 incidents.' },
@@ -598,7 +604,7 @@ describe('20. controlled error-handling validation', () => {
   test('empty operational result is a valid no-data answer, not a system failure', async () => {
     resetGraphCache(); const { emit, events } = recorder();
     const database = { query: async () => ({ rows: [], rowCount: 0 }) };
-    const tools = createHseTools(undefined, undefined, false, database as any);
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
     const model = createMockModel([
       { toolCall: { name: 'list_incidents', input: '{"limit":20}' } },
       { text: 'I checked recent incidents and no records were returned.' },

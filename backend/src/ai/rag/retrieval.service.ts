@@ -1,5 +1,5 @@
-import { OpenAIEmbeddingService, type EmbeddingService } from './embedding.service';
-import { PostgresRagRetrievalRepository, type RagRetrievalRepository } from './retrieval.repository';
+import type { EmbeddingService } from './embedding.service';
+import type { RagRetrievalRepository } from './retrieval.repository';
 import { MAX_RAG_QUERY_LENGTH, readRagRetrievalConfig, type RagRetrievalConfig } from './retrieval.config';
 import type { RagRetriever, RagRetrievalResult } from './retrieval.types';
 
@@ -13,8 +13,8 @@ export function isStructuredOperationalQuery(query: string): boolean {
 
 export class RagRetrievalService implements RagRetriever {
   constructor(
-    private readonly embeddings: EmbeddingService = new OpenAIEmbeddingService(),
-    private readonly repository: RagRetrievalRepository = new PostgresRagRetrievalRepository(),
+    private readonly embeddings: EmbeddingService,
+    private readonly repository: RagRetrievalRepository,
     private readonly config: RagRetrievalConfig = readRagRetrievalConfig(),
     private readonly log: (entry: Record<string, unknown>) => void = (entry) => console.info(JSON.stringify(entry))
   ) {}

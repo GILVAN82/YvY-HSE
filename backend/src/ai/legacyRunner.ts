@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { streamText, stepCountIs, type LanguageModel, type ModelMessage } from 'ai';
-import { hseTools } from './tools';
+import { streamText, stepCountIs, type LanguageModel, type ModelMessage, type ToolSet } from 'ai';
 import { SYSTEM_PROMPT } from './prompt';
 import { MAX_AGENT_STEPS, MAX_HISTORY_TURNS, MODEL_TIMEOUT_MS } from './config';
 import { inspectInput } from './graph/nodes/guard.node';
@@ -33,6 +32,7 @@ export async function runLegacyAgent(input: {
   conversationId?: string;
   model: LanguageModel;
   emit: EmitFn;
+  tools?: ToolSet;
 }): Promise<AgentRunResult> {
   const runId = randomUUID();
   const conversationId = input.conversationId ?? randomUUID();
@@ -67,7 +67,7 @@ export async function runLegacyAgent(input: {
     const result = streamText({
       model: input.model,
       system: SYSTEM_PROMPT,
-      tools: hseTools,
+      tools: input.tools ?? {},
       messages,
       maxOutputTokens: 4096,
       stopWhen: stepCountIs(MAX_AGENT_STEPS),

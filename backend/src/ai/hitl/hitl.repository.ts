@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
-import { pool } from '../../db/pool';
 import type { ApprovalActionType, ApprovalRequest, HumanDecision } from './hitl.types';
 
 export class ApprovalResolutionError extends Error {}
@@ -10,7 +9,7 @@ function map(row: any): ApprovalRequest {
 }
 
 export class PostgresApprovalService {
-  constructor(private readonly db: Pool = pool) {}
+  constructor(private readonly db: Pool) {}
   async create(threadId: string, actionType: ApprovalActionType): Promise<ApprovalRequest> {
     const summary = 'LOTO safety execution approval requested';
     const reason = 'AI analysis is advisory; accountable human authorization is required before any safety-critical execution.';
@@ -37,5 +36,3 @@ export class PostgresApprovalService {
   }
   async deleteForTest(approvalId: string) { await this.db.query('DELETE FROM agent_human_approval WHERE id=$1', [approvalId]); }
 }
-
-export const humanApprovalService = new PostgresApprovalService();

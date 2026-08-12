@@ -1,5 +1,4 @@
 import type { Pool } from 'pg';
-import { pool as defaultPool } from '../../db/pool';
 import { validateEmbedding } from './embedding.service';
 import type { RagEvidence } from './retrieval.types';
 
@@ -12,7 +11,7 @@ function vectorLiteral(vector: readonly number[]): string {
 }
 
 export class PostgresRagRetrievalRepository implements RagRetrievalRepository {
-  constructor(private readonly db: Pool = defaultPool, private readonly dimensions = 1536) {}
+  constructor(private readonly db: Pool, private readonly dimensions = 1536) {}
 
   async searchByEmbedding(embedding: readonly number[], topK: number, minSimilarity: number): Promise<RagEvidence[]> {
     const vector = vectorLiteral(validateEmbedding(embedding, this.dimensions));

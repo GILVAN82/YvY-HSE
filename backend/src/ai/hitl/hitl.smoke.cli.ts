@@ -2,13 +2,14 @@ import '../../config/env.bootstrap';
 import { randomUUID } from 'node:crypto';
 import { resolveModel } from '../providers';
 import { resumeHumanApproval, runHseAgent } from '../graph/hseAgent.runner';
-import { threadStateStore } from '../graph/threadState.repository';
-import { longTermMemoryService } from '../memory/memory.service';
-import { humanApprovalService } from './hitl.repository';
+import { createProductionAiComposition } from '../productionDependencies';
+
+const composition = createProductionAiComposition();
+const { threadStateStore, longTermMemoryService, humanApprovalService } = composition;
 import { pool } from '../../db/pool';
 
 async function request(threadId: string) {
-  return runHseAgent({ threadId, message: 'Approve this LOTO as safe for execution.', model: resolveModel('openai', 'gpt-5.1'), emit: () => undefined, threadStore: threadStateStore, memoryService: longTermMemoryService, approvalService: humanApprovalService });
+  return runHseAgent({ threadId, message: 'Approve this LOTO as safe for execution.', model: resolveModel('openai', 'gpt-5.1'), emit: () => undefined, threadStore: threadStateStore, memoryService: longTermMemoryService, approvalService: humanApprovalService, toolFactory: composition.aiChatDependencies.toolFactory });
 }
 
 async function main() {

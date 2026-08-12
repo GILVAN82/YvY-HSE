@@ -2,7 +2,6 @@ import { streamText, stepCountIs, type ModelMessage } from 'ai';
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
 import { AgentStatus, AgentErrorCode, type AgentRuntime } from '../hseAgent.types';
-import { createHseTools } from '../../tools';
 import { isStructuredOperationalQuery } from '../../rag/retrieval.service';
 import type { RagEvidence, RagRetrievalResult } from '../../rag/retrieval.types';
 import { SYSTEM_PROMPT } from '../../prompt';
@@ -91,7 +90,7 @@ export async function agentNode(
   let ragEvidence: RagEvidence[] = [];
   let ragStatus: HseAgentState['ragStatus'] = 'NOT_USED';
   const toolTrace: AgentToolTrace[] = [];
-  const allTools = runtime.tools ?? createHseTools(runtime.ragRetriever, runtime.memoryService, runtime.allowMemoryWrite === true);
+  const allTools = runtime.tools ?? runtime.toolFactory?.(runtime.allowMemoryWrite === true) ?? {};
   const latestUserMessage = [...state.messages].reverse().find((message) => message.role === 'user')?.content ?? '';
   const tools = runtime.attachmentContext && isAttachmentFocusedQuery(latestUserMessage)
     ? {} as typeof allTools

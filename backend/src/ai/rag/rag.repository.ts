@@ -1,5 +1,4 @@
 import type { Pool, PoolClient } from 'pg';
-import { pool as defaultPool } from '../../db/pool';
 import type { EmbeddedRagChunk, RagSourceDocument, StoredRagDocument } from './types';
 
 export interface RagRepository {
@@ -13,7 +12,7 @@ function vectorLiteral(vector: readonly number[]): string {
 }
 
 export class PostgresRagRepository implements RagRepository {
-  constructor(private readonly db: Pool = defaultPool) {}
+  constructor(private readonly db: Pool) {}
 
   async findDocument(sourceType: string, sourceReference: string): Promise<StoredRagDocument | null> {
     const result = await this.db.query(

@@ -2,12 +2,14 @@ import '../../config/env.bootstrap';
 import { randomUUID } from 'node:crypto';
 import { resolveModel } from '../providers';
 import { runHseAgent } from '../graph/hseAgent.runner';
-import { threadStateStore } from '../graph/threadState.repository';
-import { longTermMemoryService } from './memory.service';
+import { createProductionAiComposition } from '../productionDependencies';
+
+const composition = createProductionAiComposition();
+const { threadStateStore, longTermMemoryService } = composition;
 import { pool } from '../../db/pool';
 
 async function run(threadId: string, message: string) {
-  return runHseAgent({ threadId, message, model: resolveModel('openai', 'gpt-5.1'), emit: () => undefined, threadStore: threadStateStore, memoryService: longTermMemoryService });
+  return runHseAgent({ threadId, message, model: resolveModel('openai', 'gpt-5.1'), emit: () => undefined, threadStore: threadStateStore, memoryService: longTermMemoryService, toolFactory: composition.aiChatDependencies.toolFactory });
 }
 
 async function main() {

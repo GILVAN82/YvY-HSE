@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { PostgresMemoryRepository, type MemoryRepository } from './memory.repository';
+import type { MemoryRepository } from './memory.repository';
 import { MEMORY_CATEGORIES, type LongTermMemory, type MemoryService, type SaveMemoryCandidate, type SaveMemoryResult } from './memory.types';
 
 export const MAX_MEMORY_CONTENT_LENGTH = 500;
@@ -57,7 +57,7 @@ function tokens(text: string): Set<string> {
 }
 
 export class ControlledMemoryService implements MemoryService {
-  constructor(private readonly repository: MemoryRepository = new PostgresMemoryRepository()) {}
+  constructor(private readonly repository: MemoryRepository) {}
   async save(candidate: SaveMemoryCandidate): Promise<SaveMemoryResult> {
     const reason = validateMemoryCandidate(candidate); if (reason) return { status: 'REJECTED', reason };
     const content = normalizeMemoryContent(candidate.content);
@@ -79,5 +79,3 @@ export class ControlledMemoryService implements MemoryService {
   }
   forget(memoryKey: string) { return this.repository.disable(memoryKey); }
 }
-
-export const longTermMemoryService = new ControlledMemoryService();

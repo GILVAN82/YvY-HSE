@@ -1,6 +1,6 @@
 import '../../config/env.bootstrap';
-import { RagRetrievalService } from './retrieval.service';
 import { pool } from '../../db/pool';
+import { createProductionAiComposition } from '../productionDependencies';
 
 const queries = [
   ['loto', 'What controls are required before servicing locked-out equipment?'],
@@ -17,7 +17,7 @@ async function main() {
   console.log(`OPENAI API CONFIGURED: ${configured ? 'YES' : 'NO'}`);
   if (!configured) process.exitCode = 1;
   else {
-    const service = new RagRetrievalService();
+    const service = createProductionAiComposition().ragRetriever;
     for (const [id, query] of queries) {
       const result = await service.retrieve(query);
       console.log(JSON.stringify({ queryId: id, status: result.status, count: result.evidence.length, sources: result.evidence.map((item) => item.sourceId), scores: result.evidence.map((item) => Number(item.score.toFixed(4))) }));

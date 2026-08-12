@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ControlledMemoryService, MAX_MEMORY_CONTENT_LENGTH, classifyExplicitMemoryIntent, classifyMemorySafetyRejection, hasExplicitMemoryIntent, validateMemoryCandidate } from '../memory/memory.service';
 import type { MemoryRepository } from '../memory/memory.repository';
 import type { LongTermMemory, MemoryCategory } from '../memory/memory.types';
-import { createMockModel } from './mockModel';
+import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
 
 class MemoryRepositoryFake implements MemoryRepository {
@@ -54,7 +54,7 @@ describe('agent integration across independent threads', () => {
   test('explicit intent exposes save tool; normal text does not', async () => {
     resetGraphCache(); const repo = new MemoryRepositoryFake(); const service = new ControlledMemoryService(repo);
     const saveModel = createMockModel([{ toolCall: { name: 'save_memory', input: JSON.stringify(approved) } }, { text: 'Saved.' }]);
-    await runHseAgent({ threadId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', message: 'Remember that this project uses PostgreSQL for persistence and not MySQL.', model: saveModel, emit: () => undefined, memoryService: service });
+    await runHseAgent({ threadId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', message: 'Remember that this project uses PostgreSQL for persistence and not MySQL.', model: saveModel, emit: () => undefined, memoryService: service, toolFactory: createHermeticToolFactory({ memoryService: service }) });
     assert.equal(repo.memories.length, 1);
     const normalModel = createMockModel([{ text: 'Discussing emergency procedures.' }]);
     await runHseAgent({ threadId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', message: 'We are talking about emergency procedures today.', model: normalModel, emit: () => undefined, memoryService: service });
@@ -71,7 +71,7 @@ describe('agent integration across independent threads', () => {
   test('explicit forget command disables memory and a new thread cannot retrieve it', async () => {
     resetGraphCache(); const repo = new MemoryRepositoryFake(); const service = new ControlledMemoryService(repo); await service.save(approved);
     const forgetModel = createMockModel([{ toolCall: { name: 'forget_memory', input: JSON.stringify({ memoryKey: approved.memoryKey }) } }, { text: 'Forgotten.' }]);
-    const forgotten = await runHseAgent({ threadId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', message: 'Forget that persistence database memory.', model: forgetModel, emit: () => undefined, memoryService: service });
+    const forgotten = await runHseAgent({ threadId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', message: 'Forget that persistence database memory.', model: forgetModel, emit: () => undefined, memoryService: service, toolFactory: createHermeticToolFactory({ memoryService: service }) });
     assert.equal(forgotten.status, 'COMPLETED');
     assert.deepEqual(forgotten.toolsUsed, ['forget_memory']);
     assert.equal(repo.memories[0].enabled, false);

@@ -5,7 +5,8 @@ import { genericRouter } from './routes/generic';
 import { projectsRouter, listsRouter } from './routes/projects';
 import { kpiRouter } from './routes/kpi';
 import { statsRouter } from './routes/sheetStats';
-import { aiChatRouter } from './routes/aiChat';
+import { createAiChatRouter } from './routes/aiChat';
+import { createProductionAiDependencies } from './ai/productionDependencies';
 import { readOrchestrator, readCorsOrigins, readWritesEnabled, MAX_BODY_SIZE } from './ai/config';
 import { temporaryAttachmentService } from './ai/attachments/attachment.service';
 
@@ -56,7 +57,7 @@ app.use('/api', projectsRouter);
 app.use('/api', listsRouter);
 app.use('/api', kpiRouter);
 app.use('/api', statsRouter);
-app.use('/api', aiChatRouter);
+app.use('/api', createAiChatRouter(createProductionAiDependencies()));
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { createAiChatRouter } from '../aiChat';
 import { createMockModel } from '../../ai/__tests__/mockModel';
 import { runHseAgent, resetGraphCache } from '../../ai/graph/hseAgent.runner';
+import { runLegacyAgent } from '../../ai/legacyRunner';
+import { temporaryAttachmentService } from '../../ai/attachments/attachment.service';
 import type { PersistedThreadState, ThreadStateStore } from '../../ai/graph/threadState.repository';
 import { createHseTools } from '../../ai/tools';
 import { ApprovalResolutionError } from '../../ai/hitl/hitl.repository';
@@ -47,9 +49,11 @@ async function start(model: any, tools?: any, approvals: any = approvalService) 
     resolveModel: () => model,
     readOrchestrator: () => 'langgraph',
     runHseAgent,
+    runLegacyAgent,
     threadStateStore: store,
     longTermMemoryService: memoryService,
     humanApprovalService: approvals,
+    attachmentService: temporaryAttachmentService,
     ...(tools ? { tools } : {}),
   }));
   const server = app.listen(0, '127.0.0.1');
@@ -171,7 +175,7 @@ describe('POST /api/ai/chat HTTP boundary', () => {
       { toolCall: { name: 'list_actions', input: '{"overdue":true}' } },
       { text: 'Foram encontradas oito ações sintéticas atrasadas.' },
     ]);
-    const tools = createHseTools(undefined, undefined, false, database as any);
+    const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
     const { port } = await start(model, tools);
     const events = await post(port, { message: 'Quais ações estão atrasadas?', history: [], provider: 'openai', model: 'gpt-5.5' });
     const done = events.find((event) => event.type === 'done');
@@ -196,7 +200,7 @@ describe('POST /api/ai/chat HTTP boundary', () => {
       { toolCall: { name: 'list_actions', input: '{"project":"*","status":"","overdue":true,"limit":20}' } },
       { text: 'Uma ação sintética atrasada.' },
     ]);
-    const { port } = await start(model, createHseTools(undefined, undefined, false, database as any));
+    const { port } = await start(model, createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) }));
     const events = await post(port, { message: 'Quais ações estão atrasadas?', history: [], provider: 'openai', model: 'gpt-5.5' });
     assert.equal(events.find((event) => event.type === 'done')?.status, 'COMPLETED');
     assert.deepEqual(calls[0].params, [20]);

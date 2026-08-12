@@ -1,14 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
-import { listProvidersForClient, resolveModel, ProviderUnavailableError } from '../ai/providers';
-import { readOrchestrator, MAX_MESSAGE_LENGTH, MAX_HISTORY_TURNS } from '../ai/config';
+import { listProvidersForClient, ProviderUnavailableError } from '../ai/providers';
+import { MAX_MESSAGE_LENGTH, MAX_HISTORY_TURNS } from '../ai/config';
 import { resumeHumanApproval, runHseAgent } from '../ai/graph/hseAgent.runner';
-import { runLegacyAgent } from '../ai/legacyRunner';
 import { AgentErrorCode, type AgentEvent } from '../ai/graph/hseAgent.types';
-import { threadStateStore } from '../ai/graph/threadState.repository';
-import { longTermMemoryService } from '../ai/memory/memory.service';
-import { ApprovalResolutionError, humanApprovalService } from '../ai/hitl/hitl.repository';
+import { ApprovalResolutionError } from '../ai/hitl/hitl.repository';
 import type { LanguageModel, ToolSet } from 'ai';
 import type { ThreadStateStore } from '../ai/graph/threadState.repository';
 import type { MemoryService } from '../ai/memory/memory.types';
@@ -16,26 +13,20 @@ import type { ApprovalService } from '../ai/hitl/hitl.types';
 import multer from 'multer';
 import { attachmentConfig } from '../ai/attachments/attachment.config';
 import { AttachmentError } from '../ai/attachments/attachment.types';
-import { temporaryAttachmentService, type TemporaryAttachmentService } from '../ai/attachments/attachment.service';
+import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
 
-interface AiChatDependencies {
+export interface AiChatDependencies {
   resolveModel: (provider: string, model: string) => LanguageModel;
-  readOrchestrator: typeof readOrchestrator;
+  readOrchestrator: () => 'legacy' | 'langgraph';
   runHseAgent: typeof runHseAgent;
-  runLegacyAgent: typeof runLegacyAgent;
+  runLegacyAgent: (input: Parameters<typeof import('../ai/legacyRunner').runLegacyAgent>[0]) => ReturnType<typeof import('../ai/legacyRunner').runLegacyAgent>;
   threadStateStore: ThreadStateStore;
   longTermMemoryService: MemoryService;
   humanApprovalService: ApprovalService;
   tools?: ToolSet;
+  toolFactory?: (allowMemoryWrite: boolean) => ToolSet;
   attachmentService: TemporaryAttachmentService;
 }
-
-const defaultDependencies: AiChatDependencies = {
-  resolveModel, readOrchestrator, runHseAgent, runLegacyAgent,
-  threadStateStore, longTermMemoryService, humanApprovalService,
-  attachmentService: temporaryAttachmentService,
-};
-
 // Basic abuse protection. This is a local, single-user app today, but the chat endpoint
 // calls billed third-party APIs, so a stuck frontend loop or a stray script should not be
 // able to run up an unbounded bill.
@@ -60,8 +51,7 @@ const approvalDecisionSchema = z.object({
   locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
 });
 
-export function createAiChatRouter(overrides: Partial<AiChatDependencies> = {}) {
-const dependencies = { ...defaultDependencies, ...overrides };
+export function createAiChatRouter(dependencies: AiChatDependencies) {
 const router = Router();
 const chatLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: true, legacyHeaders: false });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: attachmentConfig.maxFileBytes, files: 1 } });
@@ -173,8 +163,8 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({ message, history, conversationId, threadId, model: languageModel, emit, threadStore: dependencies.threadStateStore, memoryService: dependencies.longTermMemoryService, approvalService: dependencies.humanApprovalService, tools: dependencies.tools, attachments, attachmentContext, locale })
-      : dependencies.runLegacyAgent({ message, history, conversationId, model: languageModel, emit });
+      ? dependencies.runHseAgent({ message, history, conversationId, threadId, model: languageModel, emit, threadStore: dependencies.threadStateStore, memoryService: dependencies.longTermMemoryService, approvalService: dependencies.humanApprovalService, tools: dependencies.tools, toolFactory: dependencies.toolFactory, attachments, attachmentContext, locale })
+      : dependencies.runLegacyAgent({ message, history, conversationId, model: languageModel, emit, tools: dependencies.tools ?? dependencies.toolFactory?.(false) });
 
   const result = await run;
 
@@ -199,5 +189,3 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
 });
 return router;
 }
-
-export const aiChatRouter = createAiChatRouter();

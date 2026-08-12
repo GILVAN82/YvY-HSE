@@ -1,5 +1,4 @@
 import type { Pool } from 'pg';
-import { pool } from '../../db/pool';
 import { MAX_HISTORY_TURNS } from '../config';
 import type { ChatTurn } from './hseAgent.state';
 
@@ -49,7 +48,7 @@ function safeContext(value: unknown): { lastRagUsed: boolean; sourceReferences: 
 }
 
 export class PostgresThreadStateStore implements ThreadStateStore {
-  constructor(private readonly db: Pool = pool) {}
+  constructor(private readonly db: Pool) {}
 
   async load(threadId: string): Promise<PersistedThreadState | null> {
     const result = await this.db.query(
@@ -79,5 +78,3 @@ export class PostgresThreadStateStore implements ThreadStateStore {
     await this.db.query('DELETE FROM agent_thread_state WHERE thread_id = $1', [threadId]);
   }
 }
-
-export const threadStateStore = new PostgresThreadStateStore();

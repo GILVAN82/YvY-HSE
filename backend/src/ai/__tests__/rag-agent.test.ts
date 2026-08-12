@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMockModel } from './mockModel';
+import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
 import { AgentErrorCode, AgentStatus } from '../graph/hseAgent.types';
 import type { RagRetriever } from '../rag/retrieval.types';
@@ -19,7 +19,7 @@ describe('controlled RAG graph integration', () => {
       { toolCall: { name: 'search_hse_knowledge', input: '{"query":"How should LOTO be applied?"}' } },
       { text: `Isole e verifique energia zero [${citation}].` },
     ]);
-    const result = await runHseAgent({ message: 'How should LOTO be applied?', model, emit: () => undefined, ragRetriever: retriever });
+    const result = await runHseAgent({ message: 'How should LOTO be applied?', model, emit: () => undefined, ragRetriever: retriever, toolFactory: createHermeticToolFactory({ ragRetriever: retriever }) });
     assert.equal(result.status, AgentStatus.COMPLETED);
     assert.equal(result.ragUsed, true);
     assert.equal(result.citations?.[0].sourceId, 'osha-loto');
@@ -31,7 +31,7 @@ describe('controlled RAG graph integration', () => {
       { toolCall: { name: 'search_hse_knowledge', input: '{"query":"LOTO guidance"}' } },
       { text: 'Isole e verifique energia zero.' },
     ]);
-    const result = await runHseAgent({ message: 'LOTO guidance', model, emit: () => undefined, ragRetriever: retriever });
+    const result = await runHseAgent({ message: 'LOTO guidance', model, emit: () => undefined, ragRetriever: retriever, toolFactory: createHermeticToolFactory({ ragRetriever: retriever }) });
     assert.equal(result.status, AgentStatus.FAILED);
     assert.equal(result.errorCode, AgentErrorCode.RAG_GROUNDING);
   });
@@ -39,7 +39,7 @@ describe('controlled RAG graph integration', () => {
   test('structured data questions cannot invoke the RAG tool', async () => {
     resetGraphCache();
     const model = createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: '{"query":"How many open incidents?"}' } }]);
-    const result = await runHseAgent({ message: 'How many open incidents are there?', model, emit: () => undefined, ragRetriever: retriever });
+    const result = await runHseAgent({ message: 'How many open incidents are there?', model, emit: () => undefined, ragRetriever: retriever, toolFactory: createHermeticToolFactory({ ragRetriever: retriever }) });
     assert.equal(result.ragUsed, false);
     assert.notEqual(result.status, AgentStatus.COMPLETED);
   });
@@ -50,7 +50,7 @@ describe('controlled RAG graph integration', () => {
       {toolCall:{name:'search_hse_knowledge',input:'{"query":"LOTO isolation controls"}'}},
       {text:`The temporary procedure aligns on isolation [Attachment: procedure.pdf, page 1] [${citation}].`},
     ]);
-    const result=await runHseAgent({message:'Compare this LOTO procedure with our approved HSE knowledge.',model,emit:()=>undefined,ragRetriever:retriever,attachmentContext:'[Attachment: procedure.pdf, page 1]\nApply locks and verify zero energy.'});
+    const result=await runHseAgent({message:'Compare this LOTO procedure with our approved HSE knowledge.',model,emit:()=>undefined,ragRetriever:retriever,toolFactory:createHermeticToolFactory({ragRetriever:retriever}),attachmentContext:'[Attachment: procedure.pdf, page 1]\nApply locks and verify zero energy.'});
     assert.equal(result.status,AgentStatus.COMPLETED); assert.equal(result.ragUsed,true); assert.match(result.text,/Attachment: procedure\.pdf, page 1/);
   });
 });

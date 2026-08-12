@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
-import { pool } from '../../db/pool';
 import type { LongTermMemory, MemoryCategory } from './memory.types';
 
 export interface MemoryRepository {
@@ -19,7 +18,7 @@ function map(row: any): LongTermMemory {
 }
 
 export class PostgresMemoryRepository implements MemoryRepository {
-  constructor(private readonly db: Pool = pool) {}
+  constructor(private readonly db: Pool) {}
   async findByKey(key: string) {
     const r = await this.db.query('SELECT id::text, memory_key, category, content, content_hash, enabled FROM agent_long_term_memory WHERE memory_key=$1', [key]);
     return r.rowCount ? { ...map(r.rows[0]), contentHash: r.rows[0].content_hash, enabled: r.rows[0].enabled } : null;

@@ -2,13 +2,16 @@ import '../../config/env.bootstrap';
 import { randomUUID } from 'node:crypto';
 import { resolveModel } from '../providers';
 import { runHseAgent } from './hseAgent.runner';
-import { threadStateStore } from './threadState.repository';
+import { createProductionAiComposition } from '../productionDependencies';
+
+const composition = createProductionAiComposition();
+const { threadStateStore } = composition;
 import { pool } from '../../db/pool';
 
 async function turn(threadId: string, turnId: string, message: string) {
   const result = await runHseAgent({
     threadId, message, model: resolveModel('openai', 'gpt-5.1'), emit: () => undefined,
-    threadStore: threadStateStore,
+    threadStore: threadStateStore, toolFactory: composition.aiChatDependencies.toolFactory,
   });
   console.log(JSON.stringify({ turnId, status: result.status, threadRestored: (await threadStateStore.load(threadId)) !== null, ragUsed: result.ragUsed, sources: result.citations?.map((item) => item.sourceId) ?? [] }));
   return result;

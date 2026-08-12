@@ -2,13 +2,14 @@ import '../config/env.bootstrap';
 import { pool } from '../db/pool';
 import { ACTION_OVERDUE_SQL } from '../domain/actions';
 import { ACTION_MODEL_VISIBLE_FIELDS } from './operationalDataProjection';
-import { hseTools } from './tools';
+import { createProductionAiDependencies } from './productionDependencies';
 
 void (async () => {
   const result = await pool.query(
     `SELECT COUNT(*)::int AS count FROM action_tracker_capa WHERE ${ACTION_OVERDUE_SQL}`
   );
-  const toolResult = await (hseTools.list_actions as any).execute(
+  const tools = createProductionAiDependencies().toolFactory!(false);
+  const toolResult = await (tools.list_actions as any).execute(
     { overdue: true, limit: 50 }, { toolCallId: 'local-egress-audit', messages: [] }
   );
   if (!Array.isArray(toolResult)) throw new Error('list_actions audit did not return rows');

@@ -100,6 +100,7 @@ export interface AgentRuntime {
   responseLanguage?: ResponseLanguage;
   /** Test/diagnostic seam. Production uses the shared createHseTools registry. */
   tools?: ToolSet;
+  toolFactory?: (allowMemoryWrite: boolean) => ToolSet;
 }
 
 /** Shape returned by the runner to the HTTP layer. */

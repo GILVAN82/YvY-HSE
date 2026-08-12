@@ -34,6 +34,7 @@ export interface RunAgentInput {
   memoryService?: MemoryService;
   approvalService?: ApprovalService;
   tools?: ToolSet;
+  toolFactory?: (allowMemoryWrite: boolean) => ToolSet;
   attachmentContext?: string;
   attachments?: NormalizedAttachment[];
   locale?: string;
@@ -142,7 +143,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], finalText: '' },
       {
         configurable: {
-          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage },
+          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage },
           // Only consulted when a checkpointer is attached.
           thread_id: conversationId,
         },
