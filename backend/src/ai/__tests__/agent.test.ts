@@ -31,6 +31,8 @@ describe('1. complete START -> guard -> agent -> verify -> finalize flow', () =>
     assert.equal(result.text, 'O TRIR do portfolio e 51,95.');
     assert.ok(events.some((e) => e.type === 'text'));
     assert.equal(events.filter((e) => e.type === 'error').length, 0);
+    assert.deepEqual(result.executionTrace?.route, ['guard', 'agent', 'verify', 'approval_gate', 'finalize']);
+    assert.equal(result.executionTrace?.guardrail.status, 'PASS');
   });
 });
 
@@ -49,6 +51,8 @@ describe('2. START -> guard -> refuse', () => {
     assert.equal(result.refusalReason, RefusalCode.PROMPT_INJECTION);
     assert.equal(model.callCount(), 0, 'the model must not be called for a refusal');
     assert.ok(events.some((e) => e.type === 'text'));
+    assert.deepEqual(result.executionTrace?.route, ['guard', 'refuse']);
+    assert.equal(result.executionTrace?.guardrail.reason, RefusalCode.PROMPT_INJECTION);
   });
 
   test('the refusal does not reveal the triggering rule', async () => {
@@ -76,6 +80,9 @@ describe('3. multi-step tool calling with a final answer', () => {
     assert.notEqual(result.text.trim(), '', 'the user must receive text');
     assert.deepEqual(result.toolsUsed, ['get_projects']);
     assert.ok(events.some((e) => e.type === 'tool_use' && e.name === 'get_projects'));
+    assert.equal(result.executionTrace?.tools[0]?.name, 'get_projects');
+    assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
+    assert.match(result.executionTrace?.tools[0]?.resultSummary ?? '', /record/);
   });
 });
 

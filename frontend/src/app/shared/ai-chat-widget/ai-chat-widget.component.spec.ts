@@ -140,6 +140,41 @@ describe('AI chat widget conversation controls', () => {
     expect(fixture.nativeElement.textContent).not.toContain('C:\\');
   });
 
+  it('renders Approve and Reject only for a real pending approval', () => {
+    const fixture = createComponent(); const component = fixture.componentInstance;
+    component.open.set(true); component.providerStatus.set('ready');
+    component.approval.set({ approvalId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', threadId: '11111111-2222-4333-8444-555555555555', actionType: 'LOTO_SAFETY_EXECUTION', riskLevel: 'CRITICAL', status: 'PENDING' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.approval-panel').textContent).toContain('Human Approval Required');
+    expect(fixture.nativeElement.querySelector('button.approve')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('button.reject')).not.toBeNull();
+  });
+
+  it('updates to APPROVED from the backend response and removes decision buttons', async () => {
+    const fixture = createComponent(); const component = fixture.componentInstance;
+    const pending = { approvalId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', threadId: '11111111-2222-4333-8444-555555555555', actionType: 'LOTO_SAFETY_EXECUTION', riskLevel: 'CRITICAL', status: 'PENDING' as const };
+    component.open.set(true); component.providerStatus.set('ready'); component.approval.set(pending);
+    const approved = { ...pending, status: 'APPROVED' as const, resolvedAt: '2026-08-12T12:00:00.000Z' };
+    spyOn(globalThis, 'fetch').and.resolveTo(new Response(JSON.stringify({ approval: approved, text: 'Human approval recorded. Field verification remains required.' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    await component.resolveApproval('approve'); fixture.detectChanges();
+    expect(component.approval()?.status).toBe('APPROVED');
+    expect(fixture.nativeElement.querySelector('button.approve')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button.reject')).toBeNull();
+    expect(component.messages().at(-1)?.content).toContain('Field verification');
+  });
+
+  it('updates to REJECTED from the backend response and removes decision buttons', async () => {
+    const fixture = createComponent(); const component = fixture.componentInstance;
+    const pending = { approvalId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', threadId: '22222222-2222-4222-8222-222222222222', actionType: 'LOTO_SAFETY_EXECUTION', riskLevel: 'CRITICAL', status: 'PENDING' as const };
+    component.open.set(true); component.providerStatus.set('ready'); component.approval.set(pending);
+    const rejected = { ...pending, status: 'REJECTED' as const, resolvedAt: '2026-08-12T12:00:00.000Z' };
+    spyOn(globalThis, 'fetch').and.resolveTo(new Response(JSON.stringify({ approval: rejected, text: 'The critical LOTO action remains blocked.' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    await component.resolveApproval('reject'); fixture.detectChanges();
+    expect(component.approval()?.status).toBe('REJECTED');
+    expect(fixture.nativeElement.querySelector('.approval-panel').textContent).toContain('REJECTED');
+    expect(fixture.nativeElement.querySelector('.approval-actions')).toBeNull();
+  });
+
   it('the next message omits the old thread and accepts a different backend thread', async () => {
     const oldThreadId = '11111111-2222-4333-8444-555555555555';
     const newThreadId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';

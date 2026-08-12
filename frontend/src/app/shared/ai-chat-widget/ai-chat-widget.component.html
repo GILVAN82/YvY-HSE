@@ -83,6 +83,18 @@
     <small class="attachment-notice">{{ i18n.t('Attachments are temporarily processed by the configured AI service and are not added to the permanent knowledge base.') }}</small>
   </div>
 
+  <section class="approval-panel" *ngIf="approval() as item" aria-live="polite">
+    <strong>{{ item.status === 'PENDING' ? 'Human Approval Required' : 'Human Decision Recorded' }}</strong>
+    <div><span>Operation</span><code>{{ item.actionType }}</code></div>
+    <div><span>Risk</span><b>{{ item.riskLevel }}</b></div>
+    <div><span>Status</span><b [class.rejected]="item.status === 'REJECTED'">{{ item.status }}</b></div>
+    <div class="approval-actions" *ngIf="item.status === 'PENDING'">
+      <button type="button" class="approve" (click)="resolveApproval('approve')" [disabled]="resolvingApproval()">Approve</button>
+      <button type="button" class="reject" (click)="resolveApproval('reject')" [disabled]="resolvingApproval()">Reject</button>
+    </div>
+    <small class="approval-error" *ngIf="approvalError()">{{ approvalError() }}</small>
+  </section>
+
   <form class="composer" *ngIf="providerStatus() === 'ready'" (ngSubmit)="send()">
     <label class="attachbtn" [title]="i18n.t('Attach file')" [attr.aria-label]="i18n.t('Attach file')">
       <input type="file" accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.webp" (change)="attachFile($event)" [disabled]="loading() || uploading()" />

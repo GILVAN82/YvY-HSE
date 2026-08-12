@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../core/i18n.service';
+import { AgentInspectorService, type ApprovalSnapshot } from '../../core/agent-inspector.service';
 
 type MessageStatus = 'consulting' | 'streaming' | 'done';
 
@@ -31,6 +32,7 @@ interface AttachmentInfo {
 }
 
 export type ProviderStatus = 'loading' | 'ready' | 'none' | 'error';
+export type ApprovalDecision = 'approve' | 'reject';
 
 export const PROVIDER_STATUS_ERROR_MESSAGE =
   'Unable to verify the assistant configuration. Check the server connection.';
@@ -111,6 +113,7 @@ export const SUGGESTED_PROMPTS = [
 export class AiChatWidgetComponent implements OnInit, OnDestroy {
   /** UI chrome follows the app language; free-form conversation content is not rewritten. */
   readonly i18n = inject(I18nService);
+  private readonly agentInspector = inject(AgentInspectorService);
   open = signal(false);
   settingsOpen = signal(false);
   loading = signal(false);
@@ -119,6 +122,9 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
   attachments = signal<AttachmentInfo[]>([]);
   uploading = signal(false);
   attachmentError = signal('');
+  approval = signal<ApprovalSnapshot | null>(null);
+  resolvingApproval = signal(false);
+  approvalError = signal('');
   readonly suggestedPrompts = SUGGESTED_PROMPTS;
   panelPosition = signal({ x: 0, y: 0 });
   dragging = signal(false);
@@ -236,6 +242,8 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
     this.messages.set([]);
     this.attachments.set([]);
     this.attachmentError.set('');
+    this.approval.set(null);
+    this.approvalError.set('');
     this.input = '';
   }
 
@@ -314,6 +322,8 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
           } else if (payload.type === 'error') {
             this.appendToLast(`\n${this.i18n.t(safeChatErrorMessage(payload.code))}`);
           } else if (payload.type === 'done') {
+            this.agentInspector.record(payload);
+            if (payload.approvalRequest?.status === 'PENDING') this.approval.set(payload.approvalRequest);
             const returnedThreadId = payload.threadId || payload.conversationId;
             if (typeof returnedThreadId === 'string' && returnedThreadId) {
               this.activeThreadId = returnedThreadId;
@@ -326,6 +336,31 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
       this.appendToLast(this.i18n.t('Server connection error.'));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async resolveApproval(decision: ApprovalDecision) {
+    const approval = this.approval();
+    if (!approval || approval.status !== 'PENDING' || this.resolvingApproval()) return;
+    this.resolvingApproval.set(true);
+    this.approvalError.set('');
+    try {
+      const response = await fetch(`${environment.apiUrl}/ai/approvals/${encodeURIComponent(approval.approvalId)}/${decision}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: approval.threadId, locale: this.i18n.lang() }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.approval || typeof body?.text !== 'string') {
+        this.approvalError.set(this.i18n.t('The human decision could not be recorded. Refresh the approval state before trying again.'));
+        return;
+      }
+      this.approval.set(body.approval);
+      this.agentInspector.recordApproval(body.approval);
+      this.messages.update((messages) => [...messages, { role: 'assistant', content: body.text, status: 'done' }]);
+    } catch {
+      this.approvalError.set(this.i18n.t('Server connection error.'));
+    } finally {
+      this.resolvingApproval.set(false);
     }
   }
 

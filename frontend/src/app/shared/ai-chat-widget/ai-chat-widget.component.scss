@@ -297,6 +297,19 @@
 .attachment-chip button { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 0; font-size: 15px; line-height: 1; }
 .attachment-notice, .attachment-error, .uploading { display: block; margin-top: 5px; font-size: 10px; color: var(--muted); }
 .attachment-error { color: var(--danger, #d45b5b); }
+.approval-panel { margin: 0 12px 10px; padding: 12px; border: 1px solid #9b772e; border-radius: 10px; background: color-mix(in srgb, #9b772e 13%, var(--card)); font-size: 11px; }
+.approval-panel > strong { display: block; margin-bottom: 8px; color: #e9c56e; font-size: 12px; }
+.approval-panel > div:not(.approval-actions) { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+.approval-panel span { color: var(--muted); }
+.approval-panel code { color: var(--ink); overflow-wrap: anywhere; }
+.approval-panel b { color: #e9c56e; }
+.approval-panel b.rejected { color: var(--danger, #e16b6b); }
+.approval-actions { display: flex; gap: 8px; margin-top: 10px; }
+.approval-actions button { flex: 1; border-radius: 7px; padding: 8px; font-weight: 700; cursor: pointer; }
+.approval-actions .approve { border: 1px solid #36b88c; background: #15382f; color: #68deb5; }
+.approval-actions .reject { border: 1px solid #b65462; background: #3a1f28; color: #ef929e; }
+.approval-actions button:disabled { opacity: .5; cursor: default; }
+.approval-error { display: block; margin-top: 8px; color: var(--danger, #e16b6b); }
 .composer textarea {
   flex: 1;
   resize: none;

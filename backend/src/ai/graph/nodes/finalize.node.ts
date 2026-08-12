@@ -12,7 +12,7 @@ const FAILURE_MESSAGES: Record<string, Record<ResponseLanguage, string>> = {
   [AgentErrorCode.PROVIDER_UNAVAILABLE]: { en:'The AI service is not configured on the server.',pt:'O serviço de IA não está configurado no servidor.',es:'El servicio de IA no está configurado en el servidor.',fr:"Le service d’IA n’est pas configuré sur le serveur.",de:'Der KI-Dienst ist auf dem Server nicht konfiguriert.' },
 };
 
-export async function finalizeNode(_state: HseAgentState): Promise<Partial<HseAgentState>> { return { status: AgentStatus.COMPLETED }; }
+export async function finalizeNode(state: HseAgentState): Promise<Partial<HseAgentState>> { return { status: AgentStatus.COMPLETED, executedRoute: [...state.executedRoute, 'finalize'] }; }
 
 export async function finalizeFailureNode(state: HseAgentState, config: LangGraphRunnableConfig): Promise<Partial<HseAgentState>> {
   const runtime = config.configurable?.runtime as AgentRuntime | undefined;
@@ -20,5 +20,5 @@ export async function finalizeFailureNode(state: HseAgentState, config: LangGrap
   const language = runtime?.responseLanguage ?? 'en';
   const templates = FAILURE_MESSAGES[code] ?? FAILURE_MESSAGES[AgentErrorCode.MODEL_ERROR];
   runtime?.emit({ type: 'error', message: localized(templates, language), code });
-  return { status: AgentStatus.FAILED, errorCode: code };
+  return { status: AgentStatus.FAILED, errorCode: code, executedRoute: [...state.executedRoute, 'finalize_failure'] };
 }

@@ -3,12 +3,12 @@ import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { listProvidersForClient, resolveModel, ProviderUnavailableError } from '../ai/providers';
 import { readOrchestrator, MAX_MESSAGE_LENGTH, MAX_HISTORY_TURNS } from '../ai/config';
-import { runHseAgent } from '../ai/graph/hseAgent.runner';
+import { resumeHumanApproval, runHseAgent } from '../ai/graph/hseAgent.runner';
 import { runLegacyAgent } from '../ai/legacyRunner';
 import { AgentErrorCode, type AgentEvent } from '../ai/graph/hseAgent.types';
 import { threadStateStore } from '../ai/graph/threadState.repository';
 import { longTermMemoryService } from '../ai/memory/memory.service';
-import { humanApprovalService } from '../ai/hitl/hitl.repository';
+import { ApprovalResolutionError, humanApprovalService } from '../ai/hitl/hitl.repository';
 import type { LanguageModel, ToolSet } from 'ai';
 import type { ThreadStateStore } from '../ai/graph/threadState.repository';
 import type { MemoryService } from '../ai/memory/memory.types';
@@ -54,6 +54,12 @@ const chatRequestSchema = z.object({
   locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
 });
 
+const approvalDecisionSchema = z.object({
+  threadId: z.string().uuid(),
+  resolutionNote: z.string().trim().max(500).optional(),
+  locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
+});
+
 export function createAiChatRouter(overrides: Partial<AiChatDependencies> = {}) {
 const dependencies = { ...defaultDependencies, ...overrides };
 const router = Router();
@@ -91,6 +97,32 @@ router.delete('/ai/attachments/:attachmentId', async (req: Request, res: Respons
 router.get('/ai/providers', (_req: Request, res: Response) => {
   res.json(listProvidersForClient());
 });
+
+const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').RequestHandler => async (req, res) => {
+  const approvalId = z.string().uuid().safeParse(req.params.approvalId);
+  const body = approvalDecisionSchema.safeParse(req.body);
+  if (!approvalId.success || !body.success) {
+    res.status(400).json({ error: 'Invalid approval request.', code: 'AI_INVALID_APPROVAL_REQUEST' });
+    return;
+  }
+  try {
+    const result = await resumeHumanApproval({
+      approvalId: approvalId.data, threadId: body.data.threadId, decision,
+      resolutionNote: body.data.resolutionNote, locale: body.data.locale,
+      approvalService: dependencies.humanApprovalService, threadStore: dependencies.threadStateStore,
+    });
+    res.json({ approval: result.approval, text: result.text });
+  } catch (error) {
+    if (error instanceof ApprovalResolutionError) {
+      res.status(409).json({ error: 'Approval is unavailable or no longer pending for this thread.', code: 'AI_APPROVAL_NOT_PENDING' });
+      return;
+    }
+    res.status(500).json({ error: 'The approval decision could not be recorded.', code: 'AI_APPROVAL_RESOLUTION_FAILED' });
+  }
+};
+
+router.post('/ai/approvals/:approvalId/approve', resolveApproval('APPROVE'));
+router.post('/ai/approvals/:approvalId/reject', resolveApproval('REJECT'));
 
 router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const parsed = chatRequestSchema.safeParse(req.body);
@@ -161,6 +193,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     errorCode: result.errorCode,
     orchestrator,
     approvalRequest: result.approvalRequest,
+    executionTrace: result.executionTrace,
   });
   res.end();
 });

@@ -5,14 +5,15 @@ import { classifyAgentAction } from '../../hitl/hitl.policy';
 
 export async function approvalGateNode(state: HseAgentState, config: LangGraphRunnableConfig): Promise<Partial<HseAgentState>> {
   const userMessage = [...state.messages].reverse().find((message) => message.role === 'user')?.content ?? '';
-  if (classifyAgentAction(userMessage) !== 'CRITICAL_APPROVAL') return { status: AgentStatus.VERIFIED };
+  const executedRoute = [...state.executedRoute, 'approval_gate'];
+  if (classifyAgentAction(userMessage) !== 'CRITICAL_APPROVAL') return { status: AgentStatus.VERIFIED, executedRoute };
   const runtime = config.configurable?.runtime as AgentRuntime | undefined;
-  if (!runtime?.approvalService) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE };
+  if (!runtime?.approvalService) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };
   try {
     const approvalRequest = await runtime.approvalService.create(state.conversationId, 'LOTO_SAFETY_EXECUTION');
-    return { status: AgentStatus.AWAITING_HUMAN_APPROVAL, approvalRequest };
+    return { status: AgentStatus.AWAITING_HUMAN_APPROVAL, approvalRequest, executedRoute };
   } catch {
-    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE };
+    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };
   }
 }
 

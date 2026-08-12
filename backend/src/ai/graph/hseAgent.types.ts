@@ -56,6 +56,33 @@ export type AgentEvent =
 
 export type EmitFn = (event: AgentEvent) => void;
 
+export interface AgentToolTrace {
+  name: string;
+  status: 'COMPLETED' | 'ERROR' | 'NOT_OBSERVABLE';
+  arguments?: Record<string, string | number | boolean | null>;
+  resultSummary?: string;
+}
+
+export interface AgentExecutionTrace {
+  timestamp: string;
+  route: string[];
+  tools: AgentToolTrace[];
+  rag: {
+    used: boolean;
+    status: 'OK' | 'NO_RELEVANT_EVIDENCE' | 'NOT_APPROPRIATE' | 'NOT_USED' | 'ERROR';
+    chunksRetrieved: number;
+  };
+  conversation: { stateActive: boolean; messageCount: number };
+  memory: {
+    used: boolean;
+    operation: 'READ' | 'WRITE' | 'FORGET' | 'NONE';
+    categories: string[];
+    status: 'USED' | 'NO_MATCH' | 'COMPLETED' | 'ERROR' | 'NOT_USED';
+  };
+  guardrail: { status: 'PASS' | 'BLOCKED' | 'REFUSED'; reason?: RefusalCode };
+  error?: { category: AgentErrorCode; node: string; recoverable: boolean };
+}
+
 /**
  * Everything the graph needs that is not part of the serialisable state.
  * Kept out of the state object so no model handle or callback is ever checkpointed.
@@ -88,4 +115,5 @@ export interface AgentRunResult {
   ragUsed?: boolean;
   citations?: Pick<RagEvidence, 'sourceId' | 'citationLabel' | 'sourceUrl' | 'jurisdiction'>[];
   approvalRequest?: ApprovalRequest;
+  executionTrace?: AgentExecutionTrace;
 }

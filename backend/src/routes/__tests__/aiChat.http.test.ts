@@ -9,6 +9,9 @@ import { createMockModel } from '../../ai/__tests__/mockModel';
 import { runHseAgent, resetGraphCache } from '../../ai/graph/hseAgent.runner';
 import type { PersistedThreadState, ThreadStateStore } from '../../ai/graph/threadState.repository';
 import { createHseTools } from '../../ai/tools';
+import { ApprovalResolutionError } from '../../ai/hitl/hitl.repository';
+import type { ApprovalRequest, HumanDecision } from '../../ai/hitl/hitl.types';
+import { randomUUID } from 'node:crypto';
 
 const servers: http.Server[] = [];
 afterEach(async () => Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve())))));
@@ -35,7 +38,7 @@ const approvalService = {
   deleteForTest: async () => undefined,
 } as any;
 
-async function start(model: any, tools?: any) {
+async function start(model: any, tools?: any, approvals: any = approvalService) {
   resetGraphCache();
   const store = new MemoryThreadStore();
   const app = express();
@@ -46,7 +49,7 @@ async function start(model: any, tools?: any) {
     runHseAgent,
     threadStateStore: store,
     longTermMemoryService: memoryService,
-    humanApprovalService: approvalService,
+    humanApprovalService: approvals,
     ...(tools ? { tools } : {}),
   }));
   const server = app.listen(0, '127.0.0.1');
@@ -55,6 +58,33 @@ async function start(model: any, tools?: any) {
   const address = server.address();
   assert.ok(address && typeof address === 'object');
   return { port: address.port, store };
+}
+
+async function postJson(port: number, path: string, payload: Record<string, unknown>) {
+  const body = JSON.stringify(payload);
+  return new Promise<{ status: number; body: any }>((resolve, reject) => {
+    const request = http.request({ hostname: '127.0.0.1', port, path, method: 'POST', headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, (res) => {
+      let data = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(data) }));
+    });
+    request.on('error', reject); request.end(body);
+  });
+}
+
+class HttpApprovalService {
+  approvals = new Map<string, ApprovalRequest>();
+  async create(threadId: string): Promise<ApprovalRequest> {
+    const approval: ApprovalRequest = { approvalId: randomUUID(), threadId, actionType: 'LOTO_SAFETY_EXECUTION', summary: 'LOTO approval', reason: 'Human decision required', riskLevel: 'CRITICAL', status: 'PENDING', requestedAt: new Date().toISOString() };
+    this.approvals.set(approval.approvalId, approval); return approval;
+  }
+  async resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string): Promise<ApprovalRequest> {
+    const current = this.approvals.get(approvalId);
+    if (!current || current.threadId !== threadId || current.status !== 'PENDING') throw new ApprovalResolutionError('not pending');
+    const resolved = { ...current, status: decision === 'APPROVE' ? 'APPROVED' as const : 'REJECTED' as const, resolvedAt: new Date().toISOString(), ...(note ? { resolutionNote: note } : {}) };
+    this.approvals.set(approvalId, resolved); return resolved;
+  }
+  async get(id: string) { return this.approvals.get(id) ?? null; }
+  async deleteForTest(id: string) { this.approvals.delete(id); }
 }
 
 async function post(port: number, payload: Record<string, unknown>) {
@@ -171,5 +201,38 @@ describe('POST /api/ai/chat HTTP boundary', () => {
     assert.equal(events.find((event) => event.type === 'done')?.status, 'COMPLETED');
     assert.deepEqual(calls[0].params, [20]);
     assert.doesNotMatch(calls[0].sql, /project = \$|status = \$/);
+  });
+});
+
+describe('POST /api/ai/approvals HTTP boundary', () => {
+  const threadId = '11111111-2222-4333-8444-555555555555';
+
+  test('persists PENDING -> APPROVED and rejects duplicate resolution', async () => {
+    const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
+    const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);
+    const first = await postJson(port, `/api/ai/approvals/${pending.approvalId}/approve`, { threadId, resolutionNote: 'Demo approval.' });
+    assert.equal(first.status, 200); assert.equal(first.body.approval.status, 'APPROVED'); assert.ok(first.body.approval.resolvedAt);
+    assert.match(first.body.text, /Field verification by competent personnel/); assert.doesNotMatch(first.body.text, /equipment is safe/i);
+    const duplicate = await postJson(port, `/api/ai/approvals/${pending.approvalId}/approve`, { threadId });
+    assert.equal(duplicate.status, 409); assert.equal(duplicate.body.code, 'AI_APPROVAL_NOT_PENDING');
+  });
+
+  test('persists rejection and keeps the critical action blocked', async () => {
+    const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
+    const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);
+    const result = await postJson(port, `/api/ai/approvals/${pending.approvalId}/reject`, { threadId });
+    assert.equal(result.status, 200); assert.equal(result.body.approval.status, 'REJECTED'); assert.ok(result.body.approval.resolvedAt);
+    assert.match(result.body.text, /remains blocked and must not proceed/);
+  });
+
+  test('rejects wrong thread, missing approval and invalid identifiers safely', async () => {
+    const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
+    const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);
+    const wrongThread = await postJson(port, `/api/ai/approvals/${pending.approvalId}/approve`, { threadId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' });
+    assert.equal(wrongThread.status, 409); assert.equal((await approvals.get(pending.approvalId))?.status, 'PENDING');
+    const missing = await postJson(port, `/api/ai/approvals/${randomUUID()}/reject`, { threadId });
+    assert.equal(missing.status, 409); assert.equal(missing.body.code, 'AI_APPROVAL_NOT_PENDING');
+    const invalid = await postJson(port, '/api/ai/approvals/not-a-uuid/approve', { threadId });
+    assert.equal(invalid.status, 400); assert.equal(invalid.body.code, 'AI_INVALID_APPROVAL_REQUEST');
   });
 });

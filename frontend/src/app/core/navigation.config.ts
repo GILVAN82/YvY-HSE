@@ -56,6 +56,7 @@ export const NAVIGATION: NavigationModule[] = [
     items: [
       { id: 'home', label: 'Home', route: '/home', icon: House },
       { id: 'instructions', label: 'Instructions', route: '/instructions', icon: BookOpenText },
+      { id: 'agent-inspector', label: 'Agent Inspector', route: '/agent-inspector', icon: Activity, badge: 'Demo' },
       { id: 'portfolio', label: 'Portfolio Dashboard', route: '/portfolio', icon: ChartPie },
       { id: 'project', label: 'Project Dashboard', route: '/project', icon: Gauge },
     ],

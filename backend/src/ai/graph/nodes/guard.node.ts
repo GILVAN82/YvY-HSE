@@ -103,12 +103,12 @@ export async function guardNode(state: HseAgentState, config?: LangGraphRunnable
   if (!decision.allowed) {
     const runtime = config?.configurable?.runtime as AgentRuntime | undefined;
     const attachmentScopedInput = isAttachmentContextRequest(last?.content ?? '', runtime?.attachmentContext);
-    if (attachmentScopedInput) return { status: AgentStatus.AUTHORIZED };
+    if (attachmentScopedInput) return { status: AgentStatus.AUTHORIZED, executedRoute: [...state.executedRoute, 'guard'] };
     const earlierTurns = state.messages.filter((m) => m !== last);
     if (classifyScopeWithThreadContext(last?.content ?? '', earlierTurns) === 'IN_SCOPE_CONTEXTUAL_FOLLOWUP') {
-      return { status: AgentStatus.AUTHORIZED };
+      return { status: AgentStatus.AUTHORIZED, executedRoute: [...state.executedRoute, 'guard'] };
     }
-    return { status: AgentStatus.REFUSED, refusalReason: decision.reason };
+    return { status: AgentStatus.REFUSED, refusalReason: decision.reason, executedRoute: [...state.executedRoute, 'guard'] };
   }
-  return { status: AgentStatus.AUTHORIZED };
+  return { status: AgentStatus.AUTHORIZED, executedRoute: [...state.executedRoute, 'guard'] };
 }

@@ -1,0 +1,98 @@
+<main class="inspector-page">
+  <header class="page-head">
+    <div>
+      <span class="eyebrow">Demo Mode — Turing College</span>
+      <h1>Agent Inspector</h1>
+      <p>Real execution metadata from the most recent YVY HSE Agent request.</p>
+    </div>
+    <div class="head-actions">
+      <span class="live-badge">OBSERVABILITY ONLY</span>
+      <button type="button" class="clear-button" (click)="inspector.clear()" [disabled]="!snapshot()">Clear Inspector</button>
+    </div>
+  </header>
+
+  <section class="empty-state" *ngIf="!snapshot()">
+    <h2>No execution recorded</h2>
+    <p>No execution recorded. Run a request using the AI Agent to inspect its execution.</p>
+  </section>
+
+  <ng-container *ngIf="snapshot() as run">
+    <section class="summary-grid">
+      <article class="metric"><span>Status</span><strong [class.error]="run.status === 'FAILED'">{{ run.status }}</strong></article>
+      <article class="metric"><span>Step Count</span><strong>{{ run.stepCount }}</strong></article>
+      <article class="metric wide"><span>Thread ID</span><code>{{ run.threadId }}</code></article>
+      <article class="metric"><span>Timestamp</span><strong>{{ trace()?.timestamp ? (trace()!.timestamp | date:'medium') : 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+    </section>
+
+    <section class="card route-card">
+      <div class="card-head"><div><span class="section-number">01</span><h2>LangGraph Route</h2></div><span>{{ run.orchestrator }}</span></div>
+      <div class="route" *ngIf="trace()?.route?.length; else noRoute">
+        <ng-container *ngFor="let node of trace()!.route; let last = last">
+          <span class="node">{{ title(node) }}</span><span class="arrow" *ngIf="!last">↓</span>
+        </ng-container>
+      </div>
+      <ng-template #noRoute><p class="not-observable">NOT CURRENTLY OBSERVABLE</p></ng-template>
+    </section>
+
+    <div class="content-grid">
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">02</span><h2>Tools Used</h2></div><span>{{ trace()?.tools?.length || 0 }}</span></div>
+        <p class="none" *ngIf="!trace()?.tools?.length">None</p>
+        <article class="tool" *ngFor="let tool of trace()?.tools">
+          <div class="tool-title"><code>{{ tool.name }}</code><span class="status" [class.error]="tool.status === 'ERROR'">{{ tool.status }}</span></div>
+          <div class="kv" *ngFor="let item of entries(tool.arguments)"><span>{{ item.key }}</span><code>{{ label(item.value) }}</code></div>
+          <p>{{ tool.resultSummary || 'Result summary not currently observable' }}</p>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">03</span><h2>Knowledge Retrieval</h2></div></div>
+        <div class="kv"><span>RAG Used</span><strong>{{ label(trace()?.rag?.used ?? run.ragUsed) }}</strong></div>
+        <div class="kv"><span>Retrieval Status</span><strong>{{ trace()?.rag?.status || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Chunks Retrieved</span><strong>{{ trace()?.rag?.chunksRetrieved ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="source" *ngFor="let citation of run.citations"><strong>{{ citation.citationLabel }}</strong><span>{{ citation.jurisdiction }}</span></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">04</span><h2>Conversation State</h2></div></div>
+        <div class="kv"><span>State Active</span><strong>{{ label(trace()?.conversation?.stateActive) }}</strong></div>
+        <div class="kv"><span>Messages in Thread</span><strong>{{ trace()?.conversation?.messageCount ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Thread ID</span><code>{{ run.threadId }}</code></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">05</span><h2>Long-Term Memory</h2></div></div>
+        <div class="kv"><span>Used</span><strong>{{ label(trace()?.memory?.used) }}</strong></div>
+        <div class="kv"><span>Operation</span><strong>{{ trace()?.memory?.operation || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Status</span><strong>{{ trace()?.memory?.status || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Categories</span><strong>{{ trace()?.memory?.categories?.join(', ') || 'None' }}</strong></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">06</span><h2>Human-in-the-Loop</h2></div></div>
+        <ng-container *ngIf="run.approvalRequest as approval; else noApproval">
+          <div class="approval">{{ approval.status === 'PENDING' ? 'HUMAN APPROVAL REQUIRED' : 'HUMAN DECISION RECORDED' }}</div>
+          <div class="kv" *ngIf="approval.status !== 'PENDING'"><span>Decision</span><strong>{{ approval.status }}</strong></div>
+          <div class="kv"><span>Operation</span><strong>{{ approval.actionType }}</strong></div>
+          <div class="kv"><span>Risk</span><strong>{{ approval.riskLevel }}</strong></div>
+          <div class="kv"><span>Status</span><strong>{{ approval.status }}</strong></div>
+          <div class="kv" *ngIf="approval.resolvedAt"><span>Resolved At</span><strong>{{ approval.resolvedAt | date:'medium' }}</strong></div>
+        </ng-container>
+        <ng-template #noApproval><p class="none">Not Required</p></ng-template>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">07</span><h2>Guardrail</h2></div></div>
+        <div class="guard" [class.blocked]="trace()?.guardrail?.status !== 'PASS'">{{ trace()?.guardrail?.status || 'NOT CURRENTLY OBSERVABLE' }}</div>
+        <div class="kv" *ngIf="trace()?.guardrail?.reason"><span>Reason</span><strong>{{ title(trace()!.guardrail.reason!) }}</strong></div>
+      </section>
+
+      <section class="card error-card" *ngIf="trace()?.error as error">
+        <div class="card-head"><div><span class="section-number">08</span><h2>Execution Error</h2></div></div>
+        <div class="kv"><span>Category</span><strong>{{ error.category }}</strong></div>
+        <div class="kv"><span>Node</span><strong>{{ error.node }}</strong></div>
+        <div class="kv"><span>Recoverable</span><strong>{{ label(error.recoverable) }}</strong></div>
+      </section>
+    </div>
+  </ng-container>
+</main>

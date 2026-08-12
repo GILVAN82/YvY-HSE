@@ -8,11 +8,12 @@ import { MAX_AGENT_STEPS } from '../../config';
  * Grounding and citation checks belong to the RAG phase.
  */
 export async function verifyNode(state: HseAgentState): Promise<Partial<HseAgentState>> {
+  const executedRoute = [...state.executedRoute, 'verify'];
   // A failure recorded upstream stays a failure.
-  if (state.status === AgentStatus.FAILED) return { status: AgentStatus.FAILED };
+  if (state.status === AgentStatus.FAILED) return { status: AgentStatus.FAILED, executedRoute };
 
   if (state.stepCount > MAX_AGENT_STEPS) {
-    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.STEP_LIMIT };
+    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.STEP_LIMIT, executedRoute };
   }
 
   if (!state.finalText.trim()) {
@@ -20,20 +21,21 @@ export async function verifyNode(state: HseAgentState): Promise<Partial<HseAgent
     return {
       status: AgentStatus.FAILED,
       errorCode: state.errorCode ?? AgentErrorCode.EMPTY_ANSWER,
+      executedRoute,
     };
   }
 
   if (state.ragUsed && state.ragEvidence.length) {
     const traceable = state.ragEvidence.every((item) => item.chunkId && item.documentId && item.sourceId && item.citationLabel);
     const citesEvidence = state.ragEvidence.some((item) => state.finalText.includes(`[${item.citationLabel}]`));
-    if (!traceable || !citesEvidence) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING };
+    if (!traceable || !citesEvidence) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING, executedRoute };
   }
 
   if (state.ragUsed && !state.ragEvidence.length && /\[(?:OSHA|HSE|ISO|LOTO|PTW)[^\]]*\]/i.test(state.finalText)) {
-    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING };
+    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING, executedRoute };
   }
 
-  return { status: AgentStatus.VERIFIED };
+  return { status: AgentStatus.VERIFIED, executedRoute };
 }
 
 /** Edge predicate: which finalizer to route to. */

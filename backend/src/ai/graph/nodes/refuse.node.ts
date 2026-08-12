@@ -52,5 +52,5 @@ export async function refuseNode(state: HseAgentState, config: LangGraphRunnable
   const input = [...state.messages].reverse().find((item) => item.role === 'user')?.content ?? '';
   const message = controlledRefusalMessage(reason, input, runtime?.responseLanguage);
   runtime?.emit({ type: 'text', text: message });
-  return { status: AgentStatus.REFUSED, refusalReason: reason, finalText: message };
+  return { status: AgentStatus.REFUSED, refusalReason: reason, finalText: message, executedRoute: [...state.executedRoute, 'refuse'] };
 }

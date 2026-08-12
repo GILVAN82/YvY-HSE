@@ -44,7 +44,15 @@ export const hseAgentStateSchema = z.object({
   stepCount: z.number().int().min(0).default(0),
   /** Tool names only — never arguments or results, which may carry HSE data. */
   toolNames: z.array(z.string()).default([]),
+  executedRoute: z.array(z.string()).default([]),
+  toolTrace: z.array(z.object({
+    name: z.string(),
+    status: z.enum(['COMPLETED', 'ERROR', 'NOT_OBSERVABLE']),
+    arguments: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+    resultSummary: z.string().optional(),
+  })).default([]),
   ragUsed: z.boolean().default(false),
+  ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
   ragEvidence: z.array(ragEvidenceSchema).default([]),
   finalText: z.string().default(''),
   approvalRequest: z.object({

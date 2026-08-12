@@ -81,6 +81,7 @@ export function resetGraphCache() {
 export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult> {
   const runId = randomUUID();
   const conversationId = resolveThreadId(input);
+  const executionTimestamp = new Date().toISOString();
   const responseLanguage = resolveResponseLanguage({ userMessage: input.message, uiLanguage: input.locale });
 
   // Refuse before loading state or optional services. Out-of-scope input cannot
@@ -97,14 +98,26 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       const refusalReason = preflight.reason!;
       const text = controlledRefusalMessage(refusalReason, input.message, input.locale);
       input.emit({ type: 'text', text });
-      return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason, ragUsed: false, citations: [] };
+      return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason, ragUsed: false, citations: [], executionTrace: {
+        timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
+        rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
+        conversation: { stateActive: false, messageCount: 0 },
+        memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
+        guardrail: { status: 'REFUSED', reason: refusalReason },
+      } };
     }
   }
 
   if (input.attachmentContext && /\b(remember|save|store|memorize|lembre|guarde|salve|armazene)\b.*\b(document|file|attachment|spreadsheet|image|documento|arquivo|anexo|planilha|imagem|entire|whole|inteiro|completo)\b/i.test(input.message)) {
     const text = ({ en: 'Attachments are temporary and cannot be stored as long-term memory.', pt: 'Os anexos são temporários e não podem ser guardados na memória de longo prazo.', es: 'Los archivos adjuntos son temporales y no pueden guardarse en la memoria a largo plazo.', fr: 'Les pièces jointes sont temporaires et ne peuvent pas être enregistrées dans la mémoire à long terme.', de: 'Anhänge sind temporär und können nicht im Langzeitgedächtnis gespeichert werden.' } as const)[responseLanguage];
     input.emit({ type: 'text', text });
-    return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason: 'OUT_OF_SCOPE', ragUsed: false, citations: [] };
+    return { runId, conversationId, status: AgentStatus.REFUSED, text, toolsUsed: [], stepCount: 0, refusalReason: 'OUT_OF_SCOPE', ragUsed: false, citations: [], executionTrace: {
+      timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
+      rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
+      conversation: { stateActive: false, messageCount: 0 },
+      memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
+      guardrail: { status: 'REFUSED', reason: 'OUT_OF_SCOPE' },
+    } };
   }
 
   persisted ??= input.threadStore ? await input.threadStore.load(conversationId) : null;
@@ -126,7 +139,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
 
   try {
     const final = await graph.invoke(
-      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], ragUsed: false, ragEvidence: [], finalText: '' },
+      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], finalText: '' },
       {
         configurable: {
           runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage },
@@ -138,7 +151,10 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       }
     );
 
-    const response = {
+    const memoryTool = final.toolNames.find((name) => name === 'save_memory' || name === 'forget_memory');
+    const memoryOperation = memoryTool === 'save_memory' ? 'WRITE' : memoryTool === 'forget_memory' ? 'FORGET' : longTermMemories.length ? 'READ' : 'NONE';
+    const citations = final.ragEvidence.map(({ sourceId, citationLabel, sourceUrl, jurisdiction }) => ({ sourceId, citationLabel, sourceUrl, jurisdiction }));
+    const response: AgentRunResult = {
       runId,
       conversationId,
       status: final.status,
@@ -148,11 +164,28 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       refusalReason: final.refusalReason,
       errorCode: final.errorCode,
       ragUsed: final.ragUsed,
-      citations: final.ragEvidence.map(({ sourceId, citationLabel, sourceUrl, jurisdiction }) => ({ sourceId, citationLabel, sourceUrl, jurisdiction })),
+      citations,
       approvalRequest: final.approvalRequest,
+      executionTrace: {
+        timestamp: executionTimestamp,
+        route: final.executedRoute,
+        tools: final.toolTrace,
+        rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length },
+        conversation: {
+          stateActive: Boolean(input.threadStore && (final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL)),
+          messageCount: messages.length + ((final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL) ? 1 : 0),
+        },
+        memory: {
+          used: memoryOperation !== 'NONE', operation: memoryOperation,
+          categories: [...new Set(longTermMemories.map((memory) => memory.category))],
+          status: memoryTool ? (final.errorCode === AgentErrorCode.TOOL_FAILURE ? 'ERROR' : 'COMPLETED') : longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED',
+        },
+        guardrail: { status: final.status === AgentStatus.REFUSED ? 'REFUSED' : 'PASS', ...(final.refusalReason ? { reason: final.refusalReason } : {}) },
+        ...(final.errorCode ? { error: { category: final.errorCode, node: final.executedRoute.at(-1) ?? 'unknown', recoverable: final.errorCode !== AgentErrorCode.HITL_PERSISTENCE } } : {}),
+      },
     };
     if (input.threadStore && (final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL)) {
-      const sourceReferences = response.citations.length ? response.citations : (persisted?.sourceReferences ?? []);
+      const sourceReferences = citations.length ? citations : (persisted?.sourceReferences ?? []);
       await input.threadStore.save({
         threadId: conversationId,
         messages: [...messages, { role: 'assistant', content: response.text }],
@@ -179,6 +212,14 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       errorCode: AgentErrorCode.MODEL_ERROR,
       ragUsed: false,
       citations: [],
+      executionTrace: {
+        timestamp: executionTimestamp, route: ['guard', 'agent'], tools: [],
+        rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
+        conversation: { stateActive: false, messageCount: messages.length },
+        memory: { used: longTermMemories.length > 0, operation: longTermMemories.length ? 'READ' : 'NONE', categories: [...new Set(longTermMemories.map((memory) => memory.category))], status: longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED' },
+        guardrail: { status: 'PASS' },
+        error: { category: AgentErrorCode.MODEL_ERROR, node: 'agent', recoverable: true },
+      },
     };
   }
 }
@@ -198,8 +239,8 @@ export async function resumeHumanApproval(input: ResumeApprovalInput) {
   const approval = await input.approvalService.resolve(input.approvalId, input.threadId, input.decision, input.resolutionNote);
   const language = resolveResponseLanguage({ uiLanguage: input.locale });
   const text = approval.status === 'APPROVED'
-    ? ({ en:'Human approval was recorded for this LOTO safety execution request. The AI did not approve the action.',pt:'A aprovação humana foi registrada para esta solicitação de execução LOTO. A IA não aprovou a ação.',es:'La aprobación humana se registró para esta solicitud de ejecución LOTO. La IA no aprobó la acción.',fr:"L’approbation humaine a été enregistrée pour cette demande d’exécution LOTO. L’IA n’a pas approuvé l’action.",de:'Die menschliche Genehmigung für diese LOTO-Ausführungsanfrage wurde erfasst. Die KI hat die Aktion nicht genehmigt.' } as const)[language]
-    : ({ en:'The human decision rejected this LOTO safety execution request. The critical action remains stopped.',pt:'A decisão humana rejeitou esta solicitação de execução LOTO. A ação crítica permanece interrompida.',es:'La decisión humana rechazó esta solicitud de ejecución LOTO. La acción crítica permanece detenida.',fr:"La décision humaine a rejeté cette demande d’exécution LOTO. L’action critique reste interrompue.",de:'Die menschliche Entscheidung hat diese LOTO-Ausführungsanfrage abgelehnt. Die kritische Aktion bleibt gestoppt.' } as const)[language];
+    ? ({ en:'Human approval has been recorded. The critical LOTO workflow may proceed to the next authorized verification step. Field verification by competent personnel is still required before execution or re-energization.',pt:'A aprovação humana foi registrada. O fluxo crítico de LOTO pode seguir para a próxima etapa de verificação autorizada. A verificação em campo por pessoal competente continua obrigatória antes da execução ou reenergização.',es:'La aprobación humana ha sido registrada. El flujo crítico de LOTO puede continuar al siguiente paso de verificación autorizado. La verificación en campo por personal competente sigue siendo obligatoria antes de la ejecución o reenergización.',fr:"L’approbation humaine a été enregistrée. Le processus LOTO critique peut passer à l’étape de vérification autorisée suivante. Une vérification sur le terrain par du personnel compétent reste obligatoire avant toute exécution ou remise sous tension.",de:'Die menschliche Genehmigung wurde erfasst. Der kritische LOTO-Ablauf darf mit dem nächsten autorisierten Prüfschritt fortfahren. Vor Ausführung oder Wiedereinschaltung ist weiterhin eine Vor-Ort-Prüfung durch befähigtes Personal erforderlich.' } as const)[language]
+    : ({ en:'Human approval was rejected. The critical LOTO action remains blocked and must not proceed.',pt:'A aprovação humana foi rejeitada. A ação crítica de LOTO permanece bloqueada e não deve prosseguir.',es:'La aprobación humana fue rechazada. La acción crítica de LOTO permanece bloqueada y no debe continuar.',fr:"L’approbation humaine a été rejetée. L’action LOTO critique reste bloquée et ne doit pas se poursuivre.",de:'Die menschliche Genehmigung wurde abgelehnt. Die kritische LOTO-Maßnahme bleibt gesperrt und darf nicht fortgesetzt werden.' } as const)[language];
   if (input.threadStore) {
     const state = await input.threadStore.load(input.threadId);
     if (state) await input.threadStore.save({ threadId: input.threadId, messages: [...state.messages, { role: 'assistant', content: text }], lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences });

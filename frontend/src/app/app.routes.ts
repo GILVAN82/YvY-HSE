@@ -6,11 +6,13 @@ import { ProjectsComponent } from './pages/projects/projects.component';
 import { ListsComponent } from './pages/lists/lists.component';
 import { InstructionsComponent } from './pages/instructions/instructions.component';
 import { SheetComponent } from './pages/sheet/sheet.component';
+import { AgentInspectorComponent } from './pages/agent-inspector/agent-inspector.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'home', component: HomeComponent },
   { path: 'instructions', component: InstructionsComponent },
+  { path: 'agent-inspector', component: AgentInspectorComponent },
   { path: 'portfolio', component: PortfolioComponent },
   { path: 'project', component: ProjectComponent },
   { path: 'projects', component: ProjectsComponent },
