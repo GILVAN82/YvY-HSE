@@ -66,7 +66,12 @@
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           {{ i18n.t('Consulting system data…') }}
         </span>
-        <ng-container *ngIf="m.content">{{ m.content }}</ng-container>
+        <ng-container *ngIf="m.content">
+          <div *ngIf="m.role === 'assistant'; else plainUserMessage"
+               class="assistant-markdown"
+               [innerHTML]="m.content | safeMarkdown"></div>
+          <ng-template #plainUserMessage>{{ m.content }}</ng-template>
+        </ng-container>
       </div>
     </div>
   </div>

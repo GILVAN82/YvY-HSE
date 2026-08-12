@@ -140,6 +140,23 @@ describe('AI chat widget conversation controls', () => {
     expect(fixture.nativeElement.textContent).not.toContain('C:\\');
   });
 
+  it('renders assistant Markdown while keeping user-authored content plain', () => {
+    const fixture = createComponent(); const component = fixture.componentInstance;
+    component.open.set(true); component.providerStatus.set('ready');
+    component.messages.set([
+      { role: 'assistant', content: '**Risk Level:** High\n\n1. Isolate\n2. Verify' },
+      { role: 'user', content: '**keep this plain** <img src=x onerror=alert(1)>' },
+    ]);
+    fixture.detectChanges();
+    const messages = fixture.nativeElement.querySelectorAll('.msg');
+    expect(messages[0].querySelector('strong')?.textContent).toContain('Risk Level');
+    expect(messages[0].querySelectorAll('ol li').length).toBe(2);
+    expect(messages[0].textContent).not.toContain('**');
+    expect(messages[1].querySelector('strong')).toBeNull();
+    expect(messages[1].querySelector('img')).toBeNull();
+    expect(messages[1].textContent).toContain('**keep this plain**');
+  });
+
   it('renders Approve and Reject only for a real pending approval', () => {
     const fixture = createComponent(); const component = fixture.componentInstance;
     component.open.set(true); component.providerStatus.set('ready');

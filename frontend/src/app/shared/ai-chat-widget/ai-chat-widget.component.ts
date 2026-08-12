@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../core/i18n.service';
 import { AgentInspectorService, type ApprovalSnapshot } from '../../core/agent-inspector.service';
+import { SafeMarkdownPipe } from './safe-markdown.pipe';
 
 type MessageStatus = 'consulting' | 'streaming' | 'done';
 
@@ -106,7 +107,7 @@ export const SUGGESTED_PROMPTS = [
 @Component({
   selector: 'app-ai-chat-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SafeMarkdownPipe],
   templateUrl: './ai-chat-widget.component.html',
   styleUrl: './ai-chat-widget.component.scss',
 })
