@@ -6,14 +6,14 @@ import { resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
 import type { ApprovalRequest, ApprovalService, HumanDecision } from '../hitl/hitl.types';
 import type { RagRetriever } from '../rag/retrieval.types';
 import { YVY_HSE_EVALUATION_CASES } from '../evaluation/evaluation.dataset';
-import { EvaluationDatasetError, evaluateObservation, runEvaluationHarness, validateEvaluationDataset } from '../evaluation/evaluation.harness';
+import { calculateEvaluationMetrics, EvaluationDatasetError, evaluateObservation, runEvaluationHarness, validateEvaluationDataset } from '../evaluation/evaluation.harness';
 import type { AgentObservation, EvaluationCase } from '../evaluation/evaluation.types';
 import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { assertSafeEvaluationReport, renderEvaluationMarkdown } from '../evaluation/evaluation.report';
 
 function observationFromExpected(item: EvaluationCase): AgentObservation {
   const e = item.expectation;
-  return { status: e.allowedStatuses?.[0] ?? AgentStatus.COMPLETED, toolsUsed: [...(e.requiredTools ?? [])], ragUsed: e.ragUsed ?? false, citationLabels: e.citationRequired ? ['Verified citation'] : [], sourceIds: e.sourceIdIncludes ? [`yvy-kb-${e.sourceIdIncludes}`] : [], refusalReason: e.refusalReason, errorCode: e.errorCode, approvalStatus: e.approvalStatus, threadLeakage: e.threadLeakage, memoryWriteCount: e.memoryWriteCount, secretExposed: e.secretExposed, jurisdictionQualified: e.jurisdictionQualified, noRelevantEvidence: e.noRelevantEvidence, citationSourceValid:e.citationSourceValid,vectorExposed:e.vectorExposed,operationalFields:e.operationalFieldsExactly,portfolioWildcardNormalized:e.portfolioWildcardNormalized,blankStatusIgnored:e.blankStatusIgnored,overdueFilterApplied:e.overdueFilterApplied,threadContinuity:e.threadContinuity,memoryRetrieved:e.memoryRetrieved,memoryForgotten:e.memoryForgotten,hitlBypassed:e.hitlBypassed,databaseReadOnly:e.databaseReadOnly,domainScopeEnforced:e.domainScopeEnforced };
+  return { status: e.allowedStatuses?.[0] ?? AgentStatus.COMPLETED, toolsUsed: [...(e.requiredTools ?? [])], ragUsed: e.ragUsed ?? false, citationLabels: e.citationRequired ? ['Verified citation'] : [], sourceIds: e.sourceIdIncludes ? [`yvy-kb-${e.sourceIdIncludes}`] : [], refusalReason: e.refusalReason, errorCode: e.errorCode, approvalStatus: e.approvalStatus, threadLeakage: e.threadLeakage, memoryWriteCount: e.memoryWriteCount, secretExposed: e.secretExposed, jurisdictionQualified: e.jurisdictionQualified, noRelevantEvidence: e.noRelevantEvidence, citationSourceValid:e.citationSourceValid,vectorExposed:e.vectorExposed,operationalFields:e.operationalFieldsExactly,portfolioWildcardNormalized:e.portfolioWildcardNormalized,blankStatusIgnored:e.blankStatusIgnored,overdueFilterApplied:e.overdueFilterApplied,threadContinuity:e.threadContinuity,memoryRetrieved:e.memoryRetrieved,memoryForgotten:e.memoryForgotten,hitlBypassed:e.hitlBypassed,databaseReadOnly:e.databaseReadOnly,domainScopeEnforced:e.domainScopeEnforced,responseStatus:e.responseStatus,operationalFact:e.expectedOperationalFact,fabricatedOperationalRecords:e.fabricatedOperationalRecords };
 }
 
 function observe(result: AgentRunResult): AgentObservation {
@@ -34,7 +34,7 @@ const ragRetriever: RagRetriever = { retrieve: async () => ({ status: 'OK', evid
 describe('formal evaluation harness', () => {
   test('versioned dataset is valid and covers required safety domains', () => {
     validateEvaluationDataset(YVY_HSE_EVALUATION_CASES);
-    assert.equal(YVY_HSE_EVALUATION_CASES.length, 36);
+    assert.equal(YVY_HSE_EVALUATION_CASES.length, 37);
     const categories = new Set(YVY_HSE_EVALUATION_CASES.map((item) => item.category));
     for (const required of ['RAG_GROUNDING', 'OPERATIONAL_ROUTING', 'DATA_MINIMIZATION', 'CITATION', 'SAFETY', 'JURISDICTION', 'THREAD_STATE', 'THREAD_ISOLATION', 'MEMORY_POLICY', 'HITL', 'REFUSAL', 'SECRET_PROTECTION', 'FAILURE_RECOVERY', 'DOMAIN_SCOPE']) assert.ok(categories.has(required as any));
   });
@@ -42,11 +42,18 @@ describe('formal evaluation harness', () => {
   test('complete conforming run returns safe evidence and category metrics', async () => {
     const clock = () => new Date('2026-08-08T12:00:00.000Z');
     const report = await runEvaluationHarness(YVY_HSE_EVALUATION_CASES, async (item) => observationFromExpected(item), clock);
-    assert.equal(report.total, 36); assert.equal(report.passed, 36); assert.equal(report.failed, 0); assert.equal(report.passRate, 1);
+    assert.equal(report.total, 37); assert.equal(report.passed, 37); assert.equal(report.failed, 0); assert.equal(report.passRate, 1);
     assert.ok(report.categoryResults.HITL.total >= 2);
     assert.doesNotMatch(JSON.stringify(report), /Use isolation and verify zero energy|system prompt contents/i);
     assertSafeEvaluationReport(report);
     assert.match(renderEvaluationMarkdown(report), /Scenario pass rate: 100.0%/);
+    assert.equal(report.metrics['Tool Selection Accuracy'].percentage,100);
+  });
+
+  test('metric calculation counts failures and handles zero denominators',()=>{
+    const metrics=calculateEvaluationMetrics([{caseId:'x',category:'HITL',passed:false,durationMs:0,checks:[{name:'approval_status',passed:false,evidence:'PENDING'}]}]);
+    assert.deepEqual(metrics['HITL Trigger Accuracy'],{passed:0,total:1,percentage:0});
+    assert.deepEqual(metrics['Operational Answer Accuracy'],{passed:0,total:0,percentage:0});
   });
 
   test('a policy regression produces named failed checks', () => {

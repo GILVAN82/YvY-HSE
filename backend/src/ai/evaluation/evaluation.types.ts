@@ -34,6 +34,9 @@ export interface EvaluationExpectation {
   hitlBypassed?: boolean;
   databaseReadOnly?: boolean;
   domainScopeEnforced?: boolean;
+  responseStatus?: 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
+  expectedOperationalFact?: number;
+  fabricatedOperationalRecords?: number;
 }
 
 export interface EvaluationCase {
@@ -73,6 +76,9 @@ export interface AgentObservation {
   hitlBypassed?: boolean;
   databaseReadOnly?: boolean;
   domainScopeEnforced?: boolean;
+  responseStatus?: 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
+  operationalFact?: number;
+  fabricatedOperationalRecords?: number;
 }
 
 export interface EvaluationCheck { name: string; passed: boolean; evidence: string; }
@@ -89,6 +95,7 @@ export interface EvaluationReport {
   metricName: 'scenario pass rate';
   executionMode: 'CONTROLLED_OFFLINE' | 'LIVE_SAFE_SUBSET';
   categoryResults: Record<string, { passed: number; total: number }>;
+  metrics: Record<string, { passed: number; total: number; percentage: number }>;
   results: EvaluationCaseResult[];
 }
 
