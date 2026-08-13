@@ -14,6 +14,7 @@ import { RagRetrievalService } from './rag/retrieval.service';
 import { createHseTools } from './tools';
 import { temporaryAttachmentService } from './attachments/attachment.service';
 import type { AiChatDependencies } from '../routes/aiChat';
+import type { RequestPrincipal } from '../auth/auth.types';
 
 export interface ProductionAiComposition {
   aiChatDependencies: AiChatDependencies;
@@ -32,7 +33,12 @@ export function createProductionAiComposition(): ProductionAiComposition {
   const embeddings = new OpenAIEmbeddingService();
   const ragRepository = new PostgresRagRetrievalRepository(pool);
   const ragRetriever = new RagRetrievalService(embeddings, ragRepository);
-  const toolFactory = (allowMemoryWrite: boolean) => createHseTools(pool, computeKpi, ragRetriever, longTermMemoryService, allowMemoryWrite);
+  const memoryServiceFactory=(userId:string)=>new ControlledMemoryService(memoryRepository,userId);
+  const toolFactory=(allowMemoryWrite:boolean,principal?:RequestPrincipal)=>{
+    const memory=principal?memoryServiceFactory(principal.userId):longTermMemoryService;
+    const scopedKpi=(project:string,month:number|undefined)=>computeKpi(project,month,principal);
+    return createHseTools(pool,scopedKpi,ragRetriever,memory,allowMemoryWrite,principal);
+  };
 
   const aiChatDependencies: AiChatDependencies = {
     resolveModel,
@@ -41,6 +47,7 @@ export function createProductionAiComposition(): ProductionAiComposition {
     runLegacyAgent,
     threadStateStore,
     longTermMemoryService,
+    memoryServiceFactory,
     humanApprovalService,
     toolFactory,
     attachmentService: temporaryAttachmentService,

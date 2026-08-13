@@ -16,6 +16,7 @@ import { AttachmentError } from '../ai/attachments/attachment.types';
 import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
 import { resolveResponseStatus } from '../ai/responseStatus';
 import type { AuthenticatedRequest } from '../auth/auth.types';
+import { hasPermission } from '../auth/authorization';
 
 export interface AiChatDependencies {
   resolveModel: (provider: string, model: string) => LanguageModel;
@@ -24,9 +25,10 @@ export interface AiChatDependencies {
   runLegacyAgent: (input: Parameters<typeof import('../ai/legacyRunner').runLegacyAgent>[0]) => ReturnType<typeof import('../ai/legacyRunner').runLegacyAgent>;
   threadStateStore: ThreadStateStore;
   longTermMemoryService: MemoryService;
+  memoryServiceFactory?: (userId:string)=>MemoryService;
   humanApprovalService: ApprovalService;
   tools?: ToolSet;
-  toolFactory?: (allowMemoryWrite: boolean) => ToolSet;
+  toolFactory?: (allowMemoryWrite:boolean,principal?:import('../auth/auth.types').RequestPrincipal)=>ToolSet;
   attachmentService: TemporaryAttachmentService;
 }
 // Basic abuse protection. This is a local, single-user app today, but the chat endpoint
@@ -91,6 +93,8 @@ router.get('/ai/providers', (_req: Request, res: Response) => {
 });
 
 const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').RequestHandler => async (req, res) => {
+  const principal=(req as AuthenticatedRequest).principal;
+  if(!hasPermission(principal,'HITL_APPROVE')){res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});return;}
   const approvalId = z.string().uuid().safeParse(req.params.approvalId);
   const body = approvalDecisionSchema.safeParse(req.body);
   if (!approvalId.success || !body.success) {
@@ -100,7 +104,7 @@ const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').Requ
   try {
     const result = await resumeHumanApproval({
       approvalId: approvalId.data, threadId: body.data.threadId, decision,
-      userId: (req as AuthenticatedRequest).principal.userId,
+      userId: principal.userId,
       resolutionNote: body.data.resolutionNote, locale: body.data.locale,
       approvalService: dependencies.humanApprovalService, threadStore: dependencies.threadStateStore,
     });
@@ -138,6 +142,10 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
 
   let attachments = [] as Awaited<ReturnType<TemporaryAttachmentService['resolve']>>;
   const principal = (req as AuthenticatedRequest).principal;
+  if(!hasPermission(principal,'AI_USE')){res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});return;}
+  const memoryAllowed=hasPermission(principal,'MEMORY_USE');
+  const memoryService=memoryAllowed ? (dependencies.memoryServiceFactory?.(principal.userId)??dependencies.longTermMemoryService) : undefined;
+  const scopedToolFactory=dependencies.toolFactory ? (allow:boolean)=>dependencies.toolFactory!(allow&&memoryAllowed,principal) : undefined;
   try { if (attachmentIds.length) attachments = await dependencies.attachmentService.resolve(attachmentIds, threadId!, principal.userId); }
   catch (error) { sendAttachmentError(res, error); return; }
   const attachmentContext = attachments.length ? dependencies.attachmentService.buildContext(attachments, message) : undefined;
@@ -167,8 +175,8 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({ message, userId: principal.userId, history, conversationId, threadId, model: languageModel, emit, threadStore: dependencies.threadStateStore, memoryService: dependencies.longTermMemoryService, approvalService: dependencies.humanApprovalService, tools: dependencies.tools, toolFactory: dependencies.toolFactory, attachments, attachmentContext, locale })
-      : dependencies.runLegacyAgent({ message, history, conversationId, model: languageModel, emit, tools: dependencies.tools ?? dependencies.toolFactory?.(false) });
+      ? dependencies.runHseAgent({message,userId:principal.userId,history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale})
+      : dependencies.runLegacyAgent({message,history,conversationId,model:languageModel,emit,tools:dependencies.tools??scopedToolFactory?.(false)});
 
   const result = await run;
 

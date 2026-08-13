@@ -1,9 +1,13 @@
 import type { Request } from 'express';
+import type { AppRole, Permission } from './authorization';
 
 export interface RequestPrincipal {
   userId: string;
   email: string;
   displayName: string;
+  role: AppRole;
+  permissions: Permission[];
+  allowedProjectIds: string[];
 }
 
 export interface AuthenticatedRequest extends Request {

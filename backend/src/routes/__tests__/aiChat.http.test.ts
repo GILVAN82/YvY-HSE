@@ -40,12 +40,12 @@ const approvalService = {
   deleteForTest: async () => undefined,
 } as any;
 
-async function start(model: any, tools?: any, approvals: any = approvalService) {
+async function start(model:any,tools?:any,approvals:any=approvalService,principal:any={userId:'11111111-1111-4111-8111-111111111111',email:'test@example.invalid',displayName:'Test User',role:'ADMIN',permissions:['HSE_DATA_READ','PROJECT_READ','AI_USE','MEMORY_USE','HITL_APPROVE','ADMIN_ACCESS'],allowedProjectIds:[]}) {
   resetGraphCache();
   const store = new MemoryThreadStore();
   const app = express();
   app.use(express.json());
-  app.use((req: any, _res, next) => { req.principal = { userId: '11111111-1111-4111-8111-111111111111', email: 'test@example.invalid', displayName: 'Test User' }; next(); });
+  app.use((req:any,_res,next)=>{req.principal=principal;next();});
   app.use('/api', createAiChatRouter({
     resolveModel: () => model,
     readOrchestrator: () => 'langgraph',
@@ -78,11 +78,13 @@ async function postJson(port: number, path: string, payload: Record<string, unkn
 
 class HttpApprovalService {
   approvals = new Map<string, ApprovalRequest>();
+  lastResolvedBy: string | undefined;
   async create(threadId: string): Promise<ApprovalRequest> {
     const approval: ApprovalRequest = { approvalId: randomUUID(), threadId, actionType: 'LOTO_SAFETY_EXECUTION', summary: 'LOTO approval', reason: 'Human decision required', riskLevel: 'CRITICAL', status: 'PENDING', requestedAt: new Date().toISOString() };
     this.approvals.set(approval.approvalId, approval); return approval;
   }
-  async resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string): Promise<ApprovalRequest> {
+  async resolve(approvalId:string,threadId:string,decision:HumanDecision,note?:string,resolvedByUserId?:string):Promise<ApprovalRequest> {
+    this.lastResolvedBy=resolvedByUserId;
     const current = this.approvals.get(approvalId);
     if (!current || current.threadId !== threadId || current.status !== 'PENDING') throw new ApprovalResolutionError('not pending');
     const resolved = { ...current, status: decision === 'APPROVE' ? 'APPROVED' as const : 'REJECTED' as const, resolvedAt: new Date().toISOString(), ...(note ? { resolutionNote: note } : {}) };
@@ -230,6 +232,15 @@ describe('POST /api/ai/approvals HTTP boundary', () => {
     const result = await postJson(port, `/api/ai/approvals/${pending.approvalId}/reject`, { threadId });
     assert.equal(result.status, 200); assert.equal(result.body.approval.status, 'REJECTED'); assert.equal(result.body.responseStatus, 'REJECTED'); assert.ok(result.body.approval.resolvedAt);
     assert.match(result.body.text, /remains blocked and must not proceed/);
+  });
+
+  test('ordinary users receive 403 while approver identity comes only from RequestPrincipal',async()=>{
+    const approvals=new HttpApprovalService();const pending=await approvals.create(threadId);
+    const ordinary={userId:'22222222-2222-4222-8222-222222222222',email:'user@example.invalid',displayName:'User',role:'HSE_USER',permissions:['AI_USE','MEMORY_USE','HSE_DATA_READ','PROJECT_READ'],allowedProjectIds:['PRJ-001']};
+    const {port}=await start(createMockModel([{text:'unused'}]),undefined,approvals,ordinary);
+    const denied=await postJson(port,`/api/ai/approvals/${pending.approvalId}/approve`,{threadId,userId:'spoofed-admin'});assert.equal(denied.status,403);assert.equal(approvals.lastResolvedBy,undefined);
+    const approver={...ordinary,userId:'33333333-3333-4333-8333-333333333333',role:'APPROVER',permissions:[...ordinary.permissions,'HITL_APPROVE']};
+    const second=await start(createMockModel([{text:'unused'}]),undefined,approvals,approver);const allowed=await postJson(second.port,`/api/ai/approvals/${pending.approvalId}/approve`,{threadId,userId:'spoofed-admin'});assert.equal(allowed.status,200);assert.equal(approvals.lastResolvedBy,approver.userId);
   });
 
   test('rejects wrong thread, missing approval and invalid identifiers safely', async () => {

@@ -57,25 +57,25 @@ function tokens(text: string): Set<string> {
 }
 
 export class ControlledMemoryService implements MemoryService {
-  constructor(private readonly repository: MemoryRepository) {}
+  constructor(private readonly repository: MemoryRepository, private readonly userId?: string) {}
   async save(candidate: SaveMemoryCandidate): Promise<SaveMemoryResult> {
     const reason = validateMemoryCandidate(candidate); if (reason) return { status: 'REJECTED', reason };
     const content = normalizeMemoryContent(candidate.content);
     const hash = createHash('sha256').update(content.toLowerCase()).digest('hex');
-    const duplicate = await this.repository.findByHash(candidate.category, hash);
+    const duplicate = await this.repository.findByHash(candidate.category, hash, this.userId);
     if (duplicate) return { status: 'UNCHANGED', memory: duplicate };
-    const existing = await this.repository.findByKey(candidate.memoryKey);
+    const existing = await this.repository.findByKey(candidate.memoryKey, this.userId);
     if (existing && !candidate.update) return { status: 'CONFLICT', reason: 'EXPLICIT_UPDATE_REQUIRED' };
-    if (existing) return { status: 'UPDATED', memory: await this.repository.update(candidate.memoryKey, candidate.category, content, hash) };
-    if (await this.repository.countActive() >= MAX_ACTIVE_MEMORIES) return { status: 'REJECTED', reason: 'ACTIVE_MEMORY_LIMIT' };
-    return { status: 'CREATED', memory: await this.repository.create(candidate.memoryKey, candidate.category, content, hash) };
+    if (existing) return { status:'UPDATED',memory:await this.repository.update(candidate.memoryKey,candidate.category,content,hash,this.userId) };
+    if (await this.repository.countActive(this.userId)>=MAX_ACTIVE_MEMORIES)return {status:'REJECTED',reason:'ACTIVE_MEMORY_LIMIT'};
+    return {status:'CREATED',memory:await this.repository.create(candidate.memoryKey,candidate.category,content,hash,this.userId)};
   }
   async retrieveRelevant(query: string): Promise<LongTermMemory[]> {
     const queryTokens = tokens(query); if (!queryTokens.size) return [];
-    const candidates = await this.repository.listActive(MAX_ACTIVE_MEMORIES);
+    const candidates = await this.repository.listActive(MAX_ACTIVE_MEMORIES,this.userId);
     const ranked = candidates.map((memory) => ({ memory, score: [...tokens(`${memory.memoryKey} ${memory.category} ${memory.content}`)].filter((token) => queryTokens.has(token)).length }))
       .filter((item) => item.score > 0).sort((a, b) => b.score - a.score || a.memory.memoryKey.localeCompare(b.memory.memoryKey)).slice(0, MAX_RETRIEVED_MEMORIES).map((item) => item.memory);
-    await this.repository.touch(ranked.map((memory) => memory.id)); return ranked;
+    await this.repository.touch(ranked.map((memory)=>memory.id),this.userId); return ranked;
   }
-  forget(memoryKey: string) { return this.repository.disable(memoryKey); }
+  forget(memoryKey:string){return this.repository.disable(memoryKey,this.userId);}
 }

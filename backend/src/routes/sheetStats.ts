@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/pool';
 import { buildFilter, findTable, TableMeta } from './generic';
+import type { AuthenticatedRequest } from '../auth/auth.types';
+import { assertProjectAccess,hasPermission,requirePermission } from '../auth/authorization';
 
 export const statsRouter = Router();
+statsRouter.use(requirePermission('HSE_DATA_READ'));
 
 /**
  * A KPI card shown above a sheet's table. `fmt` tells the frontend how to render
@@ -351,7 +354,9 @@ statsRouter.get('/stats/:sheet/:tableIndex(\\d+)?', async (req: Request, res: Re
   const t = findTable(sheet, ti);
   if (!t) return res.status(404).json({ error: 'Unknown sheet/table' });
 
-  const { whereSql, params } = buildFilter(t, req.query as Record<string, string>);
+  const principal=(req as AuthenticatedRequest).principal; const requested=(req.query as Record<string,string>).project;
+  if(requested)try{assertProjectAccess(principal,requested);}catch{return res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});}
+  const {whereSql,params}=buildFilter(t,req.query as Record<string,string>,hasPermission(principal,'ADMIN_ACCESS')?null:principal.allowedProjectIds);
   const countRes = await pool.query(`SELECT COUNT(*) FROM "${t.db_table}" ${whereSql}`, params);
   const total = Number(countRes.rows[0].count);
   const rowsRes = await pool.query(`SELECT * FROM "${t.db_table}" ${whereSql} LIMIT ${MAX_ROWS}`, params);

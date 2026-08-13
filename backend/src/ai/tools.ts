@@ -6,6 +6,8 @@ import { MEMORY_CATEGORIES } from './memory/memory.types';
 import { ACTION_OVERDUE_SQL } from '../domain/actions';
 import { projectActionsForModel } from './operationalDataProjection';
 import type { Pool } from 'pg';
+import type { RequestPrincipal } from '../auth/auth.types';
+import { assertProjectAccess, AuthorizationError, hasPermission } from '../auth/authorization';
 
 /**
  * Tool registry shared by both orchestrators (legacy AI SDK loop and the LangGraph
@@ -20,11 +22,12 @@ import type { Pool } from 'pg';
 async function safely<T>(toolName: string, run: () => Promise<T>) {
   try {
     return await run();
-  } catch {
+  } catch (error) {
     return {
       error: true,
       tool: toolName,
-      message: 'The system data query could not be completed.',
+      ...(error instanceof AuthorizationError?{code:'AUTH_FORBIDDEN'}:{}),
+      message:error instanceof AuthorizationError?'The requested resource is not available.':'The system data query could not be completed.',
     };
   }
 }
@@ -53,7 +56,9 @@ function operationalRows<T extends Record<string, unknown>>(rows: T[]): Operatio
   return operationalResult(data, data.length);
 }
 
-export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: ComputeKpi, ragRetriever: RagRetriever, memoryService?: MemoryService, allowMemoryWrite = false) {
+export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi,ragRetriever:RagRetriever,memoryService?:MemoryService,allowMemoryWrite=false,principal?:RequestPrincipal) {
+  const scoped=principal && !hasPermission(principal,'ADMIN_ACCESS') ? principal.allowedProjectIds : null;
+  const check=(project?:string)=>{if(principal&&project&&project!=='*')assertProjectAccess(principal,project);};
   return {
   get_kpi: tool({
     description:
@@ -80,11 +85,14 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
     execute: async ({ project, limit }) =>
       safely('list_incidents', async () => {
         const params: any[] = [];
-        let where = '';
-        if (project) {
+        const clauses:string[]=[]; check(project);
+        if (project && project!=='*') {
           params.push(project);
-          where = 'WHERE project_code = $1';
+          clauses.push(`project_code = $${params.length}`);
+        } else if(scoped){
+          params.push(scoped); clauses.push(`project_code = ANY($${params.length}::text[])`);
         }
+        const where=clauses.length?`WHERE ${clauses.join(' AND ')}`:'';
         params.push(limit);
         const r = await database.query(
           `SELECT project_code, date_of_incident, incident_type, severity, description
@@ -115,8 +123,11 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
         // The shared prompt uses "*" to mean the whole portfolio. It must never
         // become a literal project-code predicate.
         if (normalizedProject && normalizedProject !== '*') {
+          check(normalizedProject);
           params.push(normalizedProject);
           where.push(`project = $${params.length}`);
+        } else if(scoped){
+          params.push(scoped); where.push(`project = ANY($${params.length}::text[])`);
         }
         if (normalizedStatus) {
           params.push(normalizedStatus);
@@ -158,13 +169,13 @@ export function createHseTools(database: Pick<Pool, 'query'>, computeKpi: Comput
   }),
 
   get_projects: tool({
-    description: 'Lists all portfolio projects with code, name, status and managers.',
+    description: 'Lists authorized portfolio projects with code, name and status.',
     inputSchema: z.object({}),
     execute: async () =>
       safely('get_projects', async () => {
-        const r = await database.query(
-          'SELECT code, name, status, project_manager, hse_manager FROM projects ORDER BY code'
-        );
+        const r = scoped
+          ? await database.query('SELECT code,name,status FROM projects WHERE code=ANY($1::text[]) ORDER BY code',[scoped])
+          : await database.query('SELECT code,name,status FROM projects ORDER BY code');
         return operationalRows(r.rows);
       }),
   }),

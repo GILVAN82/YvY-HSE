@@ -78,7 +78,7 @@ describe('AI chat widget conversation controls', () => {
       imports: [AiChatWidgetComponent],
       providers: [{ provide: I18nService, useValue: { t: (value: string) => value, lang: () => 'en' } }],
     });
-    return TestBed.createComponent(AiChatWidgetComponent);
+    const fixture=TestBed.createComponent(AiChatWidgetComponent); fixture.componentInstance.auth.user.set({userId:'1',email:'approver@example.invalid',displayName:'Approver',role:'APPROVER',permissions:['AI_USE','HITL_APPROVE'],allowedProjectIds:['PRJ-001']}); return fixture;
   }
 
   afterEach(() => TestBed.resetTestingModule());
@@ -166,6 +166,8 @@ describe('AI chat widget conversation controls', () => {
     expect(fixture.nativeElement.querySelector('button.approve')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('button.reject')).not.toBeNull();
   });
+
+  it('does not expose functional approval controls without HITL_APPROVE',()=>{const fixture=createComponent();const component=fixture.componentInstance;component.auth.user.update(user=>user?{...user,role:'HSE_USER',permissions:['AI_USE']}:null);component.open.set(true);component.providerStatus.set('ready');component.approval.set({approvalId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',threadId:'11111111-2222-4333-8444-555555555555',actionType:'LOTO_SAFETY_EXECUTION',riskLevel:'CRITICAL',status:'PENDING'});fixture.detectChanges();expect(fixture.nativeElement.querySelector('.approval-actions')).toBeNull();expect(fixture.nativeElement.textContent).toContain('authorized approver');});
 
   it('updates to APPROVED from the backend response and removes decision buttons', async () => {
     const fixture = createComponent(); const component = fixture.componentInstance;

@@ -1,10 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/pool';
+import type { AuthenticatedRequest } from '../auth/auth.types';
+import { hasPermission, requirePermission } from '../auth/authorization';
 
 export const projectsRouter = Router();
+projectsRouter.use(requirePermission('PROJECT_READ'));
 
-projectsRouter.get('/projects', async (_req: Request, res: Response) => {
-  const r = await pool.query('SELECT * FROM projects ORDER BY code');
+projectsRouter.get('/projects', async (req: Request, res: Response) => {
+  const p=(req as AuthenticatedRequest).principal;
+  const r=hasPermission(p,'ADMIN_ACCESS')?await pool.query('SELECT * FROM projects ORDER BY code'):await pool.query('SELECT * FROM projects WHERE code=ANY($1::text[]) ORDER BY code',[p.allowedProjectIds]);
   res.json(r.rows);
 });
 
@@ -35,6 +39,7 @@ projectsRouter.put('/projects/:code', async (req: Request, res: Response) => {
 });
 
 export const listsRouter = Router();
+listsRouter.use(requirePermission('HSE_DATA_READ'));
 
 listsRouter.get('/lists', async (_req: Request, res: Response) => {
   const r = await pool.query('SELECT "group", title, item FROM lookup_lists ORDER BY "group", title, id');

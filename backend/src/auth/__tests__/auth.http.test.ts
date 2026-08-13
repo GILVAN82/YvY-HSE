@@ -13,7 +13,7 @@ class FakeAuthRepository implements AuthRepository {
   user: AuthUser | null = null;
   async findUserByEmail(email: string) { return this.user?.email === email ? this.user : null; }
   async createSession(_userId: string, hash: string, expiresAt: Date) { if (this.user) this.sessions.set(hash, { user: this.user, expiresAt }); }
-  async findSession(hash: string) { const item=this.sessions.get(hash); return item && item.expiresAt > new Date() && item.user.active !== false ? item : null; }
+  async findSession(hash:string){const item=this.sessions.get(hash);return item&&item.expiresAt>new Date()&&this.user?.active?item:null;}
   async deleteSession(hash: string) { this.sessions.delete(hash); }
 }
 
@@ -35,19 +35,20 @@ async function request(port:number, method:string, path:string, body?:unknown, c
 
 describe('authentication HTTP foundation',()=>{
   test('login, me, protected route and logout use an opaque HttpOnly session',async()=>{
-    const repo=new FakeAuthRepository(); repo.user={userId:'11111111-1111-4111-8111-111111111111',email:'demo@example.invalid',displayName:'Demo User',passwordHash:await bcrypt.hash('correct-password',4),active:true};
-    const port=await start(repo); const login=await request(port,'POST','/api/auth/login',{email:repo.user.email,password:'correct-password',userId:'spoofed'});
-    assert.equal(login.status,200); assert.ok(login.cookie?.startsWith('yvy_hse_session=')); assert.equal(login.body.user.userId,repo.user.userId);
+    const repo=new FakeAuthRepository(); repo.user={userId:'11111111-1111-4111-8111-111111111111',email:'demo@example.invalid',displayName:'Demo User',passwordHash:await bcrypt.hash('correct-password',4),active:true,role:'HSE_USER',permissions:['HSE_DATA_READ','PROJECT_READ','AI_USE','MEMORY_USE'],allowedProjectIds:['PRJ-001']};
+    const port=await start(repo); const login=await request(port,'POST','/api/auth/login',{email:repo.user!.email,password:'correct-password',userId:'spoofed',role:'ADMIN',permissions:['ADMIN_ACCESS'],allowedProjectIds:['PRJ-X']});
+    assert.equal(login.status,200); assert.ok(login.cookie?.startsWith('yvy_hse_session=')); assert.equal(login.body.user.userId,repo.user!.userId);
+    assert.equal(login.body.user.role,'HSE_USER'); assert.deepEqual(login.body.user.allowedProjectIds,['PRJ-001']);
     const me=await request(port,'GET','/api/auth/me',undefined,login.cookie); assert.equal(me.status,200); assert.equal(me.body.user.displayName,'Demo User');
     assert.equal((await request(port,'GET','/api/protected',undefined,login.cookie)).status,200);
     assert.equal((await request(port,'POST','/api/auth/logout',{},login.cookie)).status,204);
     assert.equal((await request(port,'GET','/api/auth/me',undefined,login.cookie)).status,401);
   });
   test('invalid credentials, missing, malformed, expired and disabled sessions fail closed',async()=>{
-    const repo=new FakeAuthRepository(); repo.user={userId:'11111111-1111-4111-8111-111111111111',email:'demo@example.invalid',displayName:'Demo User',passwordHash:await bcrypt.hash('correct-password',4),active:true};
-    const port=await start(repo); assert.equal((await request(port,'POST','/api/auth/login',{email:repo.user.email,password:'wrong-password'})).status,401);
+    const repo=new FakeAuthRepository(); repo.user={userId:'11111111-1111-4111-8111-111111111111',email:'demo@example.invalid',displayName:'Demo User',passwordHash:await bcrypt.hash('correct-password',4),active:true,role:'HSE_USER',permissions:['HSE_DATA_READ','PROJECT_READ','AI_USE','MEMORY_USE'],allowedProjectIds:['PRJ-001']};
+    const port=await start(repo); assert.equal((await request(port,'POST','/api/auth/login',{email:repo.user!.email,password:'wrong-password'})).status,401);
     assert.equal((await request(port,'GET','/api/protected')).status,401); assert.equal((await request(port,'GET','/api/protected',undefined,'yvy_hse_session=bad')).status,401);
-    const expired='a'.repeat(43); repo.sessions.set(hashSessionToken(expired),{user:repo.user,expiresAt:new Date(0)}); assert.equal((await request(port,'GET','/api/protected',undefined,`yvy_hse_session=${expired}`)).status,401);
-    repo.user.active=false; assert.equal((await request(port,'POST','/api/auth/login',{email:repo.user.email,password:'correct-password'})).status,401);
+    const expired='a'.repeat(43); repo.sessions.set(hashSessionToken(expired),{user:repo.user!,expiresAt:new Date(0)}); assert.equal((await request(port,'GET','/api/protected',undefined,`yvy_hse_session=${expired}`)).status,401);
+    repo.user!.active=false; assert.equal((await request(port,'POST','/api/auth/login',{email:repo.user!.email,password:'correct-password'})).status,401);
   });
 });

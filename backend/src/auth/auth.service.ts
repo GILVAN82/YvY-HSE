@@ -16,7 +16,7 @@ export class AuthService {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(this.now().getTime() + SESSION_TTL_MS);
     await this.repository.createSession(user.userId, hashSessionToken(token), expiresAt);
-    return { token, user: { userId: user.userId, email: user.email, displayName: user.displayName }, expiresAt };
+    return { token, user: { userId:user.userId,email:user.email,displayName:user.displayName,role:user.role,permissions:user.permissions,allowedProjectIds:user.allowedProjectIds }, expiresAt };
   }
 
   async authenticate(token: string | undefined): Promise<RequestPrincipal | null> {

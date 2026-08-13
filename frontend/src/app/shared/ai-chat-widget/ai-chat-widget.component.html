@@ -93,10 +93,11 @@
     <div><span>Operation</span><code>{{ item.actionType }}</code></div>
     <div><span>Risk</span><b>{{ item.riskLevel }}</b></div>
     <div><span>Status</span><b [class.rejected]="item.status === 'REJECTED'">{{ item.status }}</b></div>
-    <div class="approval-actions" *ngIf="item.status === 'PENDING'">
+    <div class="approval-actions" *ngIf="item.status === 'PENDING' && canApprove()">
       <button type="button" class="approve" (click)="resolveApproval('approve')" [disabled]="resolvingApproval()">Approve</button>
       <button type="button" class="reject" (click)="resolveApproval('reject')" [disabled]="resolvingApproval()">Reject</button>
     </div>
+    <small *ngIf="item.status === 'PENDING' && !canApprove()">An authorized approver must complete this decision.</small>
     <small class="approval-error" *ngIf="approvalError()">{{ approvalError() }}</small>
   </section>
 

@@ -12,13 +12,21 @@ committing its password:
 $env:DEMO_USER_EMAIL='demo@example.invalid'
 $env:DEMO_USER_PASSWORD='<choose-a-local-password-of-at-least-12-characters>'
 $env:DEMO_USER_DISPLAY_NAME='YvY HSE Demo User'
+$env:DEMO_USER_ROLE='HSE_USER'
+$env:DEMO_USER_PROJECTS='PRJ-001'
 cd backend
 npm run auth:provision
 ```
 
 The password is hashed with bcrypt before storage. The browser receives only an opaque,
 expiring `HttpOnly` session cookie; no password, hash or session token is stored in
-frontend storage. Long-term AI memory remains global until Capstone Sprint 3.3.
+frontend storage.
+
+Authentication establishes who the user is. Authorization is enforced separately by
+the backend using centrally defined role permissions and project memberships. The LLM
+may select an AI tool, but the server applies the authenticated project scope before
+any SQL result or KPI aggregate can reach the model. Long-term memory is also owned by
+the authenticated user, and critical HITL decisions require `HITL_APPROVE`.
 
 ## Problem
 

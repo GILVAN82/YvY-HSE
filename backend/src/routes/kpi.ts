@@ -1,11 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/pool';
 import { isActionOverdue } from '../domain/actions';
+import type { AuthenticatedRequest, RequestPrincipal } from '../auth/auth.types';
+import { assertProjectAccess, hasPermission, requirePermission } from '../auth/authorization';
 
 export const kpiRouter = Router();
+kpiRouter.use(requirePermission('HSE_DATA_READ'));
 
-async function getRateBase(): Promise<number> {
-  const r = await pool.query(`SELECT value FROM settings WHERE named_range = 'RateBase'`);
+async function getRateBase(database:Pick<typeof pool,'query'>=pool):Promise<number> {
+  const r = await database.query(`SELECT value FROM settings WHERE named_range = 'RateBase'`);
   const v = r.rows[0]?.value ? Number(r.rows[0].value) : 1000000;
   return isNaN(v) ? 1000000 : v;
 }
@@ -17,21 +20,20 @@ function monthFilter(monthIdx: number | undefined, dateCol: string, params: any[
 }
 
 /** Core KPI calculation, shared by the /api/kpi route and the AI chat tool. */
-export async function computeKpi(project: string, monthIdx: number | undefined) {
-  const rateBase = await getRateBase();
+export async function computeKpi(project:string,monthIdx:number|undefined,principal?:RequestPrincipal,database:Pick<typeof pool,'query'>=pool) {
+  const rateBase = await getRateBase(database);
 
-  const prjParams: any[] = [];
-  let prjWhere = '';
-  if (project && project !== '*') {
-    prjParams.push(project);
-    prjWhere = ` AND project_code = $${prjParams.length}`;
-  }
+  if(principal && project && project!=='*') assertProjectAccess(principal,project);
+  const allowed=principal && !hasPermission(principal,'ADMIN_ACCESS') ? principal.allowedProjectIds : null;
+  const scope=(column:string,params:any[])=>{if(project&&project!=='*'){params.push(project);return ` AND ${column}=$${params.length}`;} if(allowed){params.push(allowed);return ` AND ${column}=ANY($${params.length}::text[])`;} return '';};
+
+  const prjParams:any[]=[]; const prjWhere=scope('project_code',prjParams);
 
   // Man-hours
   {
     const params = [...prjParams];
     const mf = monthFilter(monthIdx, 'date', params);
-    const r = await pool.query(
+    const r = await database.query(
       `SELECT COALESCE(SUM(total_manhours),0) AS mh FROM manpower_log WHERE 1=1 ${prjWhere.replace('project_code','project_code')} ${mf}`,
       params
     );
@@ -41,7 +43,7 @@ export async function computeKpi(project: string, monthIdx: number | undefined) 
   // Incidents (excluding Near Miss = recordable)
   const incParams: any[] = [...prjParams];
   const incMf = monthFilter(monthIdx, 'date_of_incident', incParams);
-  const incRows = await pool.query(
+  const incRows = await database.query(
     `SELECT severity, incident_type FROM incident_register WHERE 1=1 ${prjWhere} ${incMf}`,
     incParams
   );
@@ -54,13 +56,8 @@ export async function computeKpi(project: string, monthIdx: number | undefined) 
 
   // Actions: open/overdue (computed_status column already stores computed value from the sheet;
   // if you want live recompute, replace with a CASE based on target_date < now() and status).
-  const actParams: any[] = [];
-  let actWhere = '';
-  if (project && project !== '*') {
-    actParams.push(project);
-    actWhere = ` WHERE project = $1`;
-  }
-  const actRows = await pool.query(
+  const actParams:any[]=[]; const actScope=scope('project',actParams); const actWhere=actScope?` WHERE 1=1 ${actScope}`:'';
+  const actRows = await database.query(
     `SELECT status, target_date FROM action_tracker_capa ${actWhere}`,
     actParams
   );
@@ -75,32 +72,21 @@ export async function computeKpi(project: string, monthIdx: number | undefined) 
   // Active permits
   const permParams: any[] = [];
   let permWhere = `WHERE status IN ('Active','Open')`;
-  if (project && project !== '*') {
-    permParams.push(project);
-    permWhere += ` AND project = $${permParams.length}`;
-  }
-  const permRows = await pool.query(`SELECT id FROM permit_to_work_register ${permWhere}`, permParams);
+  permWhere += scope('project',permParams);
+  const permRows = await database.query(`SELECT id FROM permit_to_work_register ${permWhere}`,permParams);
 
   // Training %
   const trainParams: any[] = [];
-  let trainWhere = '';
-  if (project && project !== '*') {
-    trainParams.push(project);
-    trainWhere = `WHERE project = $1`;
-  }
-  const trainRows = await pool.query(`SELECT status FROM training_competency ${trainWhere}`, trainParams);
+  const trainScope=scope('project',trainParams); const trainWhere=trainScope?`WHERE 1=1 ${trainScope}`:'';
+  const trainRows = await database.query(`SELECT status FROM training_competency ${trainWhere}`,trainParams);
   const trainingPct = trainRows.rows.length
     ? trainRows.rows.filter(r => r.status === 'Valid').length / trainRows.rows.length
     : null;
 
   // Audit score average
   const auditParams: any[] = [];
-  let auditWhere = '';
-  if (project && project !== '*') {
-    auditParams.push(project);
-    auditWhere = `WHERE project = $1`;
-  }
-  const auditRows = await pool.query(
+  const auditScope=scope('project',auditParams); const auditWhere=auditScope?`WHERE 1=1 ${auditScope}`:'';
+  const auditRows = await database.query(
     `SELECT AVG(overall_audit_score) AS avg FROM audit_tracker ${auditWhere}`,
     auditParams
   );
@@ -108,7 +94,7 @@ export async function computeKpi(project: string, monthIdx: number | undefined) 
 
   // Days since last LTI
   const ltiParams: any[] = [...prjParams];
-  const ltiRows = await pool.query(
+  const ltiRows = await database.query(
     `SELECT MAX(date_of_incident) AS last FROM incident_register WHERE incident_type = 'Lost Time Injury' ${prjWhere}`,
     ltiParams
   );
@@ -142,5 +128,5 @@ kpiRouter.get('/kpi', async (req: Request, res: Response) => {
   const project = (req.query.project as string) || '';
   const monthQ = req.query.month as string | undefined;
   const monthIdx = monthQ !== undefined && monthQ !== '*' ? Number(monthQ) : undefined;
-  res.json(await computeKpi(project, monthIdx));
+  res.json(await computeKpi(project,monthIdx,(req as AuthenticatedRequest).principal));
 });

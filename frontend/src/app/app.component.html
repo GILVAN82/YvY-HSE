@@ -39,7 +39,7 @@
             <div class="usermenu" *ngIf="userMenuOpen()" role="menu">
               <div class="usermenu-head">
                 <strong>{{ userName() }}</strong>
-                <span>{{ auth.user()?.email }}</span>
+                <span>{{ auth.user()?.email }} · {{ auth.user()?.role }}</span>
               </div>
               <button type="button" class="usermenu-item" role="menuitem" (click)="toggleTheme()">
                 <lucide-icon [img]="theme() === 'dark' ? sunIcon : moonIcon" [size]="16"></lucide-icon>

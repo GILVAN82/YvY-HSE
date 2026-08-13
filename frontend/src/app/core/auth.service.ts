@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 
-export interface AuthenticatedUser { userId: string; email: string; displayName: string }
+export interface AuthenticatedUser { userId:string;email:string;displayName:string;role:'ADMIN'|'HSE_MANAGER'|'HSE_USER'|'APPROVER';permissions:string[];allowedProjectIds:string[] }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

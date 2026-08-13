@@ -1,17 +1,20 @@
 import type { Pool } from 'pg';
 import type { AuthRepository, AuthUser, SessionRecord } from './auth.types';
+import { permissionsForRole, type AppRole } from './authorization';
 
 export class PostgresAuthRepository implements AuthRepository {
   constructor(private readonly db: Pick<Pool, 'query'>) {}
 
   async findUserByEmail(email: string): Promise<AuthUser | null> {
     const result = await this.db.query(
-      `SELECT id::text, email, display_name, password_hash, active
-       FROM app_user WHERE lower(email)=lower($1)`, [email]
+      `SELECT u.id::text, u.email, u.display_name, u.password_hash, u.active, u.role,
+              COALESCE(array_agg(up.project_code) FILTER (WHERE up.project_code IS NOT NULL),'{}') AS allowed_projects
+       FROM app_user u LEFT JOIN app_user_project up ON up.user_id=u.id
+       WHERE lower(u.email)=lower($1) GROUP BY u.id`, [email]
     );
     if (!result.rowCount) return null;
     const row = result.rows[0];
-    return { userId: row.id, email: row.email, displayName: row.display_name, passwordHash: row.password_hash, active: row.active === true };
+    const role=row.role as AppRole; return { userId:row.id,email:row.email,displayName:row.display_name,passwordHash:row.password_hash,active:row.active===true,role,permissions:permissionsForRole(role),allowedProjectIds:row.allowed_projects??[] };
   }
 
   async createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
@@ -20,13 +23,14 @@ export class PostgresAuthRepository implements AuthRepository {
 
   async findSession(tokenHash: string): Promise<SessionRecord | null> {
     const result = await this.db.query(
-      `SELECT u.id::text, u.email, u.display_name, s.expires_at
-       FROM app_session s JOIN app_user u ON u.id=s.user_id
-       WHERE s.token_hash=$1 AND s.expires_at > now() AND u.active=true`, [tokenHash]
+      `SELECT u.id::text, u.email, u.display_name, u.role, s.expires_at,
+              COALESCE(array_agg(up.project_code) FILTER (WHERE up.project_code IS NOT NULL),'{}') AS allowed_projects
+       FROM app_session s JOIN app_user u ON u.id=s.user_id LEFT JOIN app_user_project up ON up.user_id=u.id
+       WHERE s.token_hash=$1 AND s.expires_at > now() AND u.active=true GROUP BY u.id,s.expires_at`, [tokenHash]
     );
     if (!result.rowCount) return null;
     const row = result.rows[0];
-    return { user: { userId: row.id, email: row.email, displayName: row.display_name }, expiresAt: row.expires_at };
+    const role=row.role as AppRole; return { user:{userId:row.id,email:row.email,displayName:row.display_name,role,permissions:permissionsForRole(role),allowedProjectIds:row.allowed_projects??[]},expiresAt:row.expires_at };
   }
 
   async deleteSession(tokenHash: string): Promise<void> {

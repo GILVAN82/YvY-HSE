@@ -1,9 +1,10 @@
-import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../core/i18n.service';
 import { AgentInspectorService, type ApprovalSnapshot } from '../../core/agent-inspector.service';
+import { AuthService } from '../../core/auth.service';
 import { SafeMarkdownPipe } from './safe-markdown.pipe';
 
 type MessageStatus = 'consulting' | 'streaming' | 'done';
@@ -115,6 +116,8 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
   /** UI chrome follows the app language; free-form conversation content is not rewritten. */
   readonly i18n = inject(I18nService);
   private readonly agentInspector = inject(AgentInspectorService);
+  readonly auth = inject(AuthService);
+  readonly canApprove = computed(() => this.auth.user()?.permissions.includes('HITL_APPROVE') === true);
   open = signal(false);
   settingsOpen = signal(false);
   loading = signal(false);

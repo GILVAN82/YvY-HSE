@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/pool';
 import tableMeta from '../config/tableMeta.json';
+import type { AuthenticatedRequest } from '../auth/auth.types';
+import { assertProjectAccess, hasPermission, requirePermission } from '../auth/authorization';
 
 export type ColumnMeta = { name: string; header: string; type: 'TEXT' | 'DATE' | 'NUMERIC' };
 export type TableMeta = { db_table: string; title: string; columns: ColumnMeta[] };
@@ -22,6 +24,7 @@ function slug(s: string): string {
 }
 
 export const genericRouter = Router();
+genericRouter.use(requirePermission('HSE_DATA_READ'));
 
 // GET /api/sheets  -> list of sheets + table metadata (for the frontend to build forms/columns)
 genericRouter.get('/sheets', (_req: Request, res: Response) => {
@@ -43,7 +46,7 @@ export function findTable(sheet: string, tableIndex: number): TableMeta | null {
  * Builds the WHERE clause shared by /api/data and /api/stats, so the KPI cards on a
  * sheet page always count exactly the rows the table below them is listing.
  */
-export function buildFilter(t: TableMeta, query: Record<string, string>): { whereSql: string; params: any[] } {
+export function buildFilter(t:TableMeta,query:Record<string,string>,allowedProjects?:readonly string[]|null):{whereSql:string;params:any[]} {
   const { q, project, status } = query;
   const where: string[] = [];
   const params: any[] = [];
@@ -59,6 +62,8 @@ export function buildFilter(t: TableMeta, query: Record<string, string>): { wher
   if (project && projectCol) {
     params.push(project);
     where.push(`"${projectCol.name}" = $${params.length}`);
+  } else if(projectCol && allowedProjects){
+    params.push([...allowedProjects]); where.push(`"${projectCol.name}" = ANY($${params.length}::text[])`);
   }
   const statusCol = t.columns.find(c => c.name === 'status' || c.name.includes('status'));
   if (status && statusCol) {
@@ -77,7 +82,11 @@ genericRouter.get('/data/:sheet/:tableIndex(\\d+)?', async (req: Request, res: R
   if (!t) return res.status(404).json({ error: 'Unknown sheet/table' });
 
   const { page = '1', pageSize = '50' } = req.query as Record<string, string>;
-  const { whereSql, params } = buildFilter(t, req.query as Record<string, string>);
+  const principal=(req as AuthenticatedRequest).principal;
+  const requestedProject=(req.query as Record<string,string>).project;
+  if(requestedProject) try{assertProjectAccess(principal,requestedProject);}catch{return res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});}
+  const allowed=hasPermission(principal,'ADMIN_ACCESS')?null:principal.allowedProjectIds;
+  const {whereSql,params}=buildFilter(t,req.query as Record<string,string>,allowed);
   const limit = Math.min(Number(pageSize) || 50, 500);
   const offset = (Math.max(Number(page) || 1, 1) - 1) * limit;
 
