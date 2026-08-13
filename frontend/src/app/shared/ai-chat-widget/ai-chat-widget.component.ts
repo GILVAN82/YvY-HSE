@@ -143,7 +143,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      const res = await fetch(`${environment.apiUrl}/ai/providers`);
+      const res = await fetch(`${environment.apiUrl}/ai/providers`, { credentials: 'include' });
       if (!res.ok) throw new Error('provider availability request failed');
       const list: ProviderInfo[] = await res.json();
       if (!Array.isArray(list)) throw new Error('invalid provider availability response');
@@ -256,7 +256,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
     this.activeThreadId ||= crypto.randomUUID();
     const form = new FormData(); form.append('file', file); form.append('threadId', this.activeThreadId);
     try {
-      const response = await fetch(`${environment.apiUrl}/ai/attachments`, { method: 'POST', body: form });
+      const response = await fetch(`${environment.apiUrl}/ai/attachments`, { method: 'POST', credentials: 'include', body: form });
       const body = await response.json().catch(() => null);
       if (!response.ok) { this.attachmentError.set(this.i18n.t(body?.error || 'The attachment could not be processed.')); return; }
       this.attachments.update((items) => [...items, { ...body, status: 'ready' }]);
@@ -267,7 +267,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
   async removeAttachment(attachment: AttachmentInfo) {
     this.attachments.update((items) => items.filter((item) => item.attachmentId !== attachment.attachmentId));
     if (!this.activeThreadId) return;
-    await fetch(`${environment.apiUrl}/ai/attachments/${attachment.attachmentId}?threadId=${encodeURIComponent(this.activeThreadId)}`, { method: 'DELETE' }).catch(() => undefined);
+    await fetch(`${environment.apiUrl}/ai/attachments/${attachment.attachmentId}?threadId=${encodeURIComponent(this.activeThreadId)}`, { method: 'DELETE', credentials: 'include' }).catch(() => undefined);
   }
 
   async send() {
@@ -287,6 +287,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
     try {
       const response = await fetch(`${environment.apiUrl}/ai/chat`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildChatPayload(text, history, provider.id, modelId, this.activeThreadId, this.attachments().filter((item) => item.status === 'ready').map((item) => item.attachmentId), this.i18n.lang())),
       });
@@ -347,7 +348,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
     this.approvalError.set('');
     try {
       const response = await fetch(`${environment.apiUrl}/ai/approvals/${encodeURIComponent(approval.approvalId)}/${decision}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ threadId: approval.threadId, locale: this.i18n.lang() }),
       });
       const body = await response.json().catch(() => null);

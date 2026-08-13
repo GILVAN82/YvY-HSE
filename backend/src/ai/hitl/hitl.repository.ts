@@ -20,13 +20,13 @@ export class PostgresApprovalService {
     );
     return map(result.rows[0]);
   }
-  async resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string): Promise<ApprovalRequest> {
+  async resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string, resolvedByUserId?: string): Promise<ApprovalRequest> {
     const status = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
     const safeNote = note?.replace(/\s+/g, ' ').trim().slice(0, 500) || null;
     const result = await this.db.query(
-      `UPDATE agent_human_approval SET status=$3,resolved_at=now(),resolution_note=$4
+      `UPDATE agent_human_approval SET status=$3,resolved_at=now(),resolution_note=$4,resolved_by_user_id=$5
        WHERE id=$1 AND thread_id=$2 AND status='PENDING' RETURNING *`,
-      [approvalId, threadId, status, safeNote]
+      [approvalId, threadId, status, safeNote, resolvedByUserId ?? null]
     );
     if (!result.rowCount) throw new ApprovalResolutionError('Approval is not pending for this thread');
     return map(result.rows[0]);

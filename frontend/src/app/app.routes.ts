@@ -7,8 +7,12 @@ import { ListsComponent } from './pages/lists/lists.component';
 import { InstructionsComponent } from './pages/instructions/instructions.component';
 import { SheetComponent } from './pages/sheet/sheet.component';
 import { AgentInspectorComponent } from './pages/agent-inspector/agent-inspector.component';
+import { LoginComponent } from './pages/login/login.component';
+import { authGuard } from './core/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  { path: '', canActivateChild: [authGuard], children: [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'home', component: HomeComponent },
   { path: 'instructions', component: InstructionsComponent },
@@ -18,5 +22,6 @@ export const routes: Routes = [
   { path: 'projects', component: ProjectsComponent },
   { path: 'lists', component: ListsComponent },
   { path: 'sheet/:sheet', component: SheetComponent },
+  ]},
   { path: '**', redirectTo: 'home' },
 ];

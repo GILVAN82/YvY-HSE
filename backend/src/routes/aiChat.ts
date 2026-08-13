@@ -15,6 +15,7 @@ import { attachmentConfig } from '../ai/attachments/attachment.config';
 import { AttachmentError } from '../ai/attachments/attachment.types';
 import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
 import { resolveResponseStatus } from '../ai/responseStatus';
+import type { AuthenticatedRequest } from '../auth/auth.types';
 
 export interface AiChatDependencies {
   resolveModel: (provider: string, model: string) => LanguageModel;
@@ -69,7 +70,7 @@ router.post('/ai/attachments', receiveAttachment, async (req: Request, res: Resp
   try {
     const threadId = z.string().uuid().parse(req.body?.threadId);
     if (!req.file) throw new AttachmentError('ATTACHMENT_NOT_FOUND', 'No attachment was supplied.');
-    const metadata = await dependencies.attachmentService.create(req.file, threadId);
+    const metadata = await dependencies.attachmentService.create(req.file, threadId, (req as AuthenticatedRequest).principal.userId);
     const { attachmentId, filename, kind, mimeType, size, expiresAt } = metadata;
     res.status(201).json({ attachmentId, filename, kind, mimeType, size, expiresAt });
   } catch (error) { sendAttachmentError(res, error); }
@@ -79,7 +80,7 @@ router.delete('/ai/attachments/:attachmentId', async (req: Request, res: Respons
   try {
     const attachmentId = z.string().uuid().parse(req.params.attachmentId);
     const threadId = z.string().uuid().parse(req.query.threadId);
-    await dependencies.attachmentService.remove(attachmentId, threadId);
+    await dependencies.attachmentService.remove(attachmentId, threadId, (req as AuthenticatedRequest).principal.userId);
     res.status(204).end();
   } catch (error) { sendAttachmentError(res, error); }
 });
@@ -99,6 +100,7 @@ const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').Requ
   try {
     const result = await resumeHumanApproval({
       approvalId: approvalId.data, threadId: body.data.threadId, decision,
+      userId: (req as AuthenticatedRequest).principal.userId,
       resolutionNote: body.data.resolutionNote, locale: body.data.locale,
       approvalService: dependencies.humanApprovalService, threadStore: dependencies.threadStateStore,
     });
@@ -135,7 +137,8 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   }
 
   let attachments = [] as Awaited<ReturnType<TemporaryAttachmentService['resolve']>>;
-  try { if (attachmentIds.length) attachments = await dependencies.attachmentService.resolve(attachmentIds, threadId!); }
+  const principal = (req as AuthenticatedRequest).principal;
+  try { if (attachmentIds.length) attachments = await dependencies.attachmentService.resolve(attachmentIds, threadId!, principal.userId); }
   catch (error) { sendAttachmentError(res, error); return; }
   const attachmentContext = attachments.length ? dependencies.attachmentService.buildContext(attachments, message) : undefined;
 
@@ -164,7 +167,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({ message, history, conversationId, threadId, model: languageModel, emit, threadStore: dependencies.threadStateStore, memoryService: dependencies.longTermMemoryService, approvalService: dependencies.humanApprovalService, tools: dependencies.tools, toolFactory: dependencies.toolFactory, attachments, attachmentContext, locale })
+      ? dependencies.runHseAgent({ message, userId: principal.userId, history, conversationId, threadId, model: languageModel, emit, threadStore: dependencies.threadStateStore, memoryService: dependencies.longTermMemoryService, approvalService: dependencies.humanApprovalService, tools: dependencies.tools, toolFactory: dependencies.toolFactory, attachments, attachmentContext, locale })
       : dependencies.runLegacyAgent({ message, history, conversationId, model: languageModel, emit, tools: dependencies.tools ?? dependencies.toolFactory?.(false) });
 
   const result = await run;

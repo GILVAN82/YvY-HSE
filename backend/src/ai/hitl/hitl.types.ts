@@ -18,7 +18,7 @@ export interface ApprovalRequest {
 
 export interface ApprovalService {
   create(threadId: string, actionType: ApprovalActionType): Promise<ApprovalRequest>;
-  resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string): Promise<ApprovalRequest>;
+  resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string, resolvedByUserId?: string): Promise<ApprovalRequest>;
   get(approvalId: string): Promise<ApprovalRequest | null>;
   deleteForTest(approvalId: string): Promise<void>;
 }

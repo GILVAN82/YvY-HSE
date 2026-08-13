@@ -15,6 +15,8 @@ import { isAttachmentFocusedQuery } from '../graph/nodes/agent.node';
 
 const THREAD_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const THREAD_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const USER_A = '11111111-1111-4111-8111-111111111111';
+const USER_B = '22222222-2222-4222-8222-222222222222';
 const png = Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0,0,0,0]);
 
 test('distinguishes file-only analysis from an explicit approved-knowledge comparison', () => {
@@ -88,25 +90,26 @@ describe('temporary AI attachment security and parsing', () => {
   test('enforces size, count, combined size, thread scope, removal and no permanent database', async () => {
     const { directory, instance } = await service({ maxFileBytes: 20, maxPerThread: 1 });
     try {
-      const meta = await instance.create({ originalname:'site.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A);
-      assert.equal((await instance.resolve([meta.attachmentId], THREAD_A)).length, 1);
-      await assert.rejects(() => instance.resolve([meta.attachmentId], THREAD_B), (error:any) => error.code === 'ATTACHMENT_WRONG_THREAD');
-      await assert.rejects(() => instance.create({ originalname:'site2.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A), (error:any) => error.code === 'TOO_MANY_ATTACHMENTS');
-      await assert.rejects(() => instance.create({ originalname:'large.png',mimetype:'image/png',size:21,buffer:Buffer.concat([png,Buffer.alloc(9)] ) }, THREAD_B), (error:any) => error.code === 'ATTACHMENT_TOO_LARGE');
-      await instance.remove(meta.attachmentId, THREAD_A);
+      const meta = await instance.create({ originalname:'site.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A, USER_A);
+      assert.equal((await instance.resolve([meta.attachmentId], THREAD_A, USER_A)).length, 1);
+      await assert.rejects(() => instance.resolve([meta.attachmentId], THREAD_B, USER_A), (error:any) => error.code === 'ATTACHMENT_WRONG_THREAD');
+      await assert.rejects(() => instance.resolve([meta.attachmentId], THREAD_A, USER_B), (error:any) => error.code === 'ATTACHMENT_WRONG_THREAD');
+      await assert.rejects(() => instance.create({ originalname:'site2.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A, USER_A), (error:any) => error.code === 'TOO_MANY_ATTACHMENTS');
+      await assert.rejects(() => instance.create({ originalname:'large.png',mimetype:'image/png',size:21,buffer:Buffer.concat([png,Buffer.alloc(9)] ) }, THREAD_B, USER_A), (error:any) => error.code === 'ATTACHMENT_TOO_LARGE');
+      await instance.remove(meta.attachmentId, THREAD_A, USER_A);
       assert.equal((await readdir(directory)).length, 0);
     } finally { await rm(directory, { recursive:true, force:true }); }
   });
 
   test('expired attachments become inaccessible and are cleaned only inside the dedicated directory', async () => {
     const { directory, instance } = await service({ ttlMinutes: 0.000001 });
-    try { const meta = await instance.create({ originalname:'site.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A); await new Promise((resolve)=>setTimeout(resolve,5)); await assert.rejects(() => instance.resolve([meta.attachmentId], THREAD_A), (error:any)=>error.code==='ATTACHMENT_EXPIRED'); assert.equal((await readdir(directory)).length,0); }
+    try { const meta = await instance.create({ originalname:'site.png',mimetype:'image/png',size:png.length,buffer:png }, THREAD_A, USER_A); await new Promise((resolve)=>setTimeout(resolve,5)); await assert.rejects(() => instance.resolve([meta.attachmentId], THREAD_A, USER_A), (error:any)=>error.code==='ATTACHMENT_EXPIRED'); assert.equal((await readdir(directory)).length,0); }
     finally { await rm(directory,{recursive:true,force:true}); }
   });
 
   test('bounded context uses only real document and spreadsheet provenance', () => {
     const fake = new TemporaryAttachmentService({ directory:'x',ttlMinutes:1,maxFileBytes:1,maxPerThread:1,maxCombinedBytes:1,cleanupIntervalMs:1,maxContextChars:300 });
-    const context = fake.buildContext([{ attachmentId:'1',filename:'risk.xlsx',kind:'spreadsheet',mimeType:'x',size:1,threadId:THREAD_A,createdAt:'x',expiresAt:'x',sheets:[{name:'Actions',rows:[{row:12,values:{Status:'Overdue'}}]}] }], 'overdue actions');
+    const context = fake.buildContext([{ attachmentId:'1',filename:'risk.xlsx',kind:'spreadsheet',mimeType:'x',size:1,threadId:THREAD_A,userId:USER_A,createdAt:'x',expiresAt:'x',sheets:[{name:'Actions',rows:[{row:12,values:{Status:'Overdue'}}]}] }], 'overdue actions');
     assert.match(context, /\[Attachment: risk\.xlsx, sheet: Actions, row 12\]/); assert.doesNotMatch(context, /page/);
   });
 

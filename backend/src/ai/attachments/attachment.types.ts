@@ -7,6 +7,7 @@ export interface AttachmentMetadata {
   mimeType: string;
   size: number;
   threadId: string;
+  userId: string;
   createdAt: string;
   expiresAt: string;
 }

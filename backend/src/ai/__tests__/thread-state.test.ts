@@ -9,16 +9,17 @@ import type { RagRetriever } from '../rag/retrieval.types';
 
 class MemoryThreadStore implements ThreadStateStore {
   states = new Map<string, PersistedThreadState>();
-  async load(id: string) { return structuredClone(this.states.get(id) ?? null); }
+  async load(id: string, userId: string) { const state = this.states.get(id); return structuredClone(state?.userId === userId ? state : null); }
   async save(state: Omit<PersistedThreadState, 'version' | 'updatedAt'>) {
     const old = this.states.get(state.threadId);
     this.states.set(state.threadId, { ...structuredClone(state), messages: minimizeThreadMessages(state.messages), version: (old?.version ?? 0) + 1 });
   }
-  async reset(id: string) { this.states.delete(id); }
+  async reset(id: string, userId: string) { if (this.states.get(id)?.userId === userId) this.states.delete(id); }
 }
 
 const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const USER = '11111111-1111-4111-8111-111111111111';
 const emit = () => undefined;
 
 function serializedMessages(model: ReturnType<typeof createMockModel>): string {
@@ -29,7 +30,7 @@ function serializedMessages(model: ReturnType<typeof createMockModel>): string {
 describe('persistent thread-scoped state', () => {
   test('a new thread starts empty and persists a completed turn', async () => {
     resetGraphCache(); const store = new MemoryThreadStore();
-    assert.equal(await store.load(A), null);
+    assert.equal(await store.load(A, '00000000-0000-4000-8000-000000000000'), null);
     await runHseAgent({ threadId: A, message: 'LOTO precautions?', model: createMockModel([{ text: 'Use isolation.' }]), emit, threadStore: store });
     assert.deepEqual(store.states.get(A)?.messages.map((m) => m.role), ['user', 'assistant']);
   });
@@ -167,9 +168,16 @@ describe('persistent thread-scoped state', () => {
 
   test('reset deletes one thread only', async () => {
     const store = new MemoryThreadStore();
-    await store.save({ threadId: A, messages: [], lastRagUsed: false, sourceReferences: [] });
-    await store.save({ threadId: B, messages: [], lastRagUsed: false, sourceReferences: [] });
-    await store.reset(A); assert.equal(await store.load(A), null); assert.ok(await store.load(B));
+    await store.save({ threadId: A, userId: USER, messages: [], lastRagUsed: false, sourceReferences: [] });
+    await store.save({ threadId: B, userId: USER, messages: [], lastRagUsed: false, sourceReferences: [] });
+    await store.reset(A, USER); assert.equal(await store.load(A, USER), null); assert.ok(await store.load(B, USER));
+  });
+
+  test('a foreign user cannot load a known thread UUID', async () => {
+    const store = new MemoryThreadStore();
+    await store.save({ threadId: A, userId: USER, messages: [{ role:'user', content:'private' }], lastRagUsed:false, sourceReferences:[] });
+    assert.ok(await store.load(A, USER));
+    assert.equal(await store.load(A, '22222222-2222-4222-8222-222222222222'), null);
   });
 
   test('message history is deterministically bounded', () => {

@@ -22,6 +22,8 @@ import { resolveResponseStatus } from '../responseStatus';
 
 export interface RunAgentInput {
   message: string;
+  /** Trusted server-derived owner; never accepted from the chat request body. */
+  userId?: string;
   history?: ChatTurn[];
   conversationId?: string;
   /** Stable checkpoint lookup key. conversationId remains a backwards-compatible alias. */
@@ -81,6 +83,9 @@ export function resetGraphCache() {
  * emits, keeping the Angular contract unchanged.
  */
 export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult> {
+  // Direct unit-test callers historically had no HTTP principal. Production always
+  // supplies userId at the authenticated route boundary.
+  const ownerId = input.userId ?? '00000000-0000-4000-8000-000000000000';
   const runId = randomUUID();
   const conversationId = resolveThreadId(input);
   const executionTimestamp = new Date().toISOString();
@@ -93,7 +98,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
   const attachmentScopedInput = isAttachmentContextRequest(input.message, input.attachmentContext);
   if (!preflight.allowed && !attachmentScopedInput) {
     const contextualCandidate = preflight.reason === 'OUT_OF_SCOPE' && isContextualFollowUp(input.message);
-    if (contextualCandidate && input.threadStore) persisted = await input.threadStore.load(conversationId);
+    if (contextualCandidate && input.threadStore) persisted = await input.threadStore.load(conversationId, ownerId);
     const contextualInScope = contextualCandidate
       && classifyScopeWithThreadContext(input.message, persisted?.messages ?? []) === 'IN_SCOPE_CONTEXTUAL_FOLLOWUP';
     if (!contextualInScope) {
@@ -122,7 +127,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
     } };
   }
 
-  persisted ??= input.threadStore ? await input.threadStore.load(conversationId) : null;
+  persisted ??= input.threadStore ? await input.threadStore.load(conversationId, ownerId) : null;
   const history = (persisted?.messages ?? input.history ?? []).slice(-MAX_HISTORY_TURNS);
   const messages: ChatTurn[] = [...history, { role: 'user', content: input.message }];
 
@@ -191,6 +196,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       const sourceReferences = citations.length ? citations : (persisted?.sourceReferences ?? []);
       await input.threadStore.save({
         threadId: conversationId,
+        userId: ownerId,
         messages: [...messages, { role: 'assistant', content: response.text }],
         lastRagUsed: response.ragUsed || persisted?.lastRagUsed === true,
         sourceReferences,
@@ -231,6 +237,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
 export interface ResumeApprovalInput {
   approvalId: string;
   threadId: string;
+  userId?: string;
   decision: HumanDecision;
   resolutionNote?: string;
   approvalService: ApprovalService;
@@ -240,14 +247,14 @@ export interface ResumeApprovalInput {
 
 export async function resumeHumanApproval(input: ResumeApprovalInput) {
   if (!UUID.test(input.approvalId) || !UUID.test(input.threadId)) throw new InvalidThreadIdError('approvalId and threadId must be UUIDs');
-  const approval = await input.approvalService.resolve(input.approvalId, input.threadId, input.decision, input.resolutionNote);
+  const approval = await input.approvalService.resolve(input.approvalId, input.threadId, input.decision, input.resolutionNote, input.userId);
   const language = resolveResponseLanguage({ uiLanguage: input.locale });
   const text = approval.status === 'APPROVED'
     ? ({ en:'Human approval has been recorded. The critical LOTO workflow may proceed to the next authorized verification step. Field verification by competent personnel is still required before execution or re-energization.',pt:'A aprovação humana foi registrada. O fluxo crítico de LOTO pode seguir para a próxima etapa de verificação autorizada. A verificação em campo por pessoal competente continua obrigatória antes da execução ou reenergização.',es:'La aprobación humana ha sido registrada. El flujo crítico de LOTO puede continuar al siguiente paso de verificación autorizado. La verificación en campo por personal competente sigue siendo obligatoria antes de la ejecución o reenergización.',fr:"L’approbation humaine a été enregistrée. Le processus LOTO critique peut passer à l’étape de vérification autorisée suivante. Une vérification sur le terrain par du personnel compétent reste obligatoire avant toute exécution ou remise sous tension.",de:'Die menschliche Genehmigung wurde erfasst. Der kritische LOTO-Ablauf darf mit dem nächsten autorisierten Prüfschritt fortfahren. Vor Ausführung oder Wiedereinschaltung ist weiterhin eine Vor-Ort-Prüfung durch befähigtes Personal erforderlich.' } as const)[language]
     : ({ en:'Human approval was rejected. The critical LOTO action remains blocked and must not proceed.',pt:'A aprovação humana foi rejeitada. A ação crítica de LOTO permanece bloqueada e não deve prosseguir.',es:'La aprobación humana fue rechazada. La acción crítica de LOTO permanece bloqueada y no debe continuar.',fr:"L’approbation humaine a été rejetée. L’action LOTO critique reste bloquée et ne doit pas se poursuivre.",de:'Die menschliche Genehmigung wurde abgelehnt. Die kritische LOTO-Maßnahme bleibt gesperrt und darf nicht fortgesetzt werden.' } as const)[language];
-  if (input.threadStore) {
-    const state = await input.threadStore.load(input.threadId);
-    if (state) await input.threadStore.save({ threadId: input.threadId, messages: [...state.messages, { role: 'assistant', content: text }], lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences });
+  if (input.threadStore && input.userId) {
+    const state = await input.threadStore.load(input.threadId, input.userId);
+    if (state) await input.threadStore.save({ threadId: input.threadId, userId: input.userId, messages: [...state.messages, { role: 'assistant', content: text }], lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences });
   }
   return { approval, text, responseStatus: resolveResponseStatus({ status: AgentStatus.COMPLETED, approvalStatus: approval.status }) };
 }

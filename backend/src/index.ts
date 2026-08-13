@@ -9,6 +9,11 @@ import { createAiChatRouter } from './routes/aiChat';
 import { createProductionAiDependencies } from './ai/productionDependencies';
 import { readOrchestrator, readCorsOrigins, readWritesEnabled, MAX_BODY_SIZE } from './ai/config';
 import { temporaryAttachmentService } from './ai/attachments/attachment.service';
+import { pool } from './db/pool';
+import { PostgresAuthRepository } from './auth/auth.repository';
+import { AuthService } from './auth/auth.service';
+import { createAuthRouter } from './routes/auth';
+import { requireAuthentication, requireTrustedOrigin } from './auth/auth.middleware';
 
 // Fail fast on a bad AI_ORCHESTRATOR rather than surprising the first caller.
 const orchestrator = readOrchestrator();
@@ -17,11 +22,13 @@ const writesEnabled = readWritesEnabled();
 temporaryAttachmentService.initialize().catch(() => console.warn(JSON.stringify({ event: 'attachment_startup_cleanup', status: 'UNAVAILABLE' })));
 
 const app = express();
+const authService = new AuthService(new PostgresAuthRepository(pool));
 
 // Allowlist instead of a wildcard. CORS is not authentication — it only stops another
 // origin's page from using the API from a browser. See docs/limitations.md.
 app.use(
   cors({
+    credentials: true,
     origin: (origin, callback) => {
       // Same-origin and non-browser callers (curl, tests) send no Origin header.
       if (!origin || corsOrigins.includes(origin)) return callback(null, true);
@@ -30,14 +37,17 @@ app.use(
   })
 );
 app.use(express.json({ limit: MAX_BODY_SIZE }));
+app.use('/api', requireTrustedOrigin(corsOrigins));
+
+app.get('/api/health', (_req, res) => res.json({ ok: true, orchestrator }));
+app.use('/api', createAuthRouter(authService));
+app.use('/api', requireAuthentication(authService));
 
 /**
- * Temporary write guard.
+ * Defense-in-depth write guard retained until Sprint 3.3 adds RBAC.
  *
- * There is no authentication yet, so POST/PUT/DELETE would let any caller on the
- * network modify HSE records. They stay closed unless ALLOW_UNAUTHENTICATED_WRITES=true
- * is set for local development. This is a stop-gap: it is replaced by real
- * authentication and RBAC in a later phase, not a permission model.
+ * Authentication is enforced above. Existing HSE record writes remain closed unless
+ * explicitly enabled; auth/session and AI workflow POSTs are handled separately.
  */
 app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   const isWrite = req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE';
@@ -49,8 +59,6 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     code: 'WRITES_DISABLED',
   });
 });
-
-app.get('/api/health', (_req, res) => res.json({ ok: true, orchestrator }));
 
 app.use('/api', genericRouter);
 app.use('/api', projectsRouter);

@@ -1,4 +1,5 @@
-<div class="shell">
+<router-outlet *ngIf="isLoginPage()"></router-outlet>
+<div class="shell" *ngIf="!isLoginPage()">
   <app-sidebar></app-sidebar>
 
   <div class="main">
@@ -23,22 +24,22 @@
             <button type="button"
                     class="userbtn"
                     (click)="toggleUserMenu()"
-                    [title]="userName"
-                    [attr.aria-label]="userName"
+                    [title]="userName()"
+                    [attr.aria-label]="userName()"
                     aria-haspopup="menu"
                     [attr.aria-expanded]="userMenuOpen()">
               <span class="avatar">
                 <img *ngIf="userAvatar; else initials" [src]="userAvatar" alt="">
-                <ng-template #initials>{{ userInitials }}</ng-template>
+                <ng-template #initials>{{ userInitials() }}</ng-template>
               </span>
-              <span class="uname">{{ userName }}</span>
+              <span class="uname">{{ userName() }}</span>
               <lucide-icon class="uchev" [class.is-open]="userMenuOpen()" [img]="chevronIcon" [size]="15"></lucide-icon>
             </button>
 
             <div class="usermenu" *ngIf="userMenuOpen()" role="menu">
               <div class="usermenu-head">
-                <strong>{{ userName }}</strong>
-                <span>{{ i18n.t('Local instance') }}</span>
+                <strong>{{ userName() }}</strong>
+                <span>{{ auth.user()?.email }}</span>
               </div>
               <button type="button" class="usermenu-item" role="menuitem" (click)="toggleTheme()">
                 <lucide-icon [img]="theme() === 'dark' ? sunIcon : moonIcon" [size]="16"></lucide-icon>
@@ -48,6 +49,7 @@
                 <lucide-icon [img]="instructionsIcon" [size]="16"></lucide-icon>
                 <span>{{ i18n.t('Instructions') }}</span>
               </a>
+              <button type="button" class="usermenu-item" role="menuitem" (click)="logout()">Sign out</button>
             </div>
           </div>
 
@@ -89,4 +91,4 @@
   </div>
 </div>
 
-<app-ai-chat-widget></app-ai-chat-widget>
+<app-ai-chat-widget *ngIf="!isLoginPage() && auth.user()"></app-ai-chat-widget>

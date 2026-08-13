@@ -8,6 +8,7 @@ import { I18nService, Lang } from './core/i18n.service';
 import { NAVIGATION } from './core/navigation.config';
 import { AiChatWidgetComponent } from './shared/ai-chat-widget/ai-chat-widget.component';
 import { SidebarComponent } from './shared/sidebar/sidebar.component';
+import { AuthService } from './core/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -26,18 +27,15 @@ export class AppComponent implements OnInit {
   readonly checkIcon = Check;
   readonly instructionsIcon = BookOpenText;
 
-  /**
-   * Display identity for the topbar. The app has no authentication, so this is a
-   * label, not a session: set `userAvatar` to an image path to replace the initials.
-   */
-  readonly userName = 'HSE Manager';
+  readonly userName = computed(() => this.auth.user()?.displayName ?? '');
   readonly userAvatar: string | null = null;
-  readonly userInitials = this.userName
+  readonly userInitials = computed(() => this.userName()
     .split(/\s+/)
     .map((w) => w[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase());
+  readonly isLoginPage = signal(false);
 
   userMenuOpen = signal(false);
 
@@ -86,7 +84,7 @@ export class AppComponent implements OnInit {
   private static readonly THEME_KEY = 'hse-theme';
   theme = signal<'light' | 'dark'>(this.getInitialTheme());
 
-  constructor(public i18n: I18nService, private router: Router) {}
+  constructor(public i18n: I18nService, private router: Router, public auth: AuthService) {}
 
   async ngOnInit() {
     await this.i18n.init();
@@ -110,6 +108,12 @@ export class AppComponent implements OnInit {
     if (this.userMenuOpen()) this.langMenuOpen.set(false); // one menu at a time
   }
 
+  async logout() {
+    this.userMenuOpen.set(false);
+    await this.auth.logout();
+    await this.router.navigate(['/login']);
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(ev: MouseEvent) {
     const t = ev.target as HTMLElement;
@@ -128,6 +132,7 @@ export class AppComponent implements OnInit {
 
   private syncToUrl(url: string) {
     const path = decodeURIComponent(url.split('?')[0]);
+    this.isLoginPage.set(path === '/login');
     for (const m of NAVIGATION) {
       const item = m.items.find((i) => i.route === path);
       if (!item) continue;

@@ -1,0 +1,12 @@
+<main class="login-page">
+  <form class="login-card" (ngSubmit)="submit()">
+    <div class="brand-mark">YvY</div>
+    <p class="eyebrow">YvY HSE</p>
+    <h1>Sign in</h1>
+    <p class="intro">Use your authorized HSE account to continue.</p>
+    <label>Email<input name="email" type="email" autocomplete="username" [(ngModel)]="email" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" [(ngModel)]="password" required minlength="8"></label>
+    <p class="error" *ngIf="error()" role="alert">{{ error() }}</p>
+    <button type="submit" [disabled]="loading() || !email || password.length < 8">{{ loading() ? 'Signing in…' : 'Sign in' }}</button>
+  </form>
+</main>

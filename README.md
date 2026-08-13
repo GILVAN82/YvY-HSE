@@ -2,6 +2,24 @@
 
 YvY HSE is an AI-assisted Health, Safety and Environment management system. It combines operational HSE data, an approved knowledge base and controlled AI-agent workflows to help HSE professionals retrieve information and support decisions. It is a consultative system, not an autonomous safety authority.
 
+## Local Authentication
+
+Application and AI routes require an authenticated server-side session. After applying
+the database migrations, provision an obviously synthetic local account without
+committing its password:
+
+```powershell
+$env:DEMO_USER_EMAIL='demo@example.invalid'
+$env:DEMO_USER_PASSWORD='<choose-a-local-password-of-at-least-12-characters>'
+$env:DEMO_USER_DISPLAY_NAME='YvY HSE Demo User'
+cd backend
+npm run auth:provision
+```
+
+The password is hashed with bcrypt before storage. The browser receives only an opaque,
+expiring `HttpOnly` session cookie; no password, hash or session token is stored in
+frontend storage. Long-term AI memory remains global until Capstone Sprint 3.3.
+
 ## Problem
 
 HSE professionals often work across fragmented incident, corrective-action, risk, LOTO, permit-to-work, audit, contractor, document and KPI records. YvY HSE brings those sources into one interface and provides structured, traceable AI assistance without allowing the agent to modify operational records or authorize physical work.

@@ -45,6 +45,7 @@ async function start(model: any, tools?: any, approvals: any = approvalService) 
   const store = new MemoryThreadStore();
   const app = express();
   app.use(express.json());
+  app.use((req: any, _res, next) => { req.principal = { userId: '11111111-1111-4111-8111-111111111111', email: 'test@example.invalid', displayName: 'Test User' }; next(); });
   app.use('/api', createAiChatRouter({
     resolveModel: () => model,
     readOrchestrator: () => 'langgraph',
