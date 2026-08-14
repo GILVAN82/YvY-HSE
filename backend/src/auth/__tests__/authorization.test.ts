@@ -5,7 +5,7 @@ import { createHseTools } from '../../ai/tools';
 import { ControlledMemoryService } from '../../ai/memory/memory.service';
 import type { MemoryRepository } from '../../ai/memory/memory.repository';
 import type { LongTermMemory,MemoryCategory } from '../../ai/memory/memory.types';
-import { computeKpi } from '../../routes/kpi';
+import { computeKpi } from '../../routes/kpi.service';
 
 const principal=(role:'ADMIN'|'HSE_USER',projects:string[])=>({userId:role,email:`${role}@example.invalid`,displayName:role,role,permissions:permissionsForRole(role),allowedProjectIds:projects});
 
@@ -17,6 +17,8 @@ describe('central authorization policy',()=>{
 });
 
 test('portfolio KPI aggregation is performed only across authorized projects',async()=>{const calls:any[]=[];const db={query:async(sql:string,params:any[]=[])=>{calls.push({sql,params});if(/settings/.test(sql))return {rows:[{value:'1000000'}]};if(/SUM/.test(sql))return {rows:[{mh:0}]};if(/AVG/.test(sql))return {rows:[{avg:null}]};if(/MAX/.test(sql))return {rows:[{last:null}]};return {rows:[]};}} as any;await computeKpi('*',undefined,principal('HSE_USER',['PRJ-1']),db);for(const call of calls.slice(1)){assert.match(call.sql,/ANY\(\$1::text\[\]\)/);assert.deepEqual(call.params[0],['PRJ-1']);}});
+
+test('unauthorized KPI project is rejected before any query executes',async()=>{let queries=0;const db={query:async()=>{queries++;return{rows:[]};}} as any;await assert.rejects(()=>computeKpi('PRJ-2',undefined,principal('HSE_USER',['PRJ-1']),db));assert.equal(queries,0);});
 
 class OwnedMemoryRepository implements MemoryRepository {
   rows=new Map<string,LongTermMemory&{contentHash:string;enabled:boolean}>(); key(user:string|undefined,key:string){return `${user}:${key}`;}

@@ -1,5 +1,5 @@
 import { pool } from '../db/pool';
-import { computeKpi } from '../routes/kpi';
+import { computeKpi } from '../routes/kpi.service';
 import { readOrchestrator } from './config';
 import { resolveModel } from './providers';
 import { runHseAgent } from './graph/hseAgent.runner';
@@ -36,7 +36,7 @@ export function createProductionAiComposition(): ProductionAiComposition {
   const memoryServiceFactory=(userId:string)=>new ControlledMemoryService(memoryRepository,userId);
   const toolFactory=(allowMemoryWrite:boolean,principal?:RequestPrincipal)=>{
     const memory=principal?memoryServiceFactory(principal.userId):longTermMemoryService;
-    const scopedKpi=(project:string,month:number|undefined)=>computeKpi(project,month,principal);
+    const scopedKpi=(project:string,month:number|undefined)=>computeKpi(project,month,principal,pool);
     return createHseTools(pool,scopedKpi,ragRetriever,memory,allowMemoryWrite,principal);
   };
 

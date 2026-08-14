@@ -3,7 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { genericRouter } from './routes/generic';
 import { projectsRouter, listsRouter } from './routes/projects';
-import { kpiRouter } from './routes/kpi';
+import { createKpiRouter } from './routes/kpi';
 import { statsRouter } from './routes/sheetStats';
 import { createAiChatRouter } from './routes/aiChat';
 import { createProductionAiDependencies } from './ai/productionDependencies';
@@ -63,7 +63,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
 app.use('/api', genericRouter);
 app.use('/api', projectsRouter);
 app.use('/api', listsRouter);
-app.use('/api', kpiRouter);
+app.use('/api', createKpiRouter(pool));
 app.use('/api', statsRouter);
 app.use('/api', createAiChatRouter(createProductionAiDependencies()));
 
