@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ShieldCheck, TriangleAlert, LucideAngularModule } from 'lucide-angular';
 import type { YvyAgentVisualState } from '../yvy-visual-state';
@@ -8,7 +8,7 @@ import type { YvyAgentVisualState } from '../yvy-visual-state';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="core" [attr.data-state]="state" [attr.aria-label]="'YvY agent status: ' + state" role="status">
+    <button type="button" class="core" [attr.data-state]="state" [attr.aria-label]="'Open YvY agent overview. Current status: ' + state" (click)="open.emit()">
       <div class="orbit orbit-a"><i></i><i></i><i></i></div>
       <div class="orbit orbit-b"><i></i><i></i></div>
       <svg class="dial" viewBox="0 0 400 400" aria-hidden="true">
@@ -31,12 +31,13 @@ import type { YvyAgentVisualState } from '../yvy-visual-state';
         <span>HSE Intelligence Agent</span>
         <small>{{ stateLabel }}</small>
       </div>
-    </div>
+    </button>
   `,
   styleUrl: './yvy-ai-core.component.scss',
 })
 export class YvyAiCoreComponent {
   @Input() state: YvyAgentVisualState = 'ready';
+  @Output() open = new EventEmitter<void>();
   readonly shield = ShieldCheck;
   readonly warning = TriangleAlert;
   get stateLabel(): string { return this.state.replace('-', ' ').toUpperCase(); }

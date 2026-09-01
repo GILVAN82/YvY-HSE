@@ -5,12 +5,7 @@
 
   <header class="cc-header">
     <div><span class="eyebrow">YvY AI COMMAND CENTER</span><h1>Intelligence for safer operations</h1></div>
-    <div class="demo-control" aria-label="Visual state demonstration controls">
-      <span>VISUAL PREVIEW</span>
-      <select [ngModel]="state().agentState" (ngModelChange)="setDemoState($event)" aria-label="Preview agent visual state">
-        <option *ngFor="let demo of demoStates" [value]="demo">{{demo.replace('-', ' ') | uppercase}}</option>
-      </select>
-    </div>
+    <div class="live-state"><i [class.busy]="agent.loading()"></i><span>{{ agent.loading() ? 'LIVE EXECUTION' : 'AGENT READY' }}</span></div>
   </header>
 
   <section class="stage" aria-label="YvY AI intelligence capabilities">
@@ -18,25 +13,38 @@
       <g><line x1="500" y1="300" x2="500" y2="38"/><line x1="500" y1="300" x2="285" y2="92"/><line x1="500" y1="300" x2="715" y2="92"/><line x1="500" y1="300" x2="820" y2="278"/><line x1="500" y1="300" x2="700" y2="490"/><line x1="500" y1="300" x2="300" y2="490"/><line x1="500" y1="300" x2="180" y2="278"/><line x1="500" y1="300" x2="500" y2="575"/></g>
     </svg>
 
-    <app-yvy-ai-core class="core" [state]="state().agentState"></app-yvy-ai-core>
-    <app-yvy-capability-node *ngFor="let cap of capabilities" [class]="'cap cap-'+cap.id" [label]="cap.label" [icon]="cap.icon" [state]="capabilityState(cap.id)"></app-yvy-capability-node>
+    <app-yvy-ai-core class="core" [state]="state().agentState" (open)="openDetails('core')"></app-yvy-ai-core>
+    <app-yvy-capability-node *ngFor="let cap of capabilities" [class]="'cap cap-'+cap.id" [label]="cap.label" [icon]="cap.icon" [state]="capabilityState(cap.id)" (open)="openDetails(cap.id)"></app-yvy-capability-node>
 
-    <app-yvy-hud-panel class="panel guard-panel" title="AI GUARD" [icon]="guardIcon" [items]="['Safety first','Policy aligned','Risk aware']" footer="Designed for controlled intelligence" [active]="stageActive('guard')"></app-yvy-hud-panel>
-    <app-yvy-hud-panel class="panel rag-panel" title="RAG ENGINE" [icon]="ragIcon" [items]="['Retrieve','Augment','Generate']" footer="Enterprise knowledge connected" [active]="stageActive('rag')"></app-yvy-hud-panel>
-    <app-yvy-hud-panel class="panel tools-panel" title="TOOLS" [icon]="toolsIcon" [items]="['Analyse','Investigate','Recommend','Automate']" footer="Operational capabilities" [active]="stageActive('tools')"></app-yvy-hud-panel>
-    <app-yvy-hud-panel class="panel verify-panel" title="VERIFICATION" [icon]="verifyIcon" [items]="['Validate','Cross-check','Verify']" [footer]="state().verificationStatus === 'IDLE' ? 'Trusted and traceable' : state().verificationStatus" [active]="stageActive('verify')"></app-yvy-hud-panel>
-    <app-yvy-hud-panel class="panel approval-panel" title="HUMAN APPROVAL" [icon]="approvalIcon" [items]="['Review','Confirm','Authorize']" [footer]="state().approvalStatus === 'NOT_REQUIRED' ? 'Human in the loop' : state().approvalStatus" [active]="stageActive('approval')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel guard-panel" title="AI GUARD" [icon]="guardIcon" [items]="['Safety first','Policy aligned','Risk aware']" footer="Designed for controlled intelligence" [active]="stageActive('guard')" (open)="openDetails('guard')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel rag-panel" title="RAG ENGINE" [icon]="ragIcon" [items]="['Retrieve','Augment','Generate']" [footer]="snapshot()?.ragUsed ? ((snapshot()?.citations?.length || 0) + ' source references') : 'RAG not used for this execution'" [active]="stageActive('rag')" (open)="openDetails('rag')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel tools-panel" title="TOOLS" [icon]="toolsIcon" [items]="['Analyse','Investigate','Recommend','Automate']" [footer]="snapshot()?.toolsUsed?.length ? ((snapshot()?.toolsUsed?.length || 0) + ' tools used') : 'No tools used'" [active]="stageActive('tools')" (open)="openDetails('tools')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel verify-panel" title="VERIFICATION" [icon]="verifyIcon" [items]="['Validate','Cross-check','Verify']" [footer]="state().verificationStatus === 'IDLE' ? 'No completed execution' : state().verificationStatus" [active]="stageActive('verify')" (open)="openDetails('verify')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel approval-panel" title="HUMAN APPROVAL" [icon]="approvalIcon" [items]="['Review','Confirm','Authorize']" [footer]="state().approvalStatus === 'NOT_REQUIRED' ? 'Not required' : state().approvalStatus" [active]="stageActive('approval')" (open)="openDetails('approval')"></app-yvy-hud-panel>
 
-    <form class="agent-input" (ngSubmit)="previewQuestion()">
+    <form class="agent-input" (ngSubmit)="submit()">
       <label for="yvy-command">Ask YvY</label>
-      <div><input id="yvy-command" name="prompt" [(ngModel)]="prompt" autocomplete="off" placeholder="Ask YvY about your HSE operations..."/><button type="submit" aria-label="Prepare question for YvY"><lucide-icon [img]="sendIcon" [size]="19"></lucide-icon></button></div>
-      <small>Visual preview only — live agent execution arrives in Sprint 1.4B</small>
+      <div><input id="yvy-command" name="prompt" [(ngModel)]="prompt" autocomplete="off" placeholder="Ask YvY about your HSE operations..." [disabled]="agent.loading()"/><button type="submit" aria-label="Send question to YvY" [disabled]="agent.loading() || !prompt.trim()"><lucide-icon [img]="sendIcon" [size]="19"></lucide-icon></button></div>
+      <small *ngIf="!agent.error()">Connected to the governed YvY agent</small><small class="input-error" *ngIf="agent.error()">{{agent.error()}}</small>
     </form>
   </section>
 
   <footer class="lower-panels">
-    <app-yvy-workflow [activeStage]="state().activeWorkflowStage"></app-yvy-workflow>
+    <app-yvy-workflow [activeStage]="state().activeWorkflowStage" [executedStages]="executedStages()" (stageOpen)="openDetails($event)"></app-yvy-workflow>
     <div class="trust-line"><span></span><strong>SAFETY • EVIDENCE • HUMAN CONTROL</strong><span></span></div>
-    <app-yvy-response-panel [state]="prompt ? 'question' : 'empty'" [message]="prompt ? 'Question prepared. Live execution is not connected in this visual sprint.' : ''"></app-yvy-response-panel>
+    <app-yvy-response-panel [state]="agent.runtimeState()==='error' ? 'error' : agent.loading() ? 'loading' : agent.answer() ? (trace()?.verification?.status === 'VERIFIED' ? 'verified' : 'response') : 'empty'" [message]="agent.answer() || agent.error()" (open)="openDetails('response')"></app-yvy-response-panel>
   </footer>
+
+  <app-yvy-details-drawer *ngIf="selected()" [title]="drawerTitle()" (close)="closeDetails()">
+    <ng-container *ngIf="selected()==='core'">
+      <div class="metric"><span>Runtime state</span><strong>{{state().agentState | uppercase}}</strong></div><div class="metric"><span>Thread</span><strong>{{snapshot()?.threadId || 'No active execution'}}</strong></div><div class="metric"><span>Last status</span><strong>{{snapshot()?.responseStatus || snapshot()?.status || 'Not available'}}</strong></div><div class="metric"><span>Last tool</span><strong>{{agent.activeTool() || snapshot()?.toolsUsed?.at(-1) || 'None'}}</strong></div><div class="metric"><span>RAG</span><strong>{{snapshot()?.ragUsed ? 'USED' : 'NOT USED'}}</strong></div><div class="metric"><span>Verification</span><strong>{{trace()?.verification?.status || 'Not available'}}</strong></div><div class="metric"><span>HITL</span><strong>{{state().approvalStatus}}</strong></div>
+    </ng-container>
+    <ng-container *ngIf="selected()==='guard'"><div class="metric"><span>Status</span><strong>{{trace()?.guardrail?.status || 'No execution available'}}</strong></div><div class="metric"><span>Scope decision</span><strong>{{trace()?.guardrail?.reason || 'No refusal recorded'}}</strong></div><div class="metric"><span>Timestamp</span><strong>{{trace()?.timestamp || 'Not available'}}</strong></div></ng-container>
+    <ng-container *ngIf="selected()==='tools'"><p *ngIf="!trace()?.tools?.length">No operational tools were used for this execution.</p><div *ngFor="let tool of trace()?.tools" class="tool-detail"><div class="metric"><span>Tool</span><strong>{{tool.name}}</strong></div><div class="metric"><span>Status</span><strong>{{tool.resultStatus || tool.status}}</strong></div><div class="metric" *ngIf="tool.resultSummary"><span>Result</span><strong>{{tool.resultSummary}}</strong></div></div></ng-container>
+    <ng-container *ngIf="selected()==='rag'"><p *ngIf="!snapshot()?.ragUsed">RAG not used for this execution.</p><ng-container *ngIf="snapshot()?.ragUsed"><div class="metric"><span>Retrieved items</span><strong>{{trace()?.rag?.chunksRetrieved || 0}}</strong></div><div class="metric"><span>Status</span><strong>{{trace()?.rag?.status}}</strong></div><h3>Sources</h3><ul><li *ngFor="let citation of snapshot()?.citations">{{citation.citationLabel}} · {{citation.sourceId}} · {{citation.jurisdiction}}</li></ul></ng-container></ng-container>
+    <ng-container *ngIf="selected()==='verify'"><div class="metric"><span>Status</span><strong>{{trace()?.verification?.status || 'No verification available'}}</strong></div><div class="metric"><span>Evidence items</span><strong>{{trace()?.verification?.evidenceItemsConsidered ?? 0}}</strong></div><div class="metric"><span>Verified claims</span><strong>{{trace()?.verification?.verifiedClaims ?? 0}}</strong></div><div class="metric"><span>Unsupported claims</span><strong>{{trace()?.verification?.unsupportedClaims ?? 0}}</strong></div><h3 *ngIf="trace()?.verification?.reasons?.length">Controlled reasons</h3><ul><li *ngFor="let reason of trace()?.verification?.reasons">{{reason}}</li></ul></ng-container>
+    <ng-container *ngIf="selected()==='approval'"><div class="metric"><span>Status</span><strong>{{state().approvalStatus}}</strong></div><div class="metric" *ngIf="agent.approval() as item"><span>Action</span><strong>{{item.actionType}}</strong></div><div class="approval-controls" *ngIf="agent.approval()?.status==='PENDING' && canApprove()"><button type="button" (click)="agent.resolveApproval('approve')">Approve</button><button type="button" class="reject" (click)="agent.resolveApproval('reject')">Reject</button></div><p *ngIf="agent.approval()?.status==='PENDING' && !canApprove()">An authorized approver must complete this decision.</p></ng-container>
+    <ng-container *ngIf="selected()==='response'"><h3 *ngIf="agent.question()">Question</h3><p>{{agent.question() || 'No question submitted in this session.'}}</p><h3>Response</h3><p class="full-response">{{agent.answer() || agent.error() || 'No AI response is available.'}}</p><div class="metric"><span>Verification</span><strong>{{trace()?.verification?.status || 'Not available'}}</strong></div><div class="metric"><span>Tools used</span><strong>{{snapshot()?.toolsUsed?.join(', ') || 'None'}}</strong></div></ng-container>
+    <ng-container *ngIf="capability(selected()!) as cap"><p>{{cap.label | titlecase}} is a real YvY operational capability.</p><a *ngIf="cap.route" class="drawer-action" [routerLink]="cap.route" (click)="closeDetails()">Open {{cap.label | titlecase}}</a><p *ngIf="!cap.route">No standalone application route exists. Current approval information is available through the Human Approval panel and Agent Inspector.</p></ng-container>
+  </app-yvy-details-drawer>
 </main>
