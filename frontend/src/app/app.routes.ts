@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
+import { YvyAiCommandCenterComponent } from './pages/ai-command-center/yvy-ai-command-center.component';
 import { PortfolioComponent } from './pages/portfolio/portfolio.component';
 import { ProjectComponent } from './pages/project/project.component';
 import { ProjectsComponent } from './pages/projects/projects.component';
@@ -14,7 +14,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: '', canActivateChild: [authGuard], children: [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
-  { path: 'home', component: HomeComponent },
+  { path: 'home', component: YvyAiCommandCenterComponent },
   { path: 'instructions', component: InstructionsComponent },
   { path: 'agent-inspector', component: AgentInspectorComponent },
   { path: 'portfolio', component: PortfolioComponent },

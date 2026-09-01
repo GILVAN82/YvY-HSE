@@ -1,5 +1,5 @@
 import {
-  Activity, ArrowUpDown, Bell, BookOpenText, Boxes, Briefcase, Calendar, CalendarCog, CalendarDays,
+  Activity, ArrowUpDown, Bell, BookOpenText, Bot, Boxes, Briefcase, Calendar, CalendarCog, CalendarDays,
   CircleHelp, Settings,
   ChartColumn, ChartPie, ClipboardCheck, ClipboardList, Clock, Cog, Construction, Droplets, Eye,
   FileCheck, FileSearch, FileText, FlaskConical, Flame, FolderKanban, FolderOpen, Gauge, Gavel,
@@ -49,12 +49,12 @@ export interface NavigationModule {
 export const NAVIGATION: NavigationModule[] = [
   {
     id: 'overview',
-    label: 'Overview',
-    description: 'Dashboards and entry points',
-    icon: LayoutDashboard,
+    label: 'AI Command Center',
+    description: 'YvY intelligence and operational entry points',
+    icon: Bot,
     defaultRoute: '/home',
     items: [
-      { id: 'home', label: 'Home', route: '/home', icon: House },
+      { id: 'home', label: 'AI Command Center', route: '/home', icon: Bot },
       { id: 'instructions', label: 'Instructions', route: '/instructions', icon: BookOpenText },
       { id: 'agent-inspector', label: 'Agent Inspector', route: '/agent-inspector', icon: Activity, badge: 'Demo' },
       { id: 'portfolio', label: 'Portfolio Dashboard', route: '/portfolio', icon: ChartPie },

@@ -36,6 +36,7 @@ export class AppComponent implements OnInit {
     .slice(0, 2)
     .toUpperCase());
   readonly isLoginPage = signal(false);
+  readonly isCommandCenter = signal(false);
 
   userMenuOpen = signal(false);
 
@@ -133,6 +134,7 @@ export class AppComponent implements OnInit {
   private syncToUrl(url: string) {
     const path = decodeURIComponent(url.split('?')[0]);
     this.isLoginPage.set(path === '/login');
+    this.isCommandCenter.set(path === '/home' || path === '/');
     for (const m of NAVIGATION) {
       const item = m.items.find((i) => i.route === path);
       if (!item) continue;

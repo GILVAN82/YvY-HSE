@@ -91,4 +91,4 @@
   </div>
 </div>
 
-<app-ai-chat-widget *ngIf="!isLoginPage() && auth.user()"></app-ai-chat-widget>
+<app-ai-chat-widget *ngIf="!isLoginPage() && !isCommandCenter() && auth.user()"></app-ai-chat-widget>

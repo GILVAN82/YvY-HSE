@@ -1,0 +1,42 @@
+<main class="command-center" [attr.data-agent-state]="state().agentState">
+  <div class="industrial" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <div class="grid-floor" aria-hidden="true"></div>
+  <div class="particles" aria-hidden="true"><i *ngFor="let p of [1,2,3,4,5,6,7,8,9,10,11,12]"></i></div>
+
+  <header class="cc-header">
+    <div><span class="eyebrow">YvY AI COMMAND CENTER</span><h1>Intelligence for safer operations</h1></div>
+    <div class="demo-control" aria-label="Visual state demonstration controls">
+      <span>VISUAL PREVIEW</span>
+      <select [ngModel]="state().agentState" (ngModelChange)="setDemoState($event)" aria-label="Preview agent visual state">
+        <option *ngFor="let demo of demoStates" [value]="demo">{{demo.replace('-', ' ') | uppercase}}</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="stage" aria-label="YvY AI intelligence capabilities">
+    <svg class="connections" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+      <g><line x1="500" y1="300" x2="500" y2="38"/><line x1="500" y1="300" x2="285" y2="92"/><line x1="500" y1="300" x2="715" y2="92"/><line x1="500" y1="300" x2="820" y2="278"/><line x1="500" y1="300" x2="700" y2="490"/><line x1="500" y1="300" x2="300" y2="490"/><line x1="500" y1="300" x2="180" y2="278"/><line x1="500" y1="300" x2="500" y2="575"/></g>
+    </svg>
+
+    <app-yvy-ai-core class="core" [state]="state().agentState"></app-yvy-ai-core>
+    <app-yvy-capability-node *ngFor="let cap of capabilities" [class]="'cap cap-'+cap.id" [label]="cap.label" [icon]="cap.icon" [state]="capabilityState(cap.id)"></app-yvy-capability-node>
+
+    <app-yvy-hud-panel class="panel guard-panel" title="AI GUARD" [icon]="guardIcon" [items]="['Safety first','Policy aligned','Risk aware']" footer="Designed for controlled intelligence" [active]="stageActive('guard')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel rag-panel" title="RAG ENGINE" [icon]="ragIcon" [items]="['Retrieve','Augment','Generate']" footer="Enterprise knowledge connected" [active]="stageActive('rag')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel tools-panel" title="TOOLS" [icon]="toolsIcon" [items]="['Analyse','Investigate','Recommend','Automate']" footer="Operational capabilities" [active]="stageActive('tools')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel verify-panel" title="VERIFICATION" [icon]="verifyIcon" [items]="['Validate','Cross-check','Verify']" [footer]="state().verificationStatus === 'IDLE' ? 'Trusted and traceable' : state().verificationStatus" [active]="stageActive('verify')"></app-yvy-hud-panel>
+    <app-yvy-hud-panel class="panel approval-panel" title="HUMAN APPROVAL" [icon]="approvalIcon" [items]="['Review','Confirm','Authorize']" [footer]="state().approvalStatus === 'NOT_REQUIRED' ? 'Human in the loop' : state().approvalStatus" [active]="stageActive('approval')"></app-yvy-hud-panel>
+
+    <form class="agent-input" (ngSubmit)="previewQuestion()">
+      <label for="yvy-command">Ask YvY</label>
+      <div><input id="yvy-command" name="prompt" [(ngModel)]="prompt" autocomplete="off" placeholder="Ask YvY about your HSE operations..."/><button type="submit" aria-label="Prepare question for YvY"><lucide-icon [img]="sendIcon" [size]="19"></lucide-icon></button></div>
+      <small>Visual preview only — live agent execution arrives in Sprint 1.4B</small>
+    </form>
+  </section>
+
+  <footer class="lower-panels">
+    <app-yvy-workflow [activeStage]="state().activeWorkflowStage"></app-yvy-workflow>
+    <div class="trust-line"><span></span><strong>SAFETY • EVIDENCE • HUMAN CONTROL</strong><span></span></div>
+    <app-yvy-response-panel [state]="prompt ? 'question' : 'empty'" [message]="prompt ? 'Question prepared. Live execution is not connected in this visual sprint.' : ''"></app-yvy-response-panel>
+  </footer>
+</main>
