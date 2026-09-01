@@ -111,6 +111,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
         conversation: { stateActive: false, messageCount: 0 },
         memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
         guardrail: { status: 'REFUSED', reason: refusalReason },
+        verification: { status:'VERIFIED',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:0,evidenceSourceTypes:[],sources:[],reasons:[] },
       } };
     }
   }
@@ -124,6 +125,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       conversation: { stateActive: false, messageCount: 0 },
       memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
       guardrail: { status: 'REFUSED', reason: 'OUT_OF_SCOPE' },
+      verification: { status:'VERIFIED',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:0,evidenceSourceTypes:[],sources:[],reasons:[] },
     } };
   }
 
@@ -146,7 +148,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
 
   try {
     const final = await graph.invoke(
-      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], finalText: '' },
+      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], evidence: [], finalText: '' },
       {
         configurable: {
           runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage },
@@ -189,6 +191,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
           status: memoryTool ? (final.errorCode === AgentErrorCode.TOOL_FAILURE ? 'ERROR' : 'COMPLETED') : longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED',
         },
         guardrail: { status: final.status === AgentStatus.REFUSED ? 'REFUSED' : 'PASS', ...(final.refusalReason ? { reason: final.refusalReason } : {}) },
+        verification: final.verificationResult ?? { status:'INSUFFICIENT_EVIDENCE',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:final.evidence.length,evidenceSourceTypes:[],sources:[],reasons:['Verification did not complete.'] },
         ...(final.errorCode ? { error: { category: final.errorCode, node: final.executedRoute.at(-1) ?? 'unknown', recoverable: final.errorCode !== AgentErrorCode.HITL_PERSISTENCE } } : {}),
       },
     };
@@ -228,6 +231,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
         conversation: { stateActive: false, messageCount: messages.length },
         memory: { used: longTermMemories.length > 0, operation: longTermMemories.length ? 'READ' : 'NONE', categories: [...new Set(longTermMemories.map((memory) => memory.category))], status: longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED' },
         guardrail: { status: 'PASS' },
+        verification: { status:'INSUFFICIENT_EVIDENCE',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:0,evidenceSourceTypes:[],sources:[],reasons:['Verification did not complete.'] },
         error: { category: AgentErrorCode.MODEL_ERROR, node: 'agent', recoverable: true },
       },
     };

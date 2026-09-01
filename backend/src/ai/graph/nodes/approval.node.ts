@@ -11,6 +11,7 @@ export async function approvalGateNode(state: HseAgentState, config: LangGraphRu
   if (!runtime?.approvalService) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };
   try {
     const approvalRequest = await runtime.approvalService.create(state.conversationId, 'LOTO_SAFETY_EXECUTION');
+    if (state.finalText) runtime.emit({ type:'text', text:state.finalText });
     return { status: AgentStatus.AWAITING_HUMAN_APPROVAL, approvalRequest, executedRoute };
   } catch {
     return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };

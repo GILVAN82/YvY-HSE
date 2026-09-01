@@ -5,6 +5,7 @@ import type { ApprovalRequest, ApprovalService } from '../hitl/hitl.types';
 import type { NormalizedAttachment } from '../attachments/attachment.types';
 import type { ResponseLanguage } from '../responseLanguage';
 import type { ResponseStatus } from '../responseStatus';
+import type { AgentEvidence, VerificationResult } from './evidence.contract';
 
 /** Lifecycle of a single agent run. */
 export const AgentStatus = {
@@ -31,6 +32,7 @@ export const AgentErrorCode = {
   TIMEOUT: 'AI_TIMEOUT',
   RAG_GROUNDING: 'AI_RAG_GROUNDING_FAILED',
   HITL_PERSISTENCE: 'AI_HITL_PERSISTENCE_FAILED',
+  SEMANTIC_VERIFICATION: 'AI_SEMANTIC_VERIFICATION_FAILED',
 } as const;
 
 export type AgentErrorCode = (typeof AgentErrorCode)[keyof typeof AgentErrorCode];
@@ -82,6 +84,7 @@ export interface AgentExecutionTrace {
     status: 'USED' | 'NO_MATCH' | 'COMPLETED' | 'ERROR' | 'NOT_USED';
   };
   guardrail: { status: 'PASS' | 'BLOCKED' | 'REFUSED'; reason?: RefusalCode };
+  verification: VerificationResult;
   error?: { category: AgentErrorCode; node: string; recoverable: boolean };
 }
 
@@ -121,3 +124,5 @@ export interface AgentRunResult {
   approvalRequest?: ApprovalRequest;
   executionTrace?: AgentExecutionTrace;
 }
+
+export type { AgentEvidence, VerificationResult };

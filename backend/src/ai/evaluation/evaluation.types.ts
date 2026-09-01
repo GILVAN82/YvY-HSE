@@ -4,6 +4,7 @@ export const EVALUATION_CATEGORIES = [
   'RAG_GROUNDING', 'OPERATIONAL_ROUTING', 'DATA_MINIMIZATION', 'CITATION', 'SAFETY',
   'JURISDICTION', 'THREAD_STATE', 'THREAD_ISOLATION', 'MEMORY_POLICY', 'HITL',
   'REFUSAL', 'SECRET_PROTECTION', 'FAILURE_RECOVERY', 'DOMAIN_SCOPE',
+  'EVIDENCE_GROUNDING',
 ] as const;
 export type EvaluationCategory = typeof EVALUATION_CATEGORIES[number];
 
@@ -37,6 +38,8 @@ export interface EvaluationExpectation {
   responseStatus?: 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
   expectedOperationalFact?: number;
   fabricatedOperationalRecords?: number;
+  verificationStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'INSUFFICIENT_EVIDENCE' | 'CONTRADICTED' | 'SAFETY_BLOCKED';
+  unsupportedClaims?: number;
 }
 
 export interface EvaluationCase {
@@ -79,6 +82,8 @@ export interface AgentObservation {
   responseStatus?: 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
   operationalFact?: number;
   fabricatedOperationalRecords?: number;
+  verificationStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'INSUFFICIENT_EVIDENCE' | 'CONTRADICTED' | 'SAFETY_BLOCKED';
+  unsupportedClaims?: number;
 }
 
 export interface EvaluationCheck { name: string; passed: boolean; evidence: string; }

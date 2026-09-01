@@ -88,8 +88,18 @@
         <div class="kv" *ngIf="trace()?.guardrail?.reason"><span>Reason</span><strong>{{ title(trace()!.guardrail.reason!) }}</strong></div>
       </section>
 
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">08</span><h2>Semantic Verification</h2></div></div>
+        <div class="guard" [class.blocked]="trace()?.verification?.status !== 'VERIFIED'">{{ trace()?.verification?.status || 'NOT CURRENTLY OBSERVABLE' }}</div>
+        <div class="kv"><span>Evidence Items</span><strong>{{ trace()?.verification?.evidenceItemsConsidered ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Claims Checked</span><strong>{{ trace()?.verification?.claimsConsidered ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Unsupported Claims</span><strong>{{ trace()?.verification?.unsupportedClaims ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Evidence Types</span><strong>{{ trace()?.verification?.evidenceSourceTypes?.join(', ') || 'None' }}</strong></div>
+        <p *ngFor="let reason of trace()?.verification?.reasons">{{ reason }}</p>
+      </section>
+
       <section class="card error-card" *ngIf="trace()?.error as error">
-        <div class="card-head"><div><span class="section-number">08</span><h2>Execution Error</h2></div></div>
+        <div class="card-head"><div><span class="section-number">09</span><h2>Execution Error</h2></div></div>
         <div class="kv"><span>Category</span><strong>{{ error.category }}</strong></div>
         <div class="kv"><span>Node</span><strong>{{ error.node }}</strong></div>
         <div class="kv"><span>Recoverable</span><strong>{{ label(error.recoverable) }}</strong></div>

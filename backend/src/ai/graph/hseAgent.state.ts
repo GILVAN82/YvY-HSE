@@ -1,11 +1,27 @@
 import { z } from 'zod';
 import { AgentStatus, AgentErrorCode, RefusalCode } from './hseAgent.types';
 import { MAX_HISTORY_TURNS } from '../config';
+import { EvidenceAuthority, EvidenceSourceType, VerificationStatus } from './evidence.contract';
 
 const ragEvidenceSchema = z.object({
   chunkId: z.string(), documentId: z.string(), content: z.string(), score: z.number(),
   sourceId: z.string(), title: z.string(), module: z.string(), version: z.string(),
   citationLabel: z.string(), sourceOrganization: z.string(), jurisdiction: z.string(), sourceUrl: z.string(),
+});
+
+const evidenceFactSchema = z.object({ path: z.string(), value: z.union([z.string(), z.number(), z.boolean(), z.null()]) });
+const agentEvidenceSchema = z.object({
+  id: z.string(), sourceType: z.enum([EvidenceSourceType.TOOL, EvidenceSourceType.RAG]), source: z.string(),
+  authority: z.enum([EvidenceAuthority.OPERATIONAL, EvidenceAuthority.APPROVED_KNOWLEDGE]),
+  toolName: z.string().optional(), resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA', 'ERROR']).optional(),
+  recordCount: z.number().int().min(0).optional(), facts: z.array(evidenceFactSchema).max(80).optional(),
+  rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string() }).optional(),
+});
+const verificationResultSchema = z.object({
+  status: z.enum([VerificationStatus.VERIFIED,VerificationStatus.PARTIALLY_VERIFIED,VerificationStatus.INSUFFICIENT_EVIDENCE,VerificationStatus.CONTRADICTED,VerificationStatus.SAFETY_BLOCKED]),
+  claimsConsidered:z.number().int().min(0),verifiedClaims:z.number().int().min(0),unsupportedClaims:z.number().int().min(0),
+  evidenceItemsConsidered:z.number().int().min(0),evidenceSourceTypes:z.array(z.enum([EvidenceSourceType.TOOL,EvidenceSourceType.RAG])),
+  sources:z.array(z.string()),reasons:z.array(z.string()),
 });
 
 /**
@@ -55,6 +71,8 @@ export const hseAgentStateSchema = z.object({
   ragUsed: z.boolean().default(false),
   ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
   ragEvidence: z.array(ragEvidenceSchema).default([]),
+  evidence: z.array(agentEvidenceSchema).default([]),
+  verificationResult: verificationResultSchema.optional(),
   finalText: z.string().default(''),
   approvalRequest: z.object({
     approvalId: z.string().uuid(), threadId: z.string().uuid(), actionType: z.literal('LOTO_SAFETY_EXECUTION'),
@@ -75,6 +93,7 @@ export const hseAgentStateSchema = z.object({
       AgentErrorCode.TIMEOUT,
       AgentErrorCode.RAG_GROUNDING,
       AgentErrorCode.HITL_PERSISTENCE,
+      AgentErrorCode.SEMANTIC_VERIFICATION,
     ])
     .optional(),
 });

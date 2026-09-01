@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMockModel } from './mockModel';
+import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { runHseAgent, resetGraphCache } from '../graph/hseAgent.runner';
 import { runLegacyAgent } from '../legacyRunner';
 import { classifyScopeWithThreadContext, inspectInput, isContextualFollowUp } from '../graph/nodes/guard.node';
@@ -23,12 +23,12 @@ describe('1. complete START -> guard -> agent -> verify -> finalize flow', () =>
     const { emit, events } = recorder();
     const result = await runHseAgent({
       message: 'Qual o TRIR do portfolio?',
-      model: createMockModel([{ text: 'O TRIR do portfolio e 51,95.' }]),
+      model: createMockModel([{ text: 'Posso ajudar com perguntas de HSE.' }]),
       emit,
     });
 
     assert.equal(result.status, AgentStatus.COMPLETED);
-    assert.equal(result.text, 'O TRIR do portfolio e 51,95.');
+    assert.equal(result.text, 'Posso ajudar com perguntas de HSE.');
     assert.ok(events.some((e) => e.type === 'text'));
     assert.equal(events.filter((e) => e.type === 'error').length, 0);
     assert.deepEqual(result.executionTrace?.route, ['guard', 'agent', 'verify', 'approval_gate', 'finalize']);
@@ -70,7 +70,7 @@ describe('3. multi-step tool calling with a final answer', () => {
     const { emit, events } = recorder();
     const model = createMockModel([
       { toolCall: { name: 'get_projects', input: '{}' } },
-      { text: 'The portfolio has 12 projects.' },
+      { text: 'No projects were found.' },
     ]);
 
     const database = { query: async () => ({ rows: Array.from({ length: 12 }, (_, index) => ({ code: `PRJ-${index + 1}` })) }) };
@@ -306,14 +306,15 @@ describe('12. feature flag legacy vs langgraph', () => {
     resetGraphCache();
     const script = [
       { toolCall: { name: 'get_projects', input: '{}' } },
-      { text: 'The portfolio has 12 projects.' },
+      { text: 'No projects were found.' },
     ];
+    const factory = createHermeticToolFactory();
 
     const g = recorder();
-    const graphResult = await runHseAgent({ message: 'How many projects?', model: createMockModel(script), emit: g.emit });
+    const graphResult = await runHseAgent({ message: 'How many projects?', model: createMockModel(script), emit: g.emit, toolFactory:factory });
 
     const l = recorder();
-    const legacyResult = await runLegacyAgent({ message: 'How many projects?', model: createMockModel(script), emit: l.emit });
+    const legacyResult = await runLegacyAgent({ message: 'How many projects?', model: createMockModel(script), emit: l.emit, tools:factory(false) });
 
     assert.equal(graphResult.text, legacyResult.text);
     assert.deepEqual(graphResult.toolsUsed, legacyResult.toolsUsed);

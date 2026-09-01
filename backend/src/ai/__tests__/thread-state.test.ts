@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMockModel } from './mockModel';
+import { createHermeticToolFactory, createMockModel } from './mockModel';
 import { AgentStatus, RefusalCode } from '../graph/hseAgent.types';
 import { InvalidThreadIdError, resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
 import { MAX_HISTORY_TURNS } from '../config';
@@ -130,9 +130,9 @@ describe('persistent thread-scoped state', () => {
   test('RAG citations remain traceable but chunks and vectors are not persisted', async () => {
     resetGraphCache(); const store = new MemoryThreadStore();
     const label = 'OSHA 29 CFR 1910.147 - LOTO';
-    const ragRetriever: RagRetriever = { retrieve: async () => ({ status: 'OK', evidence: [{ chunkId: 'c1', documentId: 'd1', content: 'raw chunk', score: 0.8, sourceId: 'loto', title: 'LOTO', module: 'safety', version: '1', citationLabel: label, sourceOrganization: 'OSHA', jurisdiction: 'US', sourceUrl: 'https://osha.gov' }] }) };
-    const model = createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: '{"query":"LOTO"}' } }, { text: `Answer [${label}].` }]);
-    await runHseAgent({ threadId: A, message: 'LOTO guidance', model, emit, threadStore: store, ragRetriever });
+    const ragRetriever: RagRetriever = { retrieve: async () => ({ status: 'OK', evidence: [{ chunkId: 'c1', documentId: 'd1', content: 'Use isolation; raw chunk marker.', score: 0.8, sourceId: 'loto', title: 'LOTO', module: 'safety', version: '1', citationLabel: label, sourceOrganization: 'OSHA', jurisdiction: 'US', sourceUrl: 'https://osha.gov' }] }) };
+    const model = createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: '{"query":"LOTO"}' } }, { text: `Use isolation [${label}].` }]);
+    await runHseAgent({ threadId: A, message: 'LOTO guidance', model, emit, threadStore: store, ragRetriever,toolFactory:createHermeticToolFactory({ragRetriever}) });
     const serialized = JSON.stringify(store.states.get(A));
     assert.match(serialized, /OSHA 29 CFR/); assert.doesNotMatch(serialized, /raw chunk|embedding|0\.8/);
   });

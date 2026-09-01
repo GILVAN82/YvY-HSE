@@ -30,6 +30,11 @@ export interface AgentInspectorSnapshot {
     conversation: { stateActive: boolean; messageCount: number };
     memory: { used: boolean; operation: string; categories: string[]; status: string };
     guardrail: { status: string; reason?: string };
+    verification: {
+      status: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'INSUFFICIENT_EVIDENCE' | 'CONTRADICTED' | 'SAFETY_BLOCKED';
+      claimsConsidered: number; verifiedClaims: number; unsupportedClaims: number;
+      evidenceItemsConsidered: number; evidenceSourceTypes: string[]; sources: string[]; reasons: string[];
+    };
     error?: { category: string; node: string; recoverable: boolean };
   };
 }

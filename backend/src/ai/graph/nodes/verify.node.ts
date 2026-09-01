@@ -1,6 +1,8 @@
 import type { HseAgentState } from '../hseAgent.state';
 import { AgentStatus, AgentErrorCode } from '../hseAgent.types';
 import { MAX_AGENT_STEPS } from '../../config';
+import { VerificationStatus } from '../evidence.contract';
+import { verifyEvidenceContract } from '../semanticVerifier';
 
 /**
  * Checks the run produced something usable. Deliberately does NOT call the model a
@@ -25,17 +27,12 @@ export async function verifyNode(state: HseAgentState): Promise<Partial<HseAgent
     };
   }
 
-  if (state.ragUsed && state.ragEvidence.length) {
-    const traceable = state.ragEvidence.every((item) => item.chunkId && item.documentId && item.sourceId && item.citationLabel);
-    const citesEvidence = state.ragEvidence.some((item) => state.finalText.includes(`[${item.citationLabel}]`));
-    if (!traceable || !citesEvidence) return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING, executedRoute };
+  const verificationResult = verifyEvidenceContract(state.finalText, state.evidence);
+  if (verificationResult.status !== VerificationStatus.VERIFIED) {
+    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.SEMANTIC_VERIFICATION, verificationResult, executedRoute };
   }
 
-  if (state.ragUsed && !state.ragEvidence.length && /\[(?:OSHA|HSE|ISO|LOTO|PTW)[^\]]*\]/i.test(state.finalText)) {
-    return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.RAG_GROUNDING, executedRoute };
-  }
-
-  return { status: AgentStatus.VERIFIED, executedRoute };
+  return { status: AgentStatus.VERIFIED, verificationResult, executedRoute };
 }
 
 /** Edge predicate: which finalizer to route to. */

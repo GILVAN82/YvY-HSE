@@ -8,6 +8,7 @@ import { SYSTEM_PROMPT } from '../../prompt';
 import { MAX_AGENT_STEPS, MODEL_TIMEOUT_MS } from '../../config';
 import { fingerprintModelFailure } from '../../modelFailure';
 import type { AgentToolTrace } from '../hseAgent.types';
+import { ragResultEvidence, toolResultEvidence, type AgentEvidence } from '../evidence.contract';
 
 const SAFE_TOOL_ARGUMENTS: Record<string, Set<string>> = {
   get_kpi: new Set(['project', 'month']),
@@ -93,6 +94,7 @@ export async function agentNode(
   let ragEvidence: RagEvidence[] = [];
   let ragStatus: HseAgentState['ragStatus'] = 'NOT_USED';
   const toolTrace: AgentToolTrace[] = [];
+  const evidence: AgentEvidence[] = [];
   const allTools = runtime.tools ?? runtime.toolFactory?.(runtime.allowMemoryWrite === true) ?? {};
   const latestUserMessage = [...state.messages].reverse().find((message) => message.role === 'user')?.content ?? '';
   const tools = runtime.attachmentContext && isAttachmentFocusedQuery(latestUserMessage)
@@ -126,8 +128,9 @@ export async function agentNode(
           // Once a tool reports a controlled failure, do not accept or stream a
           // subsequent model guess as operational data.
           if (!toolFailed) {
+            // Buffer until deterministic semantic verification succeeds. This prevents
+            // an unsupported claim from reaching the SSE client before the verify node.
             text += part.text;
-            runtime.emit({ type: 'text', text: part.text });
           }
           break;
         case 'tool-call':
@@ -146,6 +149,7 @@ export async function agentNode(
           const output = toolPart.output as ({ error?: boolean } & Partial<RagRetrievalResult>) | undefined;
           const outputRecord = output as Record<string, unknown> | undefined;
           if (output && typeof output === 'object' && output.error === true) toolFailed = true;
+          if (toolPart.toolName) evidence.push(toolResultEvidence(toolPart.toolName, output, evidence.length));
           const pendingTrace = [...toolTrace].reverse().find((item) => item.name === toolPart.toolName && item.status === 'NOT_OBSERVABLE');
           if (pendingTrace) {
             pendingTrace.status = output && typeof output === 'object' && output.error === true ? 'ERROR' : 'COMPLETED';
@@ -155,7 +159,10 @@ export async function agentNode(
           if (toolPart.toolName === 'search_hse_knowledge') {
             ragUsed = true;
             ragStatus = output && typeof output.status === 'string' ? output.status : output?.error ? 'ERROR' : 'ERROR';
-            if (output?.status === 'OK') ragEvidence = output.evidence as RagEvidence[];
+            if (output?.status === 'OK') {
+              ragEvidence = output.evidence as RagEvidence[];
+              evidence.push(...ragEvidence.map(ragResultEvidence));
+            }
           }
           break;
         }
@@ -182,6 +189,7 @@ export async function agentNode(
       ragUsed,
       ragStatus,
       ragEvidence,
+      evidence,
       errorCode: timedOut ? AgentErrorCode.TIMEOUT : AgentErrorCode.MODEL_ERROR,
     };
   }
@@ -196,6 +204,7 @@ export async function agentNode(
     ragUsed,
     ragStatus,
     ragEvidence,
+    evidence,
     ...(toolFailed ? { errorCode: AgentErrorCode.TOOL_FAILURE } : {}),
   };
 }

@@ -50,6 +50,8 @@ export function evaluateObservation(expected: EvaluationExpectation, observed: A
   if (expected.responseStatus !== undefined) checks.push(check('response_status', observed.responseStatus === expected.responseStatus, `responseStatus=${observed.responseStatus ?? 'none'}`));
   if (expected.expectedOperationalFact !== undefined) checks.push(check('operational_answer', observed.operationalFact === expected.expectedOperationalFact, `observedFact=${observed.operationalFact ?? 'none'}`));
   if (expected.fabricatedOperationalRecords !== undefined) checks.push(check('no_fabricated_records', observed.fabricatedOperationalRecords === expected.fabricatedOperationalRecords, `fabricated=${observed.fabricatedOperationalRecords ?? 'unknown'}`));
+  if (expected.verificationStatus !== undefined) checks.push(check('evidence_verification_status', observed.verificationStatus === expected.verificationStatus, `verificationStatus=${observed.verificationStatus ?? 'unknown'}`));
+  if (expected.unsupportedClaims !== undefined) checks.push(check('unsupported_claims', observed.unsupportedClaims === expected.unsupportedClaims, `unsupportedClaims=${observed.unsupportedClaims ?? 'unknown'}`));
   return checks;
 }
 
@@ -64,6 +66,7 @@ const METRIC_CHECKS: Record<string, (name:string)=>boolean> = {
   'Memory Behavior Accuracy': name => name.startsWith('memory_'),
   'Failure Handling Accuracy': name => name === 'error_code' || name === 'no_fabricated_records',
   'Semantic Status Accuracy': name => name === 'response_status',
+  'Evidence Grounding Accuracy': name => name === 'evidence_verification_status' || name === 'unsupported_claims',
 };
 
 export function calculateEvaluationMetrics(results: readonly EvaluationCaseResult[]) {
@@ -91,5 +94,5 @@ export async function runEvaluationHarness(cases: readonly EvaluationCase[], exe
   const categoryResults: Record<string, { passed: number; total: number }> = {};
   for (const result of results) { const bucket = categoryResults[result.category] ??= { passed: 0, total: 0 }; bucket.total++; if (result.passed) bucket.passed++; }
   const passed = results.filter((result) => result.passed).length;
-  return { schemaVersion: 1, datasetVersion: 3, startedAt, completedAt: now().toISOString(), total: results.length, passed, failed: results.length - passed, passRate: results.length ? Number((passed / results.length).toFixed(4)) : 0, metricName: 'scenario pass rate', executionMode, categoryResults, metrics:calculateEvaluationMetrics(results), results };
+  return { schemaVersion: 1, datasetVersion: 4, startedAt, completedAt: now().toISOString(), total: results.length, passed, failed: results.length - passed, passRate: results.length ? Number((passed / results.length).toFixed(4)) : 0, metricName: 'scenario pass rate', executionMode, categoryResults, metrics:calculateEvaluationMetrics(results), results };
 }

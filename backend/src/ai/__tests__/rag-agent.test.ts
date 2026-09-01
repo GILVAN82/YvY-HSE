@@ -33,7 +33,7 @@ describe('controlled RAG graph integration', () => {
     ]);
     const result = await runHseAgent({ message: 'LOTO guidance', model, emit: () => undefined, ragRetriever: retriever, toolFactory: createHermeticToolFactory({ ragRetriever: retriever }) });
     assert.equal(result.status, AgentStatus.FAILED);
-    assert.equal(result.errorCode, AgentErrorCode.RAG_GROUNDING);
+    assert.equal(result.errorCode, AgentErrorCode.SEMANTIC_VERIFICATION);
   });
 
   test('structured data questions cannot invoke the RAG tool', async () => {
