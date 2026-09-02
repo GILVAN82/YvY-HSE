@@ -18,6 +18,7 @@ import { languageName } from './voice/language-resolution';
 import type { VoiceStatus } from './voice/voice.types';
 import type { VoiceConversationTurn } from './voice/voice.types';
 import { SpokenResponseFormatterService } from './voice/spoken-response-formatter.service';
+import { YvyAlertService, type YvyAlert } from './yvy-alert.service';
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
@@ -25,7 +26,7 @@ import { SpokenResponseFormatterService } from './voice/spoken-response-formatte
   templateUrl: './yvy-ai-command-center.component.html', styleUrl: './yvy-ai-command-center.component.scss',
 })
 export class YvyAiCommandCenterComponent implements OnInit {
-  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(SpeechSynthesisService);readonly spokenFormatter=inject(SpokenResponseFormatterService);
+  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(SpeechSynthesisService);readonly spokenFormatter=inject(SpokenResponseFormatterService);readonly alerts=inject(YvyAlertService);
   readonly sendIcon = Send;
   readonly micIcon=Mic;readonly stopIcon=Square;readonly cancelIcon=X;readonly volumeIcon=Volume2;readonly mutedIcon=VolumeX;readonly replayIcon=RotateCcw;
   readonly voiceStatus=signal<VoiceStatus>('idle');readonly voiceError=signal('');readonly muted=signal(false);readonly languageName=languageName;
@@ -44,11 +45,12 @@ export class YvyAiCommandCenterComponent implements OnInit {
   readonly activeCapability = computed(() => this.state().activeCapability);
   readonly snapshot=computed(()=>this.agent.latest());readonly trace=computed(()=>this.snapshot()?.executionTrace);
   readonly executedStages=computed(()=>{const route=this.trace()?.route??[];const stages=['guard'];if(this.snapshot()?.toolsUsed.length)stages.push('tools');if(this.snapshot()?.ragUsed)stages.push('rag');if(route.includes('verify'))stages.push('verify');if(this.snapshot()?.approvalRequest)stages.push('approval');return stages;});
-  readonly drawerTitle=computed(()=>({core:'YvY Agent Overview',guard:'AI Guard',tools:'Operational Tools',rag:'RAG Engine',verify:'Semantic Verification',approval:'Human Approval',response:'AI Response',safety:'Safety',compliance:'Compliance',risk:'Risk',operations:'Operations',people:'People',permits:'Permits',knowledge:'Knowledge',approvals:'Approvals'}[this.selected()??'']??'YvY Details'));
+  readonly drawerTitle=computed(()=>({core:'YvY Agent Overview',alerts:'YvY Attention Center',guard:'AI Guard',tools:'Operational Tools',rag:'RAG Engine',verify:'Semantic Verification',approval:'Human Approval',response:'AI Response',safety:'Safety',compliance:'Compliance',risk:'Risk',operations:'Operations',people:'People',permits:'Permits',knowledge:'Knowledge',approvals:'Approvals'}[this.selected()??'']??'YvY Details'));
 
-  ngOnInit(){void this.agent.initialize();}
+  ngOnInit(){void this.agent.initialize();void this.alerts.refresh().then(()=>this.announceProactiveAlert());}
 
   capabilityState(id:string):'inactive'|'active'|'success'|'warning'{
+    if((id==='approvals'&&this.alerts.critical())||(id==='operations'&&this.alerts.high()))return 'warning';
     if(this.state().agentState==='error' && id==='risk') return 'warning';
     if(this.trace()?.verification?.status==='VERIFIED' && (id==='safety'||id==='approvals')) return 'success';
     if(id==='knowledge'&&this.snapshot()?.ragUsed)return 'success';if(id==='operations'&&this.snapshot()?.toolsUsed.length)return 'success';
@@ -56,6 +58,11 @@ export class YvyAiCommandCenterComponent implements OnInit {
   }
   stageActive(stage:YvyWorkflowStage){return this.state().activeWorkflowStage===stage;}
   async submit(){const text=this.prompt.trim();if(!text)return;this.prompt='';await this.agent.send(text);}
+  askAboutAlert(alert:YvyAlert){
+    this.prompt=`Explain the ${alert.severity.toLowerCase()} alert ${alert.sourceId}: ${alert.summary}`;
+    this.closeDetails();
+    queueMicrotask(()=>document.getElementById('yvy-command')?.focus());
+  }
   async startVoice(){
     if(this.voiceStatus()==='listening')return;if(this.voiceStatus()==='speaking'){this.speechSynthesis.stop();this.voiceStatus.set('interrupted');}
     this.voiceError.set('');this.voiceStatus.set('requesting-permission');
@@ -81,6 +88,9 @@ export class YvyAiCommandCenterComponent implements OnInit {
     else if(runtime==='streaming'){agentState='analysing';}
     else if(runtime==='error'||snapshot?.status==='FAILED'){agentState='error';activeCapability='risk';}
     else if(approval?.status==='PENDING'){agentState='waiting-approval';activeWorkflowStage='approval';activeCapability='approvals';}
+    else if(this.alerts.critical()){agentState='critical-alert';activeCapability='approvals';}
+    else if(this.alerts.high()){agentState='high-alert';activeCapability='operations';}
+    else if(this.alerts.active().length){agentState='attention';}
     const verificationStatus=snapshot?.executionTrace?.verification?.status??'IDLE';
     const approvalStatus=approval?.status==='CANCELLED'?'EXPIRED':approval?.status??'NOT_REQUIRED';
     return {agentState,activeCapability,activeWorkflowStage,verificationStatus,approvalStatus};
@@ -88,4 +98,5 @@ export class YvyAiCommandCenterComponent implements OnInit {
   private speakVerified(){const metadata=this.agent.voiceMetadata(),verification=this.agent.latest()?.executionTrace?.verification?.status,approval=this.agent.approval();if(!metadata){this.voiceStatus.set('idle');return;}const safe=verification==='VERIFIED'||approval?.status==='PENDING';if(!safe||!this.agent.answer()){this.voiceStatus.set('idle');return;}const response=this.spokenFormatter.format(this.agent.answer(),metadata.effectiveResponseLanguage);this.lastSpokenResponse.set(response.spokenResponse);this.voiceConversation.update(turns=>[...turns,this.turn('assistant',metadata.effectiveResponseLanguage,response.displayResponse,response.spokenResponse,verification)].slice(-20));if(this.speechSynthesis.speak(response.spokenResponse,metadata.effectiveResponseLanguage,()=>this.voiceStatus.set('idle'),()=>{this.voiceError.set(this.friendlyVoiceError('TTS_FAILED',metadata.effectiveResponseLanguage));this.voiceStatus.set('idle');}))this.voiceStatus.set('speaking');else this.voiceStatus.set('idle');}
   private turn(role:'user'|'assistant',language:VoiceConversationTurn['language'],text:string,spokenText?:string,verificationStatus?:string):VoiceConversationTurn{return {id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,role,mode:'voice',language,text,spokenText,verificationStatus,timestamp:new Date().toISOString()};}
   private friendlyVoiceError(code:string,language:VoiceConversationTurn['language']){const messages={en:{miss:"I didn't catch that. Could you say it again?",unavailable:'Voice is temporarily unavailable. You can continue by text.'},pt:{miss:'Não entendi. Pode dizer novamente?',unavailable:'A voz está temporariamente indisponível. Você pode continuar por texto.'},es:{miss:'No entendí. ¿Puedes repetirlo?',unavailable:'La voz no está disponible temporalmente. Puedes continuar por texto.'},fr:{miss:"Je n’ai pas compris. Pouvez-vous répéter ?",unavailable:'La voix est temporairement indisponible. Vous pouvez continuer par écrit.'},de:{miss:'Ich habe das nicht verstanden. Können Sie es wiederholen?',unavailable:'Die Sprachausgabe ist vorübergehend nicht verfügbar. Sie können per Text fortfahren.'}};return code==='NO_SPEECH'?messages[language].miss:messages[language].unavailable;}
+  private announceProactiveAlert(){if(this.voiceStatus()!=='idle'||this.agent.loading()||this.muted())return;const prefs=this.alerts.preferences(),critical=this.alerts.active().filter(a=>a.severity==='CRITICAL'),high=this.alerts.active().filter(a=>a.severity==='HIGH');const count=prefs.criticalVoice?critical.length:prefs.highVoice?high.length:0;if(!count)return;const key=`yvy-alert-spoken:${(critical[0]??high[0]).id}`;if(sessionStorage.getItem(key))return;const language=this.agent.voiceMetadata()?.effectiveResponseLanguage??'en';const lines={en:`${count} ${critical.length?'critical':'high-priority'} item${count===1?' is':'s are'} waiting for your attention. The details are on screen.`,pt:`${count===1?'Há um item':'Há '+count+' itens'} ${critical.length?'crítico':'de alta prioridade'} aguardando sua atenção. Os detalhes estão na tela.`,es:`${count===1?'Hay un elemento':'Hay '+count+' elementos'} ${critical.length?'crítico':'de alta prioridad'} que requiere atención. Los detalles están en pantalla.`,fr:`${count} élément${count===1?'':'s'} ${critical.length?'critique':'prioritaire'} nécessite votre attention. Les détails sont affichés.`,de:`${count} ${critical.length?'kritischer':'wichtiger'} Hinweis${count===1?'':'e'} wartet auf Ihre Aufmerksamkeit. Details werden angezeigt.`};if(this.speechSynthesis.speak(lines[language],language))sessionStorage.setItem(key,'1');}
 }

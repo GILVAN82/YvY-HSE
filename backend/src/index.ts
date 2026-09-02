@@ -14,6 +14,7 @@ import { PostgresAuthRepository } from './auth/auth.repository';
 import { AuthService } from './auth/auth.service';
 import { createAuthRouter } from './routes/auth';
 import { requireAuthentication, requireTrustedOrigin } from './auth/auth.middleware';
+import { createAlertsRouter } from './routes/alerts';
 
 // Fail fast on a bad AI_ORCHESTRATOR rather than surprising the first caller.
 const orchestrator = readOrchestrator();
@@ -66,6 +67,7 @@ app.use('/api', listsRouter);
 app.use('/api', createKpiRouter(pool));
 app.use('/api', statsRouter);
 app.use('/api', createAiChatRouter(createProductionAiDependencies()));
+app.use('/api', createAlertsRouter(pool));
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
