@@ -26,6 +26,18 @@
       <label for="yvy-command">Ask YvY</label>
       <div><input id="yvy-command" name="prompt" [(ngModel)]="prompt" autocomplete="off" placeholder="Ask YvY about your HSE operations..." [disabled]="agent.loading()"/><button type="submit" aria-label="Send question to YvY" [disabled]="agent.loading() || !prompt.trim()"><lucide-icon [img]="sendIcon" [size]="19"></lucide-icon></button></div>
       <small *ngIf="!agent.error()">Connected to the governed YvY agent</small><small class="input-error" *ngIf="agent.error()">{{agent.error()}}</small>
+      <section class="voice-panel" aria-label="YvY voice controls" aria-live="polite">
+        <div class="voice-actions">
+          <button *ngIf="voiceStatus()!=='listening' && voiceStatus()!=='speaking'" type="button" class="voice-primary" (click)="startVoice()" [disabled]="agent.loading()"><lucide-icon [img]="micIcon" [size]="16"></lucide-icon> Talk to YvY</button>
+          <button *ngIf="voiceStatus()==='listening'" type="button" (click)="stopListening()"><lucide-icon [img]="stopIcon" [size]="15"></lucide-icon> Stop</button>
+          <button *ngIf="voiceStatus()==='listening'||voiceStatus()==='transcribing'" type="button" (click)="cancelVoice()"><lucide-icon [img]="cancelIcon" [size]="15"></lucide-icon> Cancel</button>
+          <button *ngIf="voiceStatus()==='speaking'" type="button" (click)="stopSpeaking()"><lucide-icon [img]="stopIcon" [size]="15"></lucide-icon> Stop voice</button>
+          <button type="button" (click)="toggleMute()" [attr.aria-pressed]="muted()"><lucide-icon [img]="muted()?mutedIcon:volumeIcon" [size]="15"></lucide-icon> {{muted()?'Unmute':'Mute'}}</button>
+          <button type="button" (click)="replay()" [disabled]="!speechSynthesis.lastText || muted()"><lucide-icon [img]="replayIcon" [size]="15"></lucide-icon> Replay</button>
+        </div>
+        <div class="voice-wave" [class.active]="voiceStatus()==='listening'||voiceStatus()==='speaking'" [attr.data-mode]="voiceStatus()" aria-hidden="true"><i *ngFor="let bar of [1,2,3,4,5,6,7,8,9,10]"></i></div>
+        <div class="voice-status"><strong>{{voiceStatus() | uppercase}}</strong><span *ngIf="agent.voiceMetadata() as voice">🎙 {{languageName(voice.detectedLanguage)}} · {{voice.transcript}}</span><span *ngIf="voiceError()">{{voiceError()}}</span></div>
+      </section>
     </form>
   </section>
 
@@ -37,7 +49,7 @@
 
   <app-yvy-details-drawer *ngIf="selected()" [title]="drawerTitle()" (close)="closeDetails()">
     <ng-container *ngIf="selected()==='core'">
-      <div class="metric"><span>Runtime state</span><strong>{{state().agentState | uppercase}}</strong></div><div class="metric"><span>Thread</span><strong>{{snapshot()?.threadId || 'No active execution'}}</strong></div><div class="metric"><span>Last status</span><strong>{{snapshot()?.responseStatus || snapshot()?.status || 'Not available'}}</strong></div><div class="metric"><span>Last tool</span><strong>{{agent.activeTool() || snapshot()?.toolsUsed?.at(-1) || 'None'}}</strong></div><div class="metric"><span>RAG</span><strong>{{snapshot()?.ragUsed ? 'USED' : 'NOT USED'}}</strong></div><div class="metric"><span>Verification</span><strong>{{trace()?.verification?.status || 'Not available'}}</strong></div><div class="metric"><span>HITL</span><strong>{{state().approvalStatus}}</strong></div>
+      <div class="metric"><span>Runtime state</span><strong>{{state().agentState | uppercase}}</strong></div><div class="metric"><span>Input mode</span><strong>{{agent.voiceMetadata() ? 'VOICE' : 'TEXT'}}</strong></div><div class="metric" *ngIf="agent.voiceMetadata() as voice"><span>Detected / response language</span><strong>{{languageName(voice.detectedLanguage)}} / {{languageName(voice.effectiveResponseLanguage)}}</strong></div><div class="metric"><span>Thread</span><strong>{{snapshot()?.threadId || 'No active execution'}}</strong></div><div class="metric"><span>Last status</span><strong>{{snapshot()?.responseStatus || snapshot()?.status || 'Not available'}}</strong></div><div class="metric"><span>Last tool</span><strong>{{agent.activeTool() || snapshot()?.toolsUsed?.at(-1) || 'None'}}</strong></div><div class="metric"><span>RAG</span><strong>{{snapshot()?.ragUsed ? 'USED' : 'NOT USED'}}</strong></div><div class="metric"><span>Verification</span><strong>{{trace()?.verification?.status || 'Not available'}}</strong></div><div class="metric"><span>HITL</span><strong>{{state().approvalStatus}}</strong></div>
     </ng-container>
     <ng-container *ngIf="selected()==='guard'"><div class="metric"><span>Status</span><strong>{{trace()?.guardrail?.status || 'No execution available'}}</strong></div><div class="metric"><span>Scope decision</span><strong>{{trace()?.guardrail?.reason || 'No refusal recorded'}}</strong></div><div class="metric"><span>Timestamp</span><strong>{{trace()?.timestamp || 'Not available'}}</strong></div></ng-container>
     <ng-container *ngIf="selected()==='tools'"><p *ngIf="!trace()?.tools?.length">No operational tools were used for this execution.</p><div *ngFor="let tool of trace()?.tools" class="tool-detail"><div class="metric"><span>Tool</span><strong>{{tool.name}}</strong></div><div class="metric"><span>Status</span><strong>{{tool.resultStatus || tool.status}}</strong></div><div class="metric" *ngIf="tool.resultSummary"><span>Result</span><strong>{{tool.resultSummary}}</strong></div></div></ng-container>

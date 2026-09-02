@@ -299,3 +299,5 @@ table.data td.num{text-align:right;font-family:var(--mono);font-variant-numeric:
 .modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--card);color:var(--ink)}
 .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .note{color:var(--ink2)}
+@import './styles/command-center-light';
+@import './styles/command-center-voice';

@@ -47,6 +47,11 @@ const chatRequestSchema = z.object({
   model: z.string().min(1, 'model is required'),
   attachmentIds: z.array(z.string().uuid()).max(3).optional(),
   locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
+  voiceMetadata: z.object({
+    detectedLanguage: z.enum(['en','pt','es','fr','de']), languageConfidence: z.number().min(0).max(1).optional(),
+    transcript: z.string().min(1).max(MAX_MESSAGE_LENGTH), inputMode: z.literal('voice'),
+    requestedResponseLanguage: z.enum(['en','pt','es','fr','de']).optional(), effectiveResponseLanguage: z.enum(['en','pt','es','fr','de']),
+  }).optional(),
 });
 
 const approvalDecisionSchema = z.object({
@@ -130,7 +135,10 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     });
     return;
   }
-  const { message, history, conversationId, threadId, provider, model, attachmentIds = [], locale } = parsed.data;
+  const { message, history, conversationId, threadId, provider, model, attachmentIds = [], locale, voiceMetadata } = parsed.data;
+  if (voiceMetadata && voiceMetadata.transcript !== message) {
+    res.status(400).json({ error: 'Voice transcript must match the agent message.', code: 'AI_INVALID_VOICE_TRANSCRIPT' }); return;
+  }
   if (threadId && conversationId && threadId !== conversationId) {
     res.status(400).json({ error: 'threadId and conversationId must match', code: 'AI_INVALID_THREAD' });
     return;

@@ -9,6 +9,8 @@ export function normalizeUiLanguage(locale?: string): ResponseLanguage | undefin
 
 export function detectMessageLanguage(message: string): ResponseLanguage | undefined {
   const text = ` ${message.toLowerCase()} `;
+  if (/\b(which|what|who|please|overdue|critical|safety|procedure)\b/i.test(text)) return 'en';
+  if (/\b(qué|cuál|acciones|seguridad|procedimiento|debo|seguir)\b/i.test(text)) return 'es';
   if (/\b(qual|quais|quem|você|ações|segurança|presidente do|receita de|instruções|lembre|senha)\b/i.test(text)) return 'pt';
   if (/\b(quién|cuál|dime|muestra|instrucciones|seguridad|presidente de|recuerda|contraseña)\b/i.test(text)) return 'es';
   if (/\b(quelle|montre|révèle|sécurité|président de)\b/i.test(text)) return 'fr';
@@ -27,8 +29,19 @@ export function detectMessageLanguage(message: string): ResponseLanguage | undef
   return ranked[0][1] >= 2 && ranked[0][1] > ranked[1][1] ? ranked[0][0] : undefined;
 }
 
+export function detectRequestedResponseLanguage(message: string): ResponseLanguage | undefined {
+  const requests: Array<[RegExp, ResponseLanguage]> = [
+    [/\b(?:em|para) ingl[eê]s\b|\bin english\b|\ben ingl[eé]s\b/i, 'en'],
+    [/\b(?:em|para) portugu[eê]s\b|\bin portuguese\b|\ben portugu[eé]s\b/i, 'pt'],
+    [/\b(?:em|para) espanhol\b|\bin spanish\b|\ben espa[nñ]ol\b/i, 'es'],
+    [/\b(?:em|para) franc[eê]s\b|\bin french\b|\ben fran[cç]ais\b/i, 'fr'],
+    [/\b(?:em|para) alem[aã]o\b|\bin german\b|\ben alem[aá]n\b/i, 'de'],
+  ];
+  return requests.find(([pattern]) => pattern.test(message))?.[1];
+}
+
 export function resolveResponseLanguage(input: { userMessage?: string; uiLanguage?: string }): ResponseLanguage {
-  return detectMessageLanguage(input.userMessage ?? '') ?? normalizeUiLanguage(input.uiLanguage) ?? 'en';
+  return detectRequestedResponseLanguage(input.userMessage ?? '') ?? detectMessageLanguage(input.userMessage ?? '') ?? normalizeUiLanguage(input.uiLanguage) ?? 'en';
 }
 
 export function localized<T extends string>(templates: Record<ResponseLanguage, T>, language: ResponseLanguage): T {

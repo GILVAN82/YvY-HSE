@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, Send, ShieldCheck, Scale, TriangleAlert, Factory, Users, FileCheck2, BookOpen, BadgeCheck, Wrench, Database, UserCheck } from 'lucide-angular';
+import { LucideAngularModule, Send, ShieldCheck, Scale, TriangleAlert, Factory, Users, FileCheck2, BookOpen, BadgeCheck, Wrench, Database, UserCheck, Mic, Square, X, Volume2, VolumeX, RotateCcw } from 'lucide-angular';
 import { YvyAiCoreComponent } from './components/yvy-ai-core.component';
 import { YvyCapabilityNodeComponent } from './components/yvy-capability-node.component';
 import { YvyHudPanelComponent } from './components/yvy-hud-panel.component';
@@ -12,6 +12,10 @@ import { YvyDetailsDrawerComponent } from './components/yvy-details-drawer.compo
 import { YvyCommandCenterAgentService } from './yvy-command-center-agent.service';
 import { AuthService } from '../../core/auth.service';
 import type { YvyAgentVisualState, YvyVisualState, YvyWorkflowStage } from './yvy-visual-state';
+import { SpeechRecognitionService } from './voice/speech-recognition.service';
+import { SpeechSynthesisService } from './voice/speech-synthesis.service';
+import { languageName } from './voice/language-resolution';
+import type { VoiceStatus } from './voice/voice.types';
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
@@ -19,8 +23,10 @@ import type { YvyAgentVisualState, YvyVisualState, YvyWorkflowStage } from './yv
   templateUrl: './yvy-ai-command-center.component.html', styleUrl: './yvy-ai-command-center.component.scss',
 })
 export class YvyAiCommandCenterComponent implements OnInit {
-  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);
+  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(SpeechSynthesisService);
   readonly sendIcon = Send;
+  readonly micIcon=Mic;readonly stopIcon=Square;readonly cancelIcon=X;readonly volumeIcon=Volume2;readonly mutedIcon=VolumeX;readonly replayIcon=RotateCcw;
+  readonly voiceStatus=signal<VoiceStatus>('idle');readonly voiceError=signal('');readonly muted=signal(false);readonly languageName=languageName;
   readonly guardIcon = ShieldCheck; readonly ragIcon = Database; readonly toolsIcon = Wrench;
   readonly verifyIcon = BadgeCheck; readonly approvalIcon = UserCheck;
   readonly capabilities = [
@@ -47,6 +53,16 @@ export class YvyAiCommandCenterComponent implements OnInit {
   }
   stageActive(stage:YvyWorkflowStage){return this.state().activeWorkflowStage===stage;}
   async submit(){const text=this.prompt.trim();if(!text)return;this.prompt='';await this.agent.send(text);}
+  async startVoice(){
+    if(this.voiceStatus()==='listening')return;this.voiceError.set('');this.voiceStatus.set('requesting-permission');
+    try{this.voiceStatus.set('listening');const result=await this.speechRecognition.listen();this.voiceStatus.set('transcribing');const metadata=this.speechRecognition.resolveMetadata(result);this.agent.voiceMetadata.set(metadata);this.prompt=result.transcript;this.voiceStatus.set('processing');const completed=await this.agent.send(result.transcript,metadata);if(completed)this.speakVerified();else this.voiceStatus.set('error');}
+    catch(error){const code=error instanceof Error?error.message:'STT_FAILED';if(code==='CANCELLED'){this.voiceStatus.set('idle');return;}this.voiceError.set(code==='PERMISSION_DENIED'?'Microphone permission was denied. You can continue using text.':code==='NO_SPEECH'?'No speech was detected. You can continue using text.':'Voice unavailable. You can continue using text.');this.voiceStatus.set('error');}
+  }
+  stopListening(){this.voiceStatus.set('transcribing');this.speechRecognition.stop();}
+  cancelVoice(){this.speechRecognition.cancel();this.speechSynthesis.stop();this.voiceStatus.set('idle');}
+  stopSpeaking(){this.speechSynthesis.stop();this.voiceStatus.set('idle');}
+  toggleMute(){const value=!this.muted();this.muted.set(value);this.speechSynthesis.setMuted(value);if(value&&this.voiceStatus()==='speaking')this.voiceStatus.set('idle');}
+  replay(){if(this.speechSynthesis.replay(()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');}
   openDetails(kind:string,event?:Event){this.returnFocus=(event?.currentTarget as HTMLElement)||document.activeElement as HTMLElement;this.selected.set(kind);}
   closeDetails(){this.selected.set(null);queueMicrotask(()=>this.returnFocus?.focus());}
   capability(id:string){return this.capabilities.find(item=>item.id===id);}
@@ -55,7 +71,8 @@ export class YvyAiCommandCenterComponent implements OnInit {
   private mapLiveState():YvyVisualState{
     const runtime=this.agent.runtimeState(),snapshot=this.agent.latest(),approval=this.agent.approval()??snapshot?.approvalRequest;
     let agentState:YvyAgentVisualState='ready',activeWorkflowStage:YvyWorkflowStage=null,activeCapability:string|undefined;
-    if(runtime==='analysing'){agentState='analysing';activeWorkflowStage='guard';activeCapability='safety';}
+    if(this.voiceStatus()==='listening')agentState='listening';else if(this.voiceStatus()==='transcribing')agentState='transcribing';else if(this.voiceStatus()==='processing'&&runtime==='idle')agentState='understanding';else if(this.voiceStatus()==='speaking')agentState='speaking';
+    else if(runtime==='analysing'){agentState='analysing';activeWorkflowStage='guard';activeCapability='safety';}
     else if(runtime==='using-tool'){agentState='using-tool';activeWorkflowStage='tools';activeCapability='operations';}
     else if(runtime==='streaming'){agentState='analysing';}
     else if(runtime==='error'||snapshot?.status==='FAILED'){agentState='error';activeCapability='risk';}
@@ -64,4 +81,5 @@ export class YvyAiCommandCenterComponent implements OnInit {
     const approvalStatus=approval?.status==='CANCELLED'?'EXPIRED':approval?.status??'NOT_REQUIRED';
     return {agentState,activeCapability,activeWorkflowStage,verificationStatus,approvalStatus};
   }
+  private speakVerified(){const metadata=this.agent.voiceMetadata(),verification=this.agent.latest()?.executionTrace?.verification?.status,approval=this.agent.approval();if(!metadata){this.voiceStatus.set('idle');return;}const safe=verification==='VERIFIED'||approval?.status==='PENDING';if(!safe||!this.agent.answer()){this.voiceStatus.set('idle');return;}if(this.speechSynthesis.speak(this.agent.answer(),metadata.effectiveResponseLanguage,()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');else this.voiceStatus.set('idle');}
 }

@@ -1,5 +1,9 @@
 export type YvyAgentVisualState =
   | 'ready'
+  | 'listening'
+  | 'transcribing'
+  | 'understanding'
+  | 'speaking'
   | 'analysing'
   | 'retrieving'
   | 'using-tool'

@@ -18,3 +18,17 @@
 .agent-input button:disabled{opacity:.45;cursor:not-allowed}.agent-input .input-error{color:#ff9f78}
 :host ::ng-deep app-yvy-details-drawer p{color:#b9cfdb;font-size:12px;line-height:1.65}:host ::ng-deep app-yvy-details-drawer .full-response{white-space:pre-wrap}:host ::ng-deep app-yvy-details-drawer .approval-controls{display:flex;gap:10px;margin-top:18px}:host ::ng-deep app-yvy-details-drawer .approval-controls button{padding:9px 15px;border:1px solid #44e2ba;border-radius:8px;background:#0a594d;color:#eafff9;cursor:pointer}:host ::ng-deep app-yvy-details-drawer .approval-controls .reject{border-color:#e77a65;background:#592720}
 @media(prefers-reduced-motion:reduce){.live-state i.busy{animation:none}}
+
+/* Keep command input and HITL controls outside the intelligence core. */
+@media(min-width:1201px){
+  .stage{height:1010px}.core{top:292px}.connections{top:286px}
+  .cap-safety{top:32px}.cap-compliance{top:84px}.cap-risk{top:84px}.cap-knowledge{top:286px}.cap-operations{top:286px}.cap-permits{top:488px}.cap-people{top:488px}.cap-approvals{top:574px}
+  .guard-panel,.tools-panel{top:78px}.rag-panel,.verify-panel{top:338px}
+  .agent-input{top:640px}.approval-panel{top:830px}
+}
+@media(min-width:901px) and (max-width:1200px){
+  .stage{height:990px}.core{top:290px}.connections{top:284px}
+  .cap-safety{top:30px}.cap-compliance{left:35%;top:82px}.cap-risk{left:65%;top:82px}.cap-knowledge{left:29%;top:284px}.cap-operations{left:71%;top:284px}.cap-permits{left:36%;top:484px}.cap-people{left:64%;top:484px}.cap-approvals{top:566px}
+  .guard-panel,.tools-panel{top:76px}.rag-panel,.verify-panel{top:334px}
+  .agent-input{top:630px;width:min(500px,46%)}.approval-panel{top:818px}
+}

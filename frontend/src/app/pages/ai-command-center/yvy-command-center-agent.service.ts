@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AgentInspectorService, type AgentInspectorSnapshot, type ApprovalSnapshot } from '../../core/agent-inspector.service';
 import { I18nService } from '../../core/i18n.service';
+import type { VoiceTurnMetadata } from './voice/voice.types';
 
 interface ProviderInfo { id:string; available:boolean; models:Array<{id:string}>; allowCustomModel:boolean; }
 export type CommandCenterRuntimeState = 'idle'|'analysing'|'using-tool'|'streaming'|'done'|'error';
@@ -10,7 +11,7 @@ export type CommandCenterRuntimeState = 'idle'|'analysing'|'using-tool'|'streami
 export class YvyCommandCenterAgentService {
   private readonly inspector=inject(AgentInspectorService); private readonly i18n=inject(I18nService);
   readonly runtimeState=signal<CommandCenterRuntimeState>('idle'); readonly answer=signal(''); readonly question=signal('');
-  readonly error=signal(''); readonly activeTool=signal<string|null>(null); readonly approval=signal<ApprovalSnapshot|null>(null);
+  readonly error=signal(''); readonly activeTool=signal<string|null>(null); readonly approval=signal<ApprovalSnapshot|null>(null);readonly voiceMetadata=signal<VoiceTurnMetadata|null>(null);
   readonly latest=this.inspector.latest; readonly loading=computed(()=>['analysing','using-tool','streaming'].includes(this.runtimeState()));
   private provider:ProviderInfo|null=null; private modelId=''; private threadId:string|null=null; private history:Array<{role:'user'|'assistant';content:string}>=[];
 
@@ -20,11 +21,11 @@ export class YvyCommandCenterAgentService {
     catch{this.error.set('Unable to verify the assistant configuration. Check the server connection.');}
   }
 
-  async send(message:string){
+  async send(message:string,voiceMetadata?:VoiceTurnMetadata){
     const text=message.trim();if(!text||this.loading())return false;await this.initialize();if(!this.provider||!this.modelId){this.runtimeState.set('error');return false;}
-    this.question.set(text);this.answer.set('');this.error.set('');this.activeTool.set(null);this.approval.set(null);this.runtimeState.set('analysing');
+    this.question.set(text);this.voiceMetadata.set(voiceMetadata??null);this.answer.set('');this.error.set('');this.activeTool.set(null);this.approval.set(null);this.runtimeState.set('analysing');
     try{
-      const response=await fetch(`${environment.apiUrl}/ai/chat`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:this.history,provider:this.provider.id,model:this.modelId,...(this.threadId?{threadId:this.threadId}:{}),locale:this.i18n.lang()})});
+      const response=await fetch(`${environment.apiUrl}/ai/chat`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:this.history,provider:this.provider.id,model:this.modelId,...(this.threadId?{threadId:this.threadId}:{}),locale:voiceMetadata?.effectiveResponseLanguage??this.i18n.lang(),...(voiceMetadata?{voiceMetadata}: {})})});
       if(!response.ok||!response.body){const body=await response.json().catch(()=>null);this.error.set(body?.error||'The query could not be completed at this time.');this.runtimeState.set('error');return false;}
       const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
       while(true){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const parts=buffer.split('\n\n');buffer=parts.pop()||'';for(const part of parts){const line=part.trim();if(!line.startsWith('data:'))continue;const payload=JSON.parse(line.slice(5).trim());this.consume(payload);}}

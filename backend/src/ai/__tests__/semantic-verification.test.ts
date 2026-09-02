@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ragResultEvidence, toolResultEvidence, VerificationStatus, type AgentEvidence } from '../graph/evidence.contract';
 import { verifyEvidenceContract } from '../graph/semanticVerifier';
 import { resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
-import { AgentErrorCode, AgentStatus, type AgentStreamEvent } from '../graph/hseAgent.types';
+import { AgentErrorCode, AgentStatus, type AgentEvent } from '../graph/hseAgent.types';
 import { createHermeticToolFactory, createMockModel } from './mockModel';
 
 const toolEvidence = (status: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA', recordCount: number, data: unknown = []) =>
@@ -79,7 +79,7 @@ describe('verify node fail-closed integration', () => {
 
   test('contradicted operational output is replaced before any text is emitted', async () => {
     resetGraphCache();
-    const events: AgentStreamEvent[] = [];
+    const events: AgentEvent[] = [];
     const result = await runHseAgent({
       message: 'How many overdue actions are there?',
       model: createMockModel([
@@ -93,7 +93,7 @@ describe('verify node fail-closed integration', () => {
     const emittedText = events.filter((event) => event.type === 'text').map((event) => event.text).join(' ');
     assert.equal(result.status, AgentStatus.FAILED);
     assert.equal(result.errorCode, AgentErrorCode.SEMANTIC_VERIFICATION);
-    assert.equal(result.executionTrace.verification.status, VerificationStatus.CONTRADICTED);
+    assert.equal(result.executionTrace!.verification.status, VerificationStatus.CONTRADICTED);
     assert.doesNotMatch(result.text, /3 overdue actions/i);
     assert.doesNotMatch(emittedText, /3 overdue actions/i);
     assert.match(emittedText, /verified evidence/i);
@@ -101,7 +101,7 @@ describe('verify node fail-closed integration', () => {
 
   test('unsupported safety output is replaced before any text is emitted', async () => {
     resetGraphCache();
-    const events: AgentStreamEvent[] = [];
+    const events: AgentEvent[] = [];
     const result = await runHseAgent({
       message: 'What LOTO controls apply?',
       model: createMockModel([{ text: 'LOTO must always be removed remotely before verification.' }]),
@@ -111,7 +111,7 @@ describe('verify node fail-closed integration', () => {
 
     const emittedText = events.filter((event) => event.type === 'text').map((event) => event.text).join(' ');
     assert.equal(result.status, AgentStatus.FAILED);
-    assert.equal(result.executionTrace.verification.status, VerificationStatus.SAFETY_BLOCKED);
+    assert.equal(result.executionTrace!.verification.status, VerificationStatus.SAFETY_BLOCKED);
     assert.doesNotMatch(result.text, /removed remotely/i);
     assert.doesNotMatch(emittedText, /removed remotely/i);
   });

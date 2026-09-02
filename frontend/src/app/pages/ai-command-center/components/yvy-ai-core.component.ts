@@ -14,7 +14,7 @@ import type { YvyAgentVisualState } from '../yvy-visual-state';
       <svg class="dial" viewBox="0 0 400 400" aria-hidden="true">
         <defs>
           <filter id="coreGlow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <linearGradient id="coreLine" x1="0" x2="1"><stop stop-color="#0aa9ff"/><stop offset=".55" stop-color="#55edff"/><stop offset="1" stop-color="#126cff"/></linearGradient>
+          <linearGradient id="coreLine" x1="0" x2="1"><stop class="energy-start"/><stop class="energy-mid" offset=".55"/><stop class="energy-end" offset="1"/></linearGradient>
         </defs>
         <circle class="line line-1" cx="200" cy="200" r="174"/>
         <circle class="line line-2" cx="200" cy="200" r="154"/>
