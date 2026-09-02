@@ -21,14 +21,14 @@
 
 /* Keep command input and HITL controls outside the intelligence core. */
 @media(min-width:1201px){
-  .stage{height:1010px}.core{top:292px}.connections{top:286px}
+  .stage{height:1070px}.core{top:292px}.connections{top:286px}
   .cap-safety{top:32px}.cap-compliance{top:84px}.cap-risk{top:84px}.cap-knowledge{top:286px}.cap-operations{top:286px}.cap-permits{top:488px}.cap-people{top:488px}.cap-approvals{top:574px}
   .guard-panel,.tools-panel{top:78px}.rag-panel,.verify-panel{top:338px}
-  .agent-input{top:640px}.approval-panel{top:830px}
+  .agent-input{top:640px}.approval-panel{top:890px}
 }
 @media(min-width:901px) and (max-width:1200px){
-  .stage{height:990px}.core{top:290px}.connections{top:284px}
+  .stage{height:1050px}.core{top:290px}.connections{top:284px}
   .cap-safety{top:30px}.cap-compliance{left:35%;top:82px}.cap-risk{left:65%;top:82px}.cap-knowledge{left:29%;top:284px}.cap-operations{left:71%;top:284px}.cap-permits{left:36%;top:484px}.cap-people{left:64%;top:484px}.cap-approvals{top:566px}
   .guard-panel,.tools-panel{top:76px}.rag-panel,.verify-panel{top:334px}
-  .agent-input{top:630px;width:min(500px,46%)}.approval-panel{top:818px}
+  .agent-input{top:630px;width:min(500px,46%)}.approval-panel{top:878px}
 }
