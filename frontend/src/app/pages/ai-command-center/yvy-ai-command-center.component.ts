@@ -16,6 +16,8 @@ import { SpeechRecognitionService } from './voice/speech-recognition.service';
 import { SpeechSynthesisService } from './voice/speech-synthesis.service';
 import { languageName } from './voice/language-resolution';
 import type { VoiceStatus } from './voice/voice.types';
+import type { VoiceConversationTurn } from './voice/voice.types';
+import { SpokenResponseFormatterService } from './voice/spoken-response-formatter.service';
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
@@ -23,10 +25,11 @@ import type { VoiceStatus } from './voice/voice.types';
   templateUrl: './yvy-ai-command-center.component.html', styleUrl: './yvy-ai-command-center.component.scss',
 })
 export class YvyAiCommandCenterComponent implements OnInit {
-  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(SpeechSynthesisService);
+  readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(SpeechSynthesisService);readonly spokenFormatter=inject(SpokenResponseFormatterService);
   readonly sendIcon = Send;
   readonly micIcon=Mic;readonly stopIcon=Square;readonly cancelIcon=X;readonly volumeIcon=Volume2;readonly mutedIcon=VolumeX;readonly replayIcon=RotateCcw;
   readonly voiceStatus=signal<VoiceStatus>('idle');readonly voiceError=signal('');readonly muted=signal(false);readonly languageName=languageName;
+  readonly voiceConversation=signal<VoiceConversationTurn[]>([]);readonly lastSpokenResponse=signal('');
   readonly guardIcon = ShieldCheck; readonly ragIcon = Database; readonly toolsIcon = Wrench;
   readonly verifyIcon = BadgeCheck; readonly approvalIcon = UserCheck;
   readonly capabilities = [
@@ -54,9 +57,10 @@ export class YvyAiCommandCenterComponent implements OnInit {
   stageActive(stage:YvyWorkflowStage){return this.state().activeWorkflowStage===stage;}
   async submit(){const text=this.prompt.trim();if(!text)return;this.prompt='';await this.agent.send(text);}
   async startVoice(){
-    if(this.voiceStatus()==='listening')return;this.voiceError.set('');this.voiceStatus.set('requesting-permission');
-    try{this.voiceStatus.set('listening');const result=await this.speechRecognition.listen();this.voiceStatus.set('transcribing');const metadata=this.speechRecognition.resolveMetadata(result);this.agent.voiceMetadata.set(metadata);this.prompt=result.transcript;this.voiceStatus.set('processing');const completed=await this.agent.send(result.transcript,metadata);if(completed)this.speakVerified();else this.voiceStatus.set('error');}
-    catch(error){const code=error instanceof Error?error.message:'STT_FAILED';if(code==='CANCELLED'){this.voiceStatus.set('idle');return;}this.voiceError.set(code==='PERMISSION_DENIED'?'Microphone permission was denied. You can continue using text.':code==='NO_SPEECH'?'No speech was detected. You can continue using text.':'Voice unavailable. You can continue using text.');this.voiceStatus.set('error');}
+    if(this.voiceStatus()==='listening')return;if(this.voiceStatus()==='speaking'){this.speechSynthesis.stop();this.voiceStatus.set('interrupted');}
+    this.voiceError.set('');this.voiceStatus.set('requesting-permission');
+    try{this.voiceStatus.set('listening');const result=await this.speechRecognition.listen();this.voiceStatus.set('transcribing');const metadata=this.speechRecognition.resolveMetadata(result);this.agent.voiceMetadata.set(metadata);this.voiceConversation.update(turns=>[...turns,this.turn('user',metadata.effectiveResponseLanguage,result.transcript)].slice(-20));this.prompt=result.transcript;this.voiceStatus.set('processing');const completed=await this.agent.send(result.transcript,metadata);if(completed)this.speakVerified();else this.voiceStatus.set('error');}
+    catch(error){const code=error instanceof Error?error.message:'STT_FAILED';if(code==='CANCELLED'){this.voiceStatus.set('idle');return;}const language=this.agent.voiceMetadata()?.effectiveResponseLanguage??'en';this.voiceError.set(this.friendlyVoiceError(code,language));this.voiceStatus.set('error');}
   }
   stopListening(){this.voiceStatus.set('transcribing');this.speechRecognition.stop();}
   cancelVoice(){this.speechRecognition.cancel();this.speechSynthesis.stop();this.voiceStatus.set('idle');}
@@ -71,7 +75,7 @@ export class YvyAiCommandCenterComponent implements OnInit {
   private mapLiveState():YvyVisualState{
     const runtime=this.agent.runtimeState(),snapshot=this.agent.latest(),approval=this.agent.approval()??snapshot?.approvalRequest;
     let agentState:YvyAgentVisualState='ready',activeWorkflowStage:YvyWorkflowStage=null,activeCapability:string|undefined;
-    if(this.voiceStatus()==='listening')agentState='listening';else if(this.voiceStatus()==='transcribing')agentState='transcribing';else if(this.voiceStatus()==='processing'&&runtime==='idle')agentState='understanding';else if(this.voiceStatus()==='speaking')agentState='speaking';
+    if(this.voiceStatus()==='listening')agentState='listening';else if(this.voiceStatus()==='transcribing')agentState='transcribing';else if(this.voiceStatus()==='processing'&&runtime==='idle')agentState='understanding';else if(this.voiceStatus()==='speaking')agentState='speaking';else if(this.voiceStatus()==='interrupted')agentState='interrupted';
     else if(runtime==='analysing'){agentState='analysing';activeWorkflowStage='guard';activeCapability='safety';}
     else if(runtime==='using-tool'){agentState='using-tool';activeWorkflowStage='tools';activeCapability='operations';}
     else if(runtime==='streaming'){agentState='analysing';}
@@ -81,5 +85,7 @@ export class YvyAiCommandCenterComponent implements OnInit {
     const approvalStatus=approval?.status==='CANCELLED'?'EXPIRED':approval?.status??'NOT_REQUIRED';
     return {agentState,activeCapability,activeWorkflowStage,verificationStatus,approvalStatus};
   }
-  private speakVerified(){const metadata=this.agent.voiceMetadata(),verification=this.agent.latest()?.executionTrace?.verification?.status,approval=this.agent.approval();if(!metadata){this.voiceStatus.set('idle');return;}const safe=verification==='VERIFIED'||approval?.status==='PENDING';if(!safe||!this.agent.answer()){this.voiceStatus.set('idle');return;}if(this.speechSynthesis.speak(this.agent.answer(),metadata.effectiveResponseLanguage,()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');else this.voiceStatus.set('idle');}
+  private speakVerified(){const metadata=this.agent.voiceMetadata(),verification=this.agent.latest()?.executionTrace?.verification?.status,approval=this.agent.approval();if(!metadata){this.voiceStatus.set('idle');return;}const safe=verification==='VERIFIED'||approval?.status==='PENDING';if(!safe||!this.agent.answer()){this.voiceStatus.set('idle');return;}const response=this.spokenFormatter.format(this.agent.answer(),metadata.effectiveResponseLanguage);this.lastSpokenResponse.set(response.spokenResponse);this.voiceConversation.update(turns=>[...turns,this.turn('assistant',metadata.effectiveResponseLanguage,response.displayResponse,response.spokenResponse,verification)].slice(-20));if(this.speechSynthesis.speak(response.spokenResponse,metadata.effectiveResponseLanguage,()=>this.voiceStatus.set('idle'),()=>{this.voiceError.set(this.friendlyVoiceError('TTS_FAILED',metadata.effectiveResponseLanguage));this.voiceStatus.set('idle');}))this.voiceStatus.set('speaking');else this.voiceStatus.set('idle');}
+  private turn(role:'user'|'assistant',language:VoiceConversationTurn['language'],text:string,spokenText?:string,verificationStatus?:string):VoiceConversationTurn{return {id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,role,mode:'voice',language,text,spokenText,verificationStatus,timestamp:new Date().toISOString()};}
+  private friendlyVoiceError(code:string,language:VoiceConversationTurn['language']){const messages={en:{miss:"I didn't catch that. Could you say it again?",unavailable:'Voice is temporarily unavailable. You can continue by text.'},pt:{miss:'Não entendi. Pode dizer novamente?',unavailable:'A voz está temporariamente indisponível. Você pode continuar por texto.'},es:{miss:'No entendí. ¿Puedes repetirlo?',unavailable:'La voz no está disponible temporalmente. Puedes continuar por texto.'},fr:{miss:"Je n’ai pas compris. Pouvez-vous répéter ?",unavailable:'La voix est temporairement indisponible. Vous pouvez continuer par écrit.'},de:{miss:'Ich habe das nicht verstanden. Können Sie es wiederholen?',unavailable:'Die Sprachausgabe ist vorübergehend nicht verfügbar. Sie können per Text fortfahren.'}};return code==='NO_SPEECH'?messages[language].miss:messages[language].unavailable;}
 }
