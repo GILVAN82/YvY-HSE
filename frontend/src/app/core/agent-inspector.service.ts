@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { YvyAlertEvent } from '../pages/ai-command-center/yvy-alert.service';
+import type { AttentionSchedulerHealth, YvyAlertEvent } from '../pages/ai-command-center/yvy-alert.service';
 
 export interface AgentToolTrace {
   name: string;
@@ -58,6 +58,7 @@ const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 export class AgentInspectorService {
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
   readonly alertEvents = signal<YvyAlertEvent[]>(this.readAlertEvents());
+  readonly attentionScheduler=signal<AttentionSchedulerHealth|null>(null);
 
   record(payload: unknown) {
     if (!payload || typeof payload !== 'object') return;
@@ -71,6 +72,7 @@ export class AgentInspectorService {
   clear() {
     this.latest.set(null);
     this.alertEvents.set([]);
+    this.attentionScheduler.set(null);
     try { sessionStorage.removeItem(STORAGE_KEY);sessionStorage.removeItem(ALERT_STORAGE_KEY); } catch { /* In-memory trace is already cleared. */ }
   }
 
@@ -81,6 +83,7 @@ export class AgentInspectorService {
     this.record({ ...current, status: approval.status, responseStatus: approval.status === 'APPROVED' ? 'APPROVED' : approval.status === 'REJECTED' ? 'REJECTED' : 'PENDING', approvalRequest: approval });
   }
   recordAlertEvents(events:YvyAlertEvent[]){const safe=events.slice(0,50).map(({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata})=>({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata}));this.alertEvents.set(safe);try{sessionStorage.setItem(ALERT_STORAGE_KEY,JSON.stringify(safe));}catch{}}
+  recordAttentionScheduler(health:AttentionSchedulerHealth){this.attentionScheduler.set(health);}
 
   private read(): AgentInspectorSnapshot | null {
     try {

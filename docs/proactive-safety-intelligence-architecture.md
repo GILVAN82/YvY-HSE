@@ -40,9 +40,9 @@ ATTENTION and HIGH alerts can be snoozed for a bounded period. CRITICAL alerts c
 
 The current scoped alert group is provided as minimized verified context to the existing conversation thread only for short contextual follow-ups such as “qual?” and “e a segunda?”. It is never stored as long-term memory and cannot authorize HITL.
 
-## Continuous active-session attention
+## Server-authoritative attention
 
-While the authenticated Command Center is open, deterministic evaluation repeats every 90 seconds. It performs no model calls, reuses the scoped evaluator, deduplicates existing fingerprints, applies escalation, and resolves conditions that disappeared. This is active-session attention, not 24/7 server-side monitoring.
+The backend Operational Attention Scheduler is authoritative for deterministic evaluation. It runs once at startup and at a configurable interval, with PostgreSQL advisory-lock leadership and source-level fail-closed resolution. The browser's 90-second cycle now reads compact persisted alert state only; it does not retrieve operational sources or maintain the lifecycle.
 
 Desktop notifications are disabled by default, require explicit browser permission, use a generic non-sensitive count, and remain secondary to the in-app Attention Center.
 
