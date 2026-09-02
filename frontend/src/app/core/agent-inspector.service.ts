@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import type { YvyAlertEvent } from '../pages/ai-command-center/yvy-alert.service';
 
 export interface AgentToolTrace {
   name: string;
@@ -51,10 +52,12 @@ export interface ApprovalSnapshot {
 }
 
 const STORAGE_KEY = 'yvy-hse-agent-inspector-latest';
+const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 
 @Injectable({ providedIn: 'root' })
 export class AgentInspectorService {
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
+  readonly alertEvents = signal<YvyAlertEvent[]>(this.readAlertEvents());
 
   record(payload: unknown) {
     if (!payload || typeof payload !== 'object') return;
@@ -67,7 +70,8 @@ export class AgentInspectorService {
   /** Clears only the browser-side Inspector snapshot. It never calls the API. */
   clear() {
     this.latest.set(null);
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* In-memory trace is already cleared. */ }
+    this.alertEvents.set([]);
+    try { sessionStorage.removeItem(STORAGE_KEY);sessionStorage.removeItem(ALERT_STORAGE_KEY); } catch { /* In-memory trace is already cleared. */ }
   }
 
   /** Synchronizes only from the persisted approval returned by the backend. */
@@ -76,6 +80,7 @@ export class AgentInspectorService {
     if (!current || current.threadId !== approval.threadId) return;
     this.record({ ...current, status: approval.status, responseStatus: approval.status === 'APPROVED' ? 'APPROVED' : approval.status === 'REJECTED' ? 'REJECTED' : 'PENDING', approvalRequest: approval });
   }
+  recordAlertEvents(events:YvyAlertEvent[]){const safe=events.slice(0,50).map(({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata})=>({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata}));this.alertEvents.set(safe);try{sessionStorage.setItem(ALERT_STORAGE_KEY,JSON.stringify(safe));}catch{}}
 
   private read(): AgentInspectorSnapshot | null {
     try {
@@ -83,4 +88,5 @@ export class AgentInspectorService {
       return value && typeof value.runId === 'string' ? value : null;
     } catch { return null; }
   }
+  private readAlertEvents():YvyAlertEvent[]{try{const value=JSON.parse(sessionStorage.getItem(ALERT_STORAGE_KEY)||'[]');return Array.isArray(value)?value:[];}catch{return[];}}
 }

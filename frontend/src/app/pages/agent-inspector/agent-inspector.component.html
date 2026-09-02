@@ -106,4 +106,8 @@
       </section>
     </div>
   </ng-container>
+  <section class="card" *ngIf="inspector.alertEvents().length">
+    <div class="card-head"><div><span class="section-number">10</span><h2>Proactive Alert Events</h2></div><span>{{inspector.alertEvents().length}}</span></div>
+    <article class="tool" *ngFor="let event of inspector.alertEvents() | slice:0:20"><div class="tool-title"><code>{{event.eventType}}</code><span class="status">{{event.severity}}</span></div><div class="kv"><span>Category / rule</span><code>{{event.category}} · {{event.ruleId}}</code></div><div class="kv"><span>Evidence</span><strong>{{event.evidenceCount}}</strong></div><div class="kv"><span>Timestamp</span><strong>{{event.createdAt | date:'medium'}}</strong></div></article>
+  </section>
 </main>

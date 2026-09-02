@@ -3,6 +3,7 @@ import { environment } from '../../../environments/environment';
 import { AgentInspectorService, type AgentInspectorSnapshot, type ApprovalSnapshot } from '../../core/agent-inspector.service';
 import { I18nService } from '../../core/i18n.service';
 import type { VoiceTurnMetadata } from './voice/voice.types';
+import type { YvyAlert } from './yvy-alert.service';
 
 interface ProviderInfo { id:string; available:boolean; models:Array<{id:string}>; allowCustomModel:boolean; }
 export type CommandCenterRuntimeState = 'idle'|'analysing'|'using-tool'|'streaming'|'done'|'error';
@@ -12,6 +13,7 @@ export class YvyCommandCenterAgentService {
   private readonly inspector=inject(AgentInspectorService); private readonly i18n=inject(I18nService);
   readonly runtimeState=signal<CommandCenterRuntimeState>('idle'); readonly answer=signal(''); readonly question=signal('');
   readonly error=signal(''); readonly activeTool=signal<string|null>(null); readonly approval=signal<ApprovalSnapshot|null>(null);readonly voiceMetadata=signal<VoiceTurnMetadata|null>(null);
+  readonly activeAlertContext=signal<YvyAlert[]>([]);
   readonly latest=this.inspector.latest; readonly loading=computed(()=>['analysing','using-tool','streaming'].includes(this.runtimeState()));
   private provider:ProviderInfo|null=null; private modelId=''; private threadId:string|null=null; private history:Array<{role:'user'|'assistant';content:string}>=[];
 
@@ -25,7 +27,8 @@ export class YvyCommandCenterAgentService {
     const text=message.trim();if(!text||this.loading())return false;await this.initialize();if(!this.provider||!this.modelId){this.runtimeState.set('error');return false;}
     this.question.set(text);this.voiceMetadata.set(voiceMetadata??null);this.answer.set('');this.error.set('');this.activeTool.set(null);this.approval.set(null);this.runtimeState.set('analysing');
     try{
-      const response=await fetch(`${environment.apiUrl}/ai/chat`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:this.history,provider:this.provider.id,model:this.modelId,...(this.threadId?{threadId:this.threadId}:{}),locale:voiceMetadata?.effectiveResponseLanguage??this.i18n.lang(),...(voiceMetadata?{voiceMetadata}: {})})});
+      const contextual=/^(qual|quais|which|which one|e a segunda|and the second|what about the second)[?!. ]*$/i.test(text);const alerts=this.activeAlertContext(),groups=new Set(alerts.map(a=>a.category));const safeContext=contextual&&alerts.length?`\n\n[ACTIVE YVY ALERT CONTEXT — verified operational metadata; do not infer beyond it${groups.size>1?'; AMBIGUOUS GROUPS: ask which category the user means before selecting an item':''}]\n${alerts.map((a,i)=>`${i+1}. ${a.severity} | ${a.category} | ${a.sourceId} | ${a.summary} | rule ${a.ruleId}`).join('\n')}`:'';
+      const response=await fetch(`${environment.apiUrl}/ai/chat`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text+safeContext,history:this.history,provider:this.provider.id,model:this.modelId,...(this.threadId?{threadId:this.threadId}:{}),locale:voiceMetadata?.effectiveResponseLanguage??this.i18n.lang(),...(voiceMetadata?{voiceMetadata}: {})})});
       if(!response.ok||!response.body){const body=await response.json().catch(()=>null);this.error.set(body?.error||'The query could not be completed at this time.');this.runtimeState.set('error');return false;}
       const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
       while(true){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const parts=buffer.split('\n\n');buffer=parts.pop()||'';for(const part of parts){const line=part.trim();if(!line.startsWith('data:'))continue;const payload=JSON.parse(line.slice(5).trim());this.consume(payload);}}
@@ -34,6 +37,7 @@ export class YvyCommandCenterAgentService {
       return this.runtimeState()!=='error';
     }catch{this.error.set('Server connection error.');this.runtimeState.set('error');return false;}
   }
+  setActiveAlertContext(alerts:YvyAlert[]){this.activeAlertContext.set(alerts.slice(0,10).map(a=>({...a,evidence:a.evidence.slice(0,5)})));}
 
   async resolveApproval(decision:'approve'|'reject'){
     const item=this.approval();if(!item||item.status!=='PENDING')return false;

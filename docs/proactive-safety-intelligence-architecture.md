@@ -28,12 +28,26 @@ Each alert stores its source type/id, deterministic rule ID, and minimized evide
 
 The fingerprint is `category + source record`. PostgreSQL enforces uniqueness per user. Re-evaluation updates the same alert, including severity changes. Conditions missing from the complete scoped evaluation become RESOLVED. Reading NEW alerts marks them ALERTED. Acknowledge records the authenticated user and timestamp but never marks the condition RESOLVED.
 
-## Alert fatigue and voice policy
+## Persisted cooldown, escalation, and voice queue
 
-INFO and ATTENTION are visual only. HIGH voice is disabled by default. CRITICAL voice is enabled by default and uses a deterministic localized count summary rather than raw records. Session-level delivery keys prevent repeated speech; existing TTS cancellation prevents overlapping streams. No proactive speech starts while YvY is listening, processing, loading, speaking, or muted.
+INFO and ATTENTION are visual only. HIGH voice is disabled by default and has a four-hour persisted cooldown when enabled. CRITICAL voice is enabled by default and has a 30-minute persisted escalation interval. PostgreSQL stores last visual/voice delivery, delivery count, and next eligibility; reloading the browser cannot bypass policy. A severity transition resets eligibility on the same fingerprint.
+
+The typed queue orders CRITICAL before HIGH and never starts proactive TTS while YvY is listening, transcribing, processing, loading, speaking, or muted. Summaries contain only grounded alert-contract facts. Multiple alerts are grouped into a localized count rather than played as overlapping streams.
+
+## Snooze, history, and context
+
+ATTENTION and HIGH alerts can be snoozed for a bounded period. CRITICAL alerts cannot use normal snooze. Snooze changes neither acknowledgement nor resolution. The drawer filters Active, Acknowledged, Resolved, and All, plus severity.
+
+The current scoped alert group is provided as minimized verified context to the existing conversation thread only for short contextual follow-ups such as “qual?” and “e a segunda?”. It is never stored as long-term memory and cannot authorize HITL.
+
+## Continuous active-session attention
+
+While the authenticated Command Center is open, deterministic evaluation repeats every 90 seconds. It performs no model calls, reuses the scoped evaluator, deduplicates existing fingerprints, applies escalation, and resolves conditions that disappeared. This is active-session attention, not 24/7 server-side monitoring.
+
+Desktop notifications are disabled by default, require explicit browser permission, use a generic non-sensitive count, and remain secondary to the in-app Attention Center.
 
 ## Security and HITL
 
 Action queries apply the principal's project allowlist. Approval queries join thread ownership. Repository reads and writes always include `user_id`. Alert acknowledgement does not invoke approval resolution. Critical operations remain subject to explicit on-screen HITL authorization.
 
-No raw audio, credentials, chain-of-thought, or unrestricted model reasoning is stored or exposed. Evaluation runs on load or explicit refresh; there are no fake monitoring timers.
+No raw audio, credentials, chain-of-thought, or unrestricted model reasoning is stored or exposed. Lifecycle events expose only event type, severity, category, rule, evidence count, and timestamps to Agent Inspector.
