@@ -10,7 +10,7 @@ export class SpeechSynthesisService {
   private generation=0;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
   get supported() { return typeof speechSynthesis!=='undefined' && typeof SpeechSynthesisUtterance!=='undefined'; }
-  speak(text:string,language:ConversationLanguage,onEnd?:()=>void,onError?:()=>void) {
+  speak(text:string,language:ConversationLanguage,onEnd?:()=>void,onError?:()=>void,settings?:{locale:string;rate:number}) {
     if(this.muted || !this.supported || !text.trim()) return false;
     this.stop();
     this.lastText=text;
@@ -18,7 +18,7 @@ export class SpeechSynthesisService {
     const token=this.generation;
     const chunks=this.chunk(text);
     const voices=speechSynthesis.getVoices();
-    const lang=locale[language];
+    const lang=settings?.locale??locale[language];
     const voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase()) ?? voices.find(v=>v.lang.toLowerCase().split('-')[0]===language) ?? null;
     const next=()=> {
       if(token!==this.generation) return;
@@ -27,7 +27,7 @@ export class SpeechSynthesisService {
       const utterance=new SpeechSynthesisUtterance(part);
       this.activeUtterance=utterance;
       utterance.lang=lang;
-      utterance.rate=.96;
+      utterance.rate=settings?.rate??.96;
       utterance.pitch=1;
       utterance.voice=voice;
       let settled=false;

@@ -4,6 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "voice:elevenlabs:smoke": "node --require ts-node/register/transpile-only src/ai/voice/elevenlabs.smoke.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",

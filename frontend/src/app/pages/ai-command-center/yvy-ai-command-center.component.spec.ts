@@ -32,6 +32,17 @@ describe('YvyAiCommandCenterComponent live interactions', () => {
   it('keeps AI Command Center as the primary destination',()=>{expect(NAVIGATION[0].defaultRoute).toBe('/home');expect(NAVIGATION[0].items[0].label).toBe('AI Command Center');});
   it('transcribes voice and sends the preserved transcript through the existing agent service',async()=>{spyOn(component.speechRecognition,'listen').and.resolveTo({transcript:'Quais ações estão atrasadas?',detectedLanguage:'pt',languageConfidence:.95});const send=spyOn(component.agent,'send').and.resolveTo(false);await component.startVoice();expect(send).toHaveBeenCalled();expect(send.calls.mostRecent().args[0]).toBe('Quais ações estão atrasadas?');expect(component.agent.voiceMetadata()?.detectedLanguage).toBe('pt');});
   it('does not synthesize an unverified answer',()=>{component.agent.voiceMetadata.set({transcript:'test',detectedLanguage:'en',effectiveResponseLanguage:'en',inputMode:'voice'});component.agent.answer.set('unsafe draft');const speak=spyOn(component.speechSynthesis,'speak');(component as any).speakVerified();expect(speak).not.toHaveBeenCalled();});
+  it('uses the shared engine for alerts and confirms all covered deliveries only on completion',()=>{
+    component.auth.user.set({userId:'A',email:'test@example.invalid',displayName:'Test',role:'HSE_USER',permissions:['AI_USE'],allowedProjectIds:[]});fixture.detectChanges();
+    component.speechSynthesis.ready.set(true);component.speechSynthesis.busy.set(false);
+    const mark=spyOn(component.alerts,'markVoiceSpoken').and.resolveTo();
+    const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);
+    const alert={id:'alert-a',voiceClaimToken:'claim-a'};
+    (component as any).proactiveVoiceQueue.enqueue({id:'alert-a',priority:'CRITICAL',alert,coveredAlerts:[alert,{id:'alert-b',voiceClaimToken:'claim-b'}],spokenText:'Two critical items require attention.',language:'en'});
+    (component as any).drainProactiveVoice();expect(speak).toHaveBeenCalledTimes(1);expect(mark).not.toHaveBeenCalled();
+    speak.calls.mostRecent().args[2]!();expect(mark).toHaveBeenCalledWith('alert-a','claim-a');expect(mark).toHaveBeenCalledWith('alert-b','claim-b');
+    component.auth.user.set(null);
+  });
   it('preserves consecutive short voice turns and language changes',async()=>{spyOn(component.speechRecognition,'listen').and.returnValues(Promise.resolve({transcript:'Quais ações?',detectedLanguage:'pt'}),Promise.resolve({transcript:'Tell me more.',detectedLanguage:'en'}));spyOn(component.agent,'send').and.resolveTo(false);await component.startVoice();component.voiceStatus.set('idle');await component.startVoice();expect(component.voiceConversation().map(turn=>turn.text)).toEqual(['Quais ações?','Tell me more.']);expect(component.voiceConversation().map(turn=>turn.language)).toEqual(['pt','en']);});
   it('supports barge-in by stopping current TTS before starting a new voice turn',async()=>{component.voiceStatus.set('speaking');const stop=spyOn(component.speechSynthesis,'stop');spyOn(component.speechRecognition,'listen').and.resolveTo({transcript:'Stop. Just give me the summary.',detectedLanguage:'en'});spyOn(component.agent,'send').and.resolveTo(false);await component.startVoice();expect(stop).toHaveBeenCalled();expect(component.voiceConversation().at(-1)?.text).toContain('summary');});
 });

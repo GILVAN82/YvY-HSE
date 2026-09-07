@@ -1,6 +1,6 @@
 import type { YvyAlert } from '../yvy-alert.service';
 export type YvyVoicePriority='NORMAL'|'HIGH'|'CRITICAL';
-export interface YvyVoiceQueueEntry{id:string;priority:YvyVoicePriority;alert:YvyAlert;spokenText:string;language:'en'|'pt'|'es'|'fr'|'de';}
+export interface YvyVoiceQueueEntry{coveredAlerts?:YvyAlert[];id:string;priority:YvyVoicePriority;alert:YvyAlert;spokenText:string;language:'en'|'pt'|'es'|'fr'|'de';}
 const rank:Record<YvyVoicePriority,number>={CRITICAL:0,HIGH:1,NORMAL:2};
 export class ProactiveVoiceQueue{
  private entries:YvyVoiceQueueEntry[]=[];

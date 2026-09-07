@@ -26,6 +26,7 @@
       <label for="yvy-command">Ask YvY</label>
       <div><input id="yvy-command" name="prompt" [(ngModel)]="prompt" autocomplete="off" placeholder="Ask YvY about your HSE operations..." [disabled]="agent.loading()"/><button type="submit" aria-label="Send question to YvY" [disabled]="agent.loading() || !prompt.trim()"><lucide-icon [img]="sendIcon" [size]="19"></lucide-icon></button></div>
       <small *ngIf="!agent.error()">Connected to the governed YvY agent</small><small class="input-error" *ngIf="agent.error()">{{agent.error()}}</small>
+      <app-yvy-voice-settings [busy]="agent.loading() || voiceStatus()==='speaking' || voiceStatus()==='listening'"></app-yvy-voice-settings>
       <section class="voice-panel" aria-label="YvY voice controls" aria-live="polite">
         <header class="voice-head"><span><i></i>VOICE CHANNEL</span><small>SECURE · ON DEMAND</small></header>
         <div class="voice-actions">

@@ -17,6 +17,8 @@ import { requireAuthentication, requireTrustedOrigin } from './auth/auth.middlew
 import { createAlertsRouter } from './routes/alerts';
 import { OperationalAttentionService } from './ai/attention/operational-attention.service';
 import { OperationalAttentionScheduler } from './ai/attention/operational-attention.scheduler';
+import { createVoiceRouter } from './routes/voice';
+import { PostgresVoicePreferences } from './ai/voice/preferences';
 
 // Fail fast on a bad AI_ORCHESTRATOR rather than surprising the first caller.
 const orchestrator = readOrchestrator();
@@ -65,6 +67,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   });
 });
 
+app.use('/api', createVoiceRouter(new PostgresVoicePreferences(pool)));
 app.use('/api', genericRouter);
 app.use('/api', projectsRouter);
 app.use('/api', listsRouter);
