@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,7 +9,7 @@ import { YvyHudPanelComponent } from './components/yvy-hud-panel.component';
 import { YvyWorkflowComponent } from './components/yvy-workflow.component';
 import { YvyResponsePanelComponent } from './components/yvy-response-panel.component';
 import { YvyDetailsDrawerComponent } from './components/yvy-details-drawer.component';
-import { YvyCommandCenterAgentService } from './yvy-command-center-agent.service';
+import { YvyCommandCenterAgentService, type ConversationItem } from './yvy-command-center-agent.service';
 import { AuthService } from '../../core/auth.service';
 import type { YvyAgentVisualState, YvyVisualState, YvyWorkflowStage } from './yvy-visual-state';
 import { SpeechRecognitionService } from './voice/speech-recognition.service';
@@ -29,6 +29,7 @@ import { AgentInspectorService } from '../../core/agent-inspector.service';
   templateUrl: './yvy-ai-command-center.component.html', styleUrl: './yvy-ai-command-center.component.scss',
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
+  @ViewChild('timeline') private timelineElement?:ElementRef<HTMLElement>;
   readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(VoiceEngineService);readonly spokenFormatter=inject(SpokenResponseFormatterService);readonly alerts=inject(YvyAlertService);private readonly inspector=inject(AgentInspectorService);private readonly proactiveVoiceQueue=new ProactiveVoiceQueue();private stopContinuousAttention:()=>void=()=>{};
   readonly sendIcon = Send;
   readonly micIcon=Mic;readonly stopIcon=Square;readonly cancelIcon=X;readonly volumeIcon=Volume2;readonly mutedIcon=VolumeX;readonly replayIcon=RotateCcw;
@@ -45,12 +46,15 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   readonly selected=signal<string|null>(null);private returnFocus:HTMLElement|null=null;
   readonly state=computed<YvyVisualState>(()=>this.mapLiveState());
   prompt = '';
+  readonly queuedPrompts=signal<string[]>([]);readonly newResponseAvailable=signal(false);private followTimeline=true;
+  readonly currentHour=new Date().getHours();
+  readonly firstName=computed(()=>this.auth.user()?.displayName?.trim().split(/\s+/)[0]||'there');
   readonly activeCapability = computed(() => this.state().activeCapability);
   readonly snapshot=computed(()=>this.agent.latest());readonly trace=computed(()=>this.snapshot()?.executionTrace);
   readonly executedStages=computed(()=>{const route=this.trace()?.route??[];const stages=['guard'];if(this.snapshot()?.toolsUsed.length)stages.push('tools');if(this.snapshot()?.ragUsed)stages.push('rag');if(route.includes('verify'))stages.push('verify');if(this.snapshot()?.approvalRequest)stages.push('approval');return stages;});
   readonly drawerTitle=computed(()=>({core:'YvY Agent Overview',alerts:'YvY Attention Center',guard:'AI Guard',tools:'Operational Tools',rag:'RAG Engine',verify:'Semantic Verification',approval:'Human Approval',response:'AI Response',safety:'Safety',compliance:'Compliance',risk:'Risk',operations:'Operations',people:'People',permits:'Permits',knowledge:'Knowledge',approvals:'Approvals'}[this.selected()??'']??'YvY Details'));
 
-  constructor(){let previous:string|null|undefined;effect(()=>{const id=this.auth.user()?.userId??null;if(id!==previous){previous=id;this.agent.resetSession();this.inspector.clear();this.alerts.resetVoiceSession();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();this.voiceConversation.set([]);this.lastSpokenResponse.set('');this.voiceStatus.set('idle');this.inspector.voiceSession.set(null);}},{allowSignalWrites:true});effect(()=>{if(this.speechSynthesis.ready()&&!this.speechSynthesis.busy())this.drainProactiveVoice();},{allowSignalWrites:true});}
+  constructor(){let previous:string|null|undefined;effect(()=>{const id=this.auth.user()?.userId??null;if(id!==previous){previous=id;this.agent.resetSession();this.inspector.clear();this.alerts.resetVoiceSession();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();this.queuedPrompts.set([]);this.voiceConversation.set([]);this.lastSpokenResponse.set('');this.voiceStatus.set('idle');this.inspector.voiceSession.set(null);}},{allowSignalWrites:true});effect(()=>{if(this.speechSynthesis.ready()&&!this.speechSynthesis.busy())this.drainProactiveVoice();},{allowSignalWrites:true});effect(()=>{this.agent.timeline();queueMicrotask(()=>{if(this.followTimeline)this.timelineElement?.nativeElement.scrollTo({top:this.timelineElement.nativeElement.scrollHeight});else this.newResponseAvailable.set(true);});},{allowSignalWrites:true});}
   ngOnInit(){void this.agent.initialize();void this.refreshAttention();this.stopContinuousAttention=this.alerts.startContinuousAttention(()=>this.afterAttentionRefresh());}
   ngOnDestroy(){this.stopContinuousAttention();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();}
 
@@ -62,7 +66,16 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
     return this.activeCapability()===id?'active':'inactive';
   }
   stageActive(stage:YvyWorkflowStage){return this.state().activeWorkflowStage===stage;}
-  async submit(){const text=this.prompt.trim();if(!text)return;this.prompt='';if(this.voiceStatus()==='speaking')this.stopSpeaking();const completed=await this.agent.send(text);const autoVoice=completed&&this.speechSynthesis.preference().voiceResponseMode==='ALL_RESPONSES'&&!this.muted();this.recordVoiceSession('TEXT',autoVoice);if(autoVoice)this.speakFinal((this.trace()?.responseLanguage as VoiceConversationTurn['language'])||'en',false);}
+  async submit(){const text=this.prompt.trim();if(!text)return;this.prompt='';if(this.agent.loading()){this.queuedPrompts.update(items=>[...items,text]);return;}await this.runTypedMessage(text);}
+  quickAction(message:string){this.prompt=message;void this.submit();}
+  onTimelineScroll(){const el=this.timelineElement?.nativeElement;if(!el)return;this.followTimeline=el.scrollHeight-el.scrollTop-el.clientHeight<72;if(this.followTimeline)this.newResponseAvailable.set(false);}
+  scrollToLatest(){this.followTimeline=true;this.newResponseAvailable.set(false);queueMicrotask(()=>this.timelineElement?.nativeElement.scrollTo({top:this.timelineElement.nativeElement.scrollHeight,behavior:'smooth'}));}
+  verificationLabel(item:ConversationItem){const status=item.snapshot?.executionTrace?.verification?.status;if(status==='VERIFIED')return 'Verified';if(status==='PARTIALLY_VERIFIED'||status==='INSUFFICIENT_EVIDENCE')return 'Evidence unavailable';if(status==='CONTRADICTED'||status==='SAFETY_BLOCKED')return 'Needs confirmation';return item.status==='STREAMING'?'Working…':'';}
+  operationalTitle(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'Actions':tool==='list_incidents'?'Incidents':tool==='get_projects'?'Projects':tool==='get_kpi'?'Safety performance':null;}
+  operationalRoute(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'/sheet/Action Log':tool==='list_incidents'?'/sheet/Incident Register':tool==='get_projects'?'/projects':tool==='get_kpi'?'/portfolio':null;}
+  evidenceCount(item:ConversationItem){return item.snapshot?.executionTrace?.verification?.evidenceItemsConsidered??0;}
+  async copyMessage(item:ConversationItem){try{await navigator.clipboard.writeText(item.text);}catch{/* Clipboard availability does not affect the conversation. */}}
+  replayMessage(item:ConversationItem){const language=(item.language as VoiceConversationTurn['language'])||'en',response=this.spokenFormatter.format(item.text,language);if(this.speechSynthesis.speak(response.spokenResponse,language,()=>this.voiceStatus.set('idle'),()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');}
   askAboutAlert(alert:YvyAlert){
     this.prompt=`Explain the ${alert.severity.toLowerCase()} alert ${alert.sourceId}: ${alert.summary}`;
     this.closeDetails();
@@ -84,6 +97,8 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   closeDetails(){this.selected.set(null);queueMicrotask(()=>this.returnFocus?.focus());}
   capability(id:string){return this.capabilities.find(item=>item.id===id);}
   readonly canApprove=computed(()=>this.auth.user()?.permissions.includes('HITL_APPROVE')===true);
+
+  private async runTypedMessage(text:string){if(this.voiceStatus()==='speaking')this.stopSpeaking();const completed=await this.agent.send(text);const autoVoice=completed&&this.speechSynthesis.preference().voiceResponseMode==='ALL_RESPONSES'&&!this.muted();this.recordVoiceSession('TEXT',autoVoice);if(autoVoice)this.speakFinal((this.trace()?.responseLanguage as VoiceConversationTurn['language'])||'en',false);const next=this.queuedPrompts()[0];if(next){this.queuedPrompts.update(items=>items.slice(1));await this.runTypedMessage(next);}}
 
   private mapLiveState():YvyVisualState{
     const runtime=this.agent.runtimeState(),snapshot=this.agent.latest(),approval=this.agent.approval()??snapshot?.approvalRequest;
