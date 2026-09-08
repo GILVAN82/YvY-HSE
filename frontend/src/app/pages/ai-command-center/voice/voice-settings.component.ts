@@ -13,7 +13,8 @@ function samePreference(left: VoicePreference, right: VoicePreference) {
 }
 
 @Component({selector:'app-yvy-voice-settings',standalone:true,imports:[CommonModule,FormsModule],template:`
-  <details class="settings"><summary>YvY Voice Settings</summary>
+  <details #panel class="settings" [open]="panelOpen()" (toggle)="panelOpen.set(panel.open)"><summary>YvY Voice Settings</summary>
+    <button type="button" class="close" aria-label="Fechar configurações de voz" (click)="close()">✕ Fechar</button>
     <p>Engine: {{engine.available() && draft.engine==='ELEVENLABS' ? 'ElevenLabs' : 'Browser fallback'}}</p>
     <p *ngIf="engine.playback()?.effectiveEngine==='ELEVENLABS'">Última reprodução: ElevenLabs<span *ngIf="engine.playback()?.voiceName"> · {{engine.playback()?.voiceName}}</span>.</p>
     <p *ngIf="engine.playback()?.effectiveEngine==='BROWSER_FALLBACK'">Última reprodução: voz do navegador (fallback). Motivo: {{engine.playback()?.fallbackReason}}.</p>
@@ -28,7 +29,7 @@ function samePreference(left: VoicePreference, right: VoicePreference) {
     <button type="button" (click)="stopPreview()">Parar</button>
     <button type="button" (click)="save()" [disabled]="!engine.ready() || !dirty() || saving()">{{saving() ? 'Salvando...' : 'Salvar'}}</button>
     <p role="status" [class.success]="feedbackKind()==='success'" [class.failure]="feedbackKind()==='failure'">{{feedback() || engine.error()}}</p>
-  </details>`,styles:[`.settings{color:#c9e4ee;background:#092031;border:1px solid #126079;border-radius:12px;padding:12px;margin:12px 0;max-width:520px}label{display:block;margin:10px 0}select{max-width:100%;margin-left:8px}button,select{background:#123c50;color:#e0f5ff;border:1px solid #26718a;border-radius:5px;padding:6px;margin:3px}button[aria-pressed=true]{border-color:#2ce3ed}button:disabled{opacity:.55}fieldset{border:0;padding:0}p{font-size:12px}.success{color:#68efb2}.failure{color:#ff9a9a}`]})
+  </details>`,styles:[`.settings{color:#c9e4ee;background:#092031;border:1px solid #126079;border-radius:12px;padding:12px;margin:12px 0;max-width:520px}.close{float:right}label{display:block;margin:10px 0}select{max-width:100%;margin-left:8px}button,select{background:#123c50;color:#e0f5ff;border:1px solid #26718a;border-radius:5px;padding:6px;margin:3px}button[aria-pressed=true]{border-color:#2ce3ed}button:disabled{opacity:.55}fieldset{border:0;padding:0}p{font-size:12px}.success{color:#68efb2}.failure{color:#ff9a9a}`]})
 export class VoiceSettingsComponent implements OnDestroy {
   @Input() busy=false;
   readonly engine=inject(VoiceEngineService);
@@ -36,12 +37,15 @@ export class VoiceSettingsComponent implements OnDestroy {
   readonly filter=signal<'FEMALE'|'MALE'|'ALL'>('ALL');
   readonly filtered=computed(()=>this.engine.voices().filter(v=>this.filter()==='ALL'||v.profile===this.filter()));
   readonly saving=signal(false);
+  readonly panelOpen=signal(false);
   readonly feedback=signal('');
   readonly feedbackKind=signal<'success'|'failure'|''>('');
   private feedbackTimer:ReturnType<typeof setTimeout>|null=null;
+  private closeTimer:ReturnType<typeof setTimeout>|null=null;
 
   constructor(){effect(()=>{const preference=this.engine.preference();this.draft={...preference};this.filter.set(preference.genderProfile==='UNKNOWN'?'ALL':preference.genderProfile);},{allowSignalWrites:true});}
-  ngOnDestroy(){if(this.feedbackTimer)clearTimeout(this.feedbackTimer);}
+  ngOnDestroy(){if(this.feedbackTimer)clearTimeout(this.feedbackTimer);if(this.closeTimer)clearTimeout(this.closeTimer);}
+  close(){this.panelOpen.set(false);}
   dirty(){return !samePreference(this.draft,this.engine.preference());}
   recommendedVoices(){return this.filtered().filter(voice=>matchesLocale(voice,this.draft.languageLocale)).sort((a,b)=>Number(b.locale===this.draft.languageLocale)-Number(a.locale===this.draft.languageLocale));}
   displayLocale(voice:import('./voice-engine.service').EngineVoice){return voice.verifiedLocales?.some(value=>value.toLowerCase()===this.draft.languageLocale.toLowerCase())?this.draft.languageLocale:voice.locale||voice.language||'UNKNOWN';}
@@ -53,7 +57,7 @@ export class VoiceSettingsComponent implements OnDestroy {
   localeMatch(){const voice=this.engine.voices().find(v=>v.id===this.draft.voiceId);return voice?matchesLocale(voice,this.draft.languageLocale):this.engine.voices().some(v=>matchesLocale(v,this.draft.languageLocale));}
   async preview(){this.clearFeedback();if(!await this.prepareLibraryVoice())return;if(!this.engine.preview({...this.draft,speed:Number(this.draft.speed)},()=>this.showFeedback('Amostra concluída.','success'),()=>this.showFeedback('Não foi possível reproduzir a amostra.','failure')))this.showFeedback('Áudio silenciado ou indisponível.','failure');}
   stopPreview(){this.engine.stop();this.showFeedback('Amostra interrompida.','');}
-  async save(){if(!this.dirty()||this.saving())return;this.clearFeedback();this.saving.set(true);if(!await this.prepareLibraryVoice()){this.saving.set(false);return;}const persisted=await this.engine.save({...this.draft,speed:Number(this.draft.speed)});this.saving.set(false);if(persisted){this.draft={...persisted};this.filter.set(persisted.genderProfile==='UNKNOWN'?'ALL':persisted.genderProfile);this.showFeedback('✓ Preferências salvas','success');}else this.showFeedback('✕ Não foi possível salvar as preferências de voz.','failure');}
+  async save(){if(!this.dirty()||this.saving())return;this.clearFeedback();this.saving.set(true);if(!await this.prepareLibraryVoice()){this.saving.set(false);return;}const persisted=await this.engine.save({...this.draft,speed:Number(this.draft.speed)});this.saving.set(false);if(persisted){this.draft={...persisted};this.filter.set(persisted.genderProfile==='UNKNOWN'?'ALL':persisted.genderProfile);this.showFeedback('✓ Preferências salvas','success');this.closeTimer=setTimeout(()=>{this.panelOpen.set(false);this.closeTimer=null;},800);}else this.showFeedback('✕ Não foi possível salvar as preferências de voz.','failure');}
   private async prepareLibraryVoice(){const voice=this.engine.voices().find(item=>item.id===this.draft.voiceId);if(!voice||voice.source!=='LIBRARY')return true;const id=await this.engine.activateVoice(voice);if(!id){this.showFeedback('✕ Não foi possível adicionar a voz selecionada.','failure');return false;}this.draft.voiceId=id;return true;}
   private showFeedback(message:string,kind:'success'|'failure'|''){this.clearFeedback();this.feedback.set(message);this.feedbackKind.set(kind);if(kind==='success')this.feedbackTimer=setTimeout(()=>{this.feedback.set('');this.feedbackKind.set('');this.feedbackTimer=null;},4000);}
   private clearFeedback(){if(this.feedbackTimer){clearTimeout(this.feedbackTimer);this.feedbackTimer=null;}this.feedback.set('');this.feedbackKind.set('');}

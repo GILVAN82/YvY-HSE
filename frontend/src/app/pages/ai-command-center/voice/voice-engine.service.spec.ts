@@ -82,11 +82,14 @@ describe('YvY voice engine',()=>{
   it('persists every draft field, confirms success and becomes clean',fakeAsync(()=>{
     const persisted={engine:'ELEVENLABS' as const,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'female',voiceName:'Female',speed:.85};
     fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(persisted)} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
-    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
+    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;component.panelOpen.set(true);
     component.draft={...persisted};expect(component.dirty()).toBeTrue();void component.save();expect(component.saving()).toBeTrue();flushMicrotasks();fixture.detectChanges();
     const put=fetchSpy.calls.all().find(call=>call.args[1]?.method==='PUT');expect(JSON.parse(put!.args[1].body as string)).toEqual(persisted);
-    expect(component.feedback()).toBe('✓ Preferências salvas');expect(component.dirty()).toBeFalse();expect(engine.preference()).toEqual(persisted);
-    tick(4000);expect(component.feedback()).toBe('');fixture.destroy();
+    expect(component.feedback()).toBe('✓ Preferências salvas');expect(component.dirty()).toBeFalse();expect(engine.preference()).toEqual(persisted);expect(component.panelOpen()).toBeTrue();
+    tick(800);expect(component.panelOpen()).toBeFalse();tick(3200);expect(component.feedback()).toBe('');fixture.destroy();
+  }));
+  it('closes voice settings manually without saving',fakeAsync(()=>{
+    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;component.panelOpen.set(true);fixture.detectChanges();component.close();fixture.detectChanges();expect(component.panelOpen()).toBeFalse();expect(fetchSpy.calls.all().some(call=>call.args[1]?.method==='PUT')).toBeFalse();fixture.destroy();
   }));
   it('keeps the draft and panel available when save fails',fakeAsync(()=>{
     fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:false,status:503} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
