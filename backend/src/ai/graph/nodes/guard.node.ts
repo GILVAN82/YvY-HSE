@@ -4,6 +4,7 @@ import { MAX_MESSAGE_LENGTH } from '../../config';
 import { classifyExplicitMemoryIntent, classifyMemorySafetyRejection } from '../../memory/memory.service';
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { AgentRuntime } from '../hseAgent.types';
+import { classifyIntent } from '../../intent/intentRouter';
 
 /**
  * Patterns that try to make the model disclose its instructions or credentials.
@@ -64,11 +65,11 @@ export function isContextualFollowUp(message: string): boolean {
 export type ScopeClassification = 'IN_SCOPE' | 'IN_SCOPE_MEMORY_COMMAND' | 'IN_SCOPE_CONTEXTUAL_FOLLOWUP' | 'OUT_OF_SCOPE';
 
 export function classifyScopeWithThreadContext(message: string, priorMessages: Array<{ role: 'user' | 'assistant'; content: string }>): ScopeClassification {
-  const direct = inspectInput(message);
-  if (direct.allowed && classifyExplicitMemoryIntent(message)) return 'IN_SCOPE_MEMORY_COMMAND';
-  if (direct.allowed) return 'IN_SCOPE';
-  if (direct.reason === RefusalCode.OUT_OF_SCOPE && classifyExplicitMemoryIntent(message)) return 'IN_SCOPE_MEMORY_COMMAND';
-  if (direct.reason !== RefusalCode.OUT_OF_SCOPE || !isContextualFollowUp(message)) return 'OUT_OF_SCOPE';
+  if (classifyExplicitMemoryIntent(message)) return 'IN_SCOPE_MEMORY_COMMAND';
+  const routed = classifyIntent(message);
+  if (routed.scope === 'OUT_OF_SCOPE') return 'OUT_OF_SCOPE';
+  if (routed.candidateTools.length || isInScopeInput(message)) return 'IN_SCOPE';
+  if (!isContextualFollowUp(message)) return 'OUT_OF_SCOPE';
   const antecedent = [...priorMessages].reverse().find((turn) => turn.role === 'user');
   return antecedent && isInScopeInput(antecedent.content) ? 'IN_SCOPE_CONTEXTUAL_FOLLOWUP' : 'OUT_OF_SCOPE';
 }
@@ -85,10 +86,7 @@ export function inspectInput(message: string): GuardDecision {
     return { allowed: false, reason: RefusalCode.PROMPT_INJECTION };
   }
   if (classifyExplicitMemoryIntent(text)) return { allowed: true };
-  const plain = normalized(text);
-  if (!HSE_SCOPE_PATTERN.test(plain)) {
-    return { allowed: false, reason: RefusalCode.OUT_OF_SCOPE };
-  }
+  if (classifyIntent(text).scope === 'OUT_OF_SCOPE') return { allowed: false, reason: RefusalCode.OUT_OF_SCOPE };
   return { allowed: true };
 }
 

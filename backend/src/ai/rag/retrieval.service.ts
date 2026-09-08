@@ -2,11 +2,14 @@ import type { EmbeddingService } from './embedding.service';
 import type { RagRetrievalRepository } from './retrieval.repository';
 import { MAX_RAG_QUERY_LENGTH, readRagRetrievalConfig, type RagRetrievalConfig } from './retrieval.config';
 import type { RagRetriever, RagRetrievalResult } from './retrieval.types';
+import { classifyIntent } from '../intent/intentRouter';
 
 const OPERATIONAL_TERMS = '(incidents?|incidentes?|permits?|actions?|ac(?:ao|oes)|records?|projects?|audits?|inspections?|trainings?|kpis?|indicado(?:r|res)|trir|ltifr)';
 const CURRENT_TERMS = '(how many|count|current(?:ly)?|open|closed|overdue|status|today|this month|este mes|quantos?|abert[oa]s?|atrasad[oa]s?|vencid[oa]s?|pendent(?:e|es)|estado|status|recentes?|atuais?|correntes?)';
 
 export function isStructuredOperationalQuery(query: string): boolean {
+  const routed = classifyIntent(query);
+  if (routed.candidateTools.some((name) => ['get_kpi','list_incidents','list_actions','get_projects'].includes(name))) return true;
   const normalized = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   return new RegExp(`\\b${CURRENT_TERMS}\\b.{0,80}\\b${OPERATIONAL_TERMS}\\b|\\b${OPERATIONAL_TERMS}\\b.{0,80}\\b${CURRENT_TERMS}\\b`, 'i').test(normalized);
 }

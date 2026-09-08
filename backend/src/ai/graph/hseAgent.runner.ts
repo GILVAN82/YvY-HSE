@@ -19,6 +19,7 @@ import { controlledRefusalMessage } from './nodes/refuse.node';
 import type { NormalizedAttachment } from '../attachments/attachment.types';
 import { resolveResponseLanguage } from '../responseLanguage';
 import { resolveResponseStatus } from '../responseStatus';
+import { classifyIntent, clarificationMessage } from '../intent/intentRouter';
 
 export interface RunAgentInput {
   message: string;
@@ -131,6 +132,24 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
 
   persisted ??= input.threadStore ? await input.threadStore.load(conversationId, ownerId) : null;
   const history = (persisted?.messages ?? input.history ?? []).slice(-MAX_HISTORY_TURNS);
+  const intentDecision = classifyIntent(input.message, history);
+  if (intentDecision.scope === 'OUT_OF_SCOPE' || (intentDecision.clarificationRequired && intentDecision.intent === 'OPERATIONAL_ATTENTION')) {
+    const refused = intentDecision.scope === 'OUT_OF_SCOPE';
+    const text = refused ? controlledRefusalMessage('OUT_OF_SCOPE', input.message, input.locale) : clarificationMessage(input.locale);
+    input.emit({ type: 'text', text });
+    return {
+      runId, conversationId, status: refused ? AgentStatus.REFUSED : AgentStatus.COMPLETED,
+      responseStatus: refused ? 'REFUSED' : 'SUCCESS', text, toolsUsed: [], stepCount: 0,
+      ...(refused ? { refusalReason: 'OUT_OF_SCOPE' as const } : {}), ragUsed: false, citations: [],
+      executionTrace: { timestamp: executionTimestamp, route: ['guard', refused ? 'refuse' : 'clarify'], tools: [],
+        rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 }, conversation: { stateActive: false, messageCount: history.length + 1 },
+        memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
+        guardrail: { status: refused ? 'REFUSED' : 'PASS', ...(refused ? { reason: 'OUT_OF_SCOPE' as const } : {}) },
+        intent: { ...intentDecision },
+        verification: { status:'VERIFIED',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:0,evidenceSourceTypes:[],sources:[],reasons:[] },
+      },
+    };
+  }
   const messages: ChatTurn[] = [...history, { role: 'user', content: input.message }];
 
   const graph = getGraph(!!input.useCheckpointer);
@@ -151,7 +170,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], evidence: [], finalText: '' },
       {
         configurable: {
-          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage },
+          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage, intentDecision },
           // Only consulted when a checkpointer is attached.
           thread_id: conversationId,
         },
@@ -191,6 +210,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
           status: memoryTool ? (final.errorCode === AgentErrorCode.TOOL_FAILURE ? 'ERROR' : 'COMPLETED') : longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED',
         },
         guardrail: { status: final.status === AgentStatus.REFUSED ? 'REFUSED' : 'PASS', ...(final.refusalReason ? { reason: final.refusalReason } : {}) },
+        intent: { ...intentDecision, selectedTool: final.toolNames[0] },
         verification: final.verificationResult ?? { status:'INSUFFICIENT_EVIDENCE',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:final.evidence.length,evidenceSourceTypes:[],sources:[],reasons:['Verification did not complete.'] },
         ...(final.errorCode ? { error: { category: final.errorCode, node: final.executedRoute.at(-1) ?? 'unknown', recoverable: final.errorCode !== AgentErrorCode.HITL_PERSISTENCE } } : {}),
       },

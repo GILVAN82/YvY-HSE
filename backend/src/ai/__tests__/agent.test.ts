@@ -460,10 +460,11 @@ describe('17b. controlled response language consistency', () => {
     assert.match(result.text,new RegExp(`^${item.expected}`)); assert.doesNotMatch(result.text,/system prompt contents|Luiz|Lula/i);
     assert.equal(model.callCount(),0); assert.equal(ragCalls,0); assert.equal(approvalCalls,0); assert.deepEqual(result.toolsUsed,[]); assert.equal(result.ragUsed,false);
   });
-  test('ambiguous input uses the optional UI language and defaults to English', async () => {
-    const spanish=await runHseAgent({message:'Olá?',locale:'es',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
-    const fallback=await runHseAgent({message:'???',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
-    assert.match(spanish.text,/^Esta pregunta está fuera/); assert.match(fallback.text,/^This question is outside/);
+  test('ambiguous operational input asks for clarification in the UI language and defaults to English', async () => {
+    const spanish=await runHseAgent({message:'What is pending?',locale:'es',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
+    const fallback=await runHseAgent({message:'What needs attention?',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
+    assert.match(spanish.text,/^Puedo revisar/); assert.match(fallback.text,/^I can review/);
+    assert.equal(spanish.executionTrace?.intent?.clarificationRequired,true);
   });
 });
 

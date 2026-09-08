@@ -98,7 +98,8 @@ describe('persistent thread-scoped state', () => {
     await runHseAgent({ threadId: A, message: 'Explain LOTO precautions.', model: createMockModel([{ text: 'LOTO context.' }]), emit, threadStore: store });
     const modelB = createMockModel([{ text: 'must not run' }]);
     const result = await runHseAgent({ threadId: B, message: 'What about restoring energy afterward?', model: modelB, emit, threadStore: store });
-    assert.equal(result.status, AgentStatus.REFUSED);
+    assert.equal(result.status, AgentStatus.COMPLETED);
+    assert.equal(result.executionTrace?.intent?.clarificationRequired, true);
     assert.equal(modelB.callInputs().length, 0);
   });
 
@@ -111,7 +112,8 @@ describe('persistent thread-scoped state', () => {
       threadStore: new MemoryThreadStore(),
       memoryService: { retrieveRelevant: async () => { memoryCalls++; return [{ memoryKey:'loto', category:'preference', content:'LOTO context' }]; } } as any,
     });
-    assert.equal(result.status, AgentStatus.REFUSED);
+    assert.equal(result.status, AgentStatus.COMPLETED);
+    assert.equal(result.executionTrace?.intent?.clarificationRequired, true);
     assert.equal(memoryCalls, 0);
   });
 

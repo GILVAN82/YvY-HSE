@@ -77,7 +77,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
 
   list_incidents: tool({
     description:
-      'Lists individual HSE incidents (date, type, severity and description), optionally filtered by project. Use this tool when the user requests details about specific incidents rather than aggregate KPI values.',
+      'Lists individual HSE incidents, accidents, occurrences or safety events (date, type, severity and description), optionally filtered by project. Use for open/current/recent incident questions and incident details rather than aggregate KPI values.',
     inputSchema: z.object({
       project: z.string().optional().describe('Project code to filter by; omit for all projects'),
       limit: z.number().int().min(1).max(50).default(20),
@@ -107,7 +107,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
 
   list_actions: tool({
     description:
-      'Lists current action tracker or CAPA actions using a minimized projection (ID, description, status, deadline, days overdue, priority and source module), optionally filtered by project, status or overdue state. Use overdue=true for overdue actions; personal data is excluded.',
+      'Use for questions about actions, action items, tasks, CAPA, corrective actions, pending items, late/overdue/past-due actions, action status or deadlines. Returns a minimized projection (ID, description, status, deadline, days overdue, priority and source module), optionally filtered by project or status. For overdue, late, past-due, atrasadas, vencidas, en retard or überfällige actions use overdue=true. Personal data is excluded.',
     inputSchema: z.object({
       project: z.string().optional(),
       status: z.string().optional().describe('For example: Open, Closed or In Progress'),
@@ -169,7 +169,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
   }),
 
   get_projects: tool({
-    description: 'Lists authorized portfolio projects with code, name and status.',
+    description: 'Lists authorized portfolio projects or sites with code, name and current status. Use for questions about active/current projects or sites.',
     inputSchema: z.object({}),
     execute: async () =>
       safely('get_projects', async () => {

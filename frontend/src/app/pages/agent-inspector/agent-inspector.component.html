@@ -89,6 +89,17 @@
         <div class="kv" *ngIf="trace()?.guardrail?.reason"><span>Reason</span><strong>{{ title(trace()!.guardrail.reason!) }}</strong></div>
       </section>
 
+      <section class="card" *ngIf="trace()?.intent as intent">
+        <div class="card-head"><div><span class="section-number">07A</span><h2>Intent Routing</h2></div></div>
+        <div class="kv"><span>Input</span><strong>{{ intent.input }}</strong></div>
+        <div class="kv"><span>Normalized intent</span><strong>{{ intent.intent }}</strong></div>
+        <div class="kv"><span>Scope</span><strong>{{ intent.scope }}</strong></div>
+        <div class="kv"><span>Confidence band</span><strong>{{ intent.confidence }}</strong></div>
+        <div class="kv"><span>Candidate tool</span><strong>{{ intent.candidateTools.join(', ') || 'None' }}</strong></div>
+        <div class="kv"><span>Selected tool</span><strong>{{ intent.selectedTool || 'None' }}</strong></div>
+        <div class="kv"><span>Clarification required</span><strong>{{ label(intent.clarificationRequired) }}</strong></div>
+      </section>
+
       <section class="card">
         <div class="card-head"><div><span class="section-number">08</span><h2>Semantic Verification</h2></div></div>
         <div class="guard" [class.blocked]="trace()?.verification?.status !== 'VERIFIED'">{{ trace()?.verification?.status || 'NOT CURRENTLY OBSERVABLE' }}</div>

@@ -6,6 +6,7 @@ import type { NormalizedAttachment } from '../attachments/attachment.types';
 import type { ResponseLanguage } from '../responseLanguage';
 import type { ResponseStatus } from '../responseStatus';
 import type { AgentEvidence, VerificationResult } from './evidence.contract';
+import type { IntentDecision } from '../intent/intentRouter';
 
 /** Lifecycle of a single agent run. */
 export const AgentStatus = {
@@ -84,6 +85,7 @@ export interface AgentExecutionTrace {
     status: 'USED' | 'NO_MATCH' | 'COMPLETED' | 'ERROR' | 'NOT_USED';
   };
   guardrail: { status: 'PASS' | 'BLOCKED' | 'REFUSED'; reason?: RefusalCode };
+  intent?: Pick<IntentDecision, 'input' | 'normalizedQuery' | 'scope' | 'confidence' | 'intent' | 'candidateTools' | 'clarificationRequired'> & { selectedTool?: string };
   verification: VerificationResult;
   error?: { category: AgentErrorCode; node: string; recoverable: boolean };
 }
@@ -103,6 +105,7 @@ export interface AgentRuntime {
   attachmentContext?: string;
   attachments?: NormalizedAttachment[];
   responseLanguage?: ResponseLanguage;
+  intentDecision?: IntentDecision;
   /** Test/diagnostic seam. Production uses the shared createHseTools registry. */
   tools?: ToolSet;
   toolFactory?: (allowMemoryWrite: boolean) => ToolSet;
