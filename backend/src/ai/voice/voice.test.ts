@@ -65,6 +65,15 @@ test('Postgres preferences bind session user and do not interpolate supplied val
   const preference={...defaultPreference,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'voice1',voiceName:'Test',speed:.85};
   await repo.load('userA');await repo.save('userA',preference);assert.equal(calls[0].args[0],'userA');assert.match(calls[0].sql,/WHERE user_id=\$1/);assert.deepEqual(calls[1].args,['userA','ELEVENLABS','pt-BR','FEMALE','voice1','Test',.85]);
 });
+test('discovers filtered shared voices, preserves verified metadata and caches briefly',async()=>{
+  const calls:string[]=[];const adapter=new ElevenLabsAdapter(env,(async(url)=>{calls.push(String(url));return String(url).includes('/shared-voices')?Response.json({voices:[{voice_id:'shared1',public_owner_id:'owner1',name:'Lisboa',gender:'Female',language:'pt',accent:'portuguese',category:'professional',verified_languages:[{language:'pt',locale:'pt-PT',model_id:'eleven_multilingual_v2'}]}]}):catalog();}) as typeof fetch);
+  const first=await adapter.discover({locale:'pt-PT',gender:'FEMALE'}),second=await adapter.discover({locale:'pt-PT',gender:'FEMALE'});const shared=first.find(v=>v.id==='shared1')!;
+  assert.equal(shared.source,'LIBRARY');assert.equal(shared.locale,'pt-PT');assert.equal(shared.profile,'FEMALE');assert.deepEqual(shared.verifiedLocales,['pt-PT']);assert.equal(calls.filter(url=>url.includes('/shared-voices')).length,1);assert.match(calls.find(url=>url.includes('/shared-voices'))!,/language=pt/);assert.match(calls.find(url=>url.includes('/shared-voices'))!,/locale=pt-PT/);assert.equal(second.length,first.length);assert.ok(!JSON.stringify(first).includes('secret-test-only'));
+});
+test('adds only an explicitly selected shared voice with sanitized projection',async()=>{
+  const calls:Array<{url:string;body:string}>=[];const adapter=new ElevenLabsAdapter(env,(async(url,init)=>{calls.push({url:String(url),body:String(init?.body??'')});return Response.json({voice_id:'shared1'});}) as typeof fetch);
+  assert.equal(await adapter.addShared('owner1','shared1','Lisboa'),'shared1');assert.match(calls[0].url,/\/v1\/voices\/add\/owner1\/shared1$/);assert.deepEqual(JSON.parse(calls[0].body),{new_name:'Lisboa',bookmarked:true});
+});
 test('claim reserves only; cooldown and VOICE_SPOKEN require successful completion',async()=>{
   const calls:any[]=[];const row={id:'alert',severity:'CRITICAL',evidence:[]};
   const repo=new PostgresAlertRepository({query:async(sql:string,args:any[])=>{calls.push({sql,args});return{rows:[row],rowCount:1};}} as any);

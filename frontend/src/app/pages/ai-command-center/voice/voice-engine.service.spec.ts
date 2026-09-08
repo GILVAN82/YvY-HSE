@@ -11,7 +11,7 @@ describe('YvY voice engine',()=>{
   let engine:VoiceEngineService;let browser:jasmine.SpyObj<SpeechSynthesisService>;let fetchSpy:jasmine.Spy;let user:ReturnType<typeof signal<any>>;
   beforeEach(fakeAsync(()=>{
     user=signal<any>({userId:'A'});browser=jasmine.createSpyObj('browser',['speak','stop','setMuted'],{supported:true});browser.speak.and.returnValue(true);
-    fetchSpy=spyOn(window,'fetch').and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(JSON.parse(init.body as string))} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):String(url).endsWith('/voice-preferences')?({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response):({ok:true,headers:new Headers({'content-type':'audio/mpeg'}),blob:()=>Promise.resolve(new Blob(['audio']))} as Response));
+    fetchSpy=spyOn(window,'fetch').and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(JSON.parse(init.body as string))} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):String(url).endsWith('/voice-preferences')?({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response):({ok:true,headers:new Headers({'content-type':'audio/mpeg'}),blob:()=>Promise.resolve(new Blob(['audio']))} as Response));
     TestBed.configureTestingModule({providers:[{provide:AuthService,useValue:{user}},{provide:SpeechSynthesisService,useValue:browser}]});
     engine=TestBed.inject(VoiceEngineService);TestBed.flushEffects();flushMicrotasks();
   }));
@@ -36,6 +36,18 @@ describe('YvY voice engine',()=>{
     flushMicrotasks();expect(matchesLocale(engine.voices()[0],'pt-BR')).toBeTrue();expect(matchesLocale(engine.voices()[0],'pt-PT')).toBeFalse();expect(matchesLocale(engine.voices()[1],'pt-PT')).toBeTrue();expect(matchesLocale(engine.voices()[2],'pt-PT')).toBeFalse();
     expect(matchesLocale({id:'en-f',name:'English Female',profile:'FEMALE',language:'en',accent:null,category:null},'en')).toBeTrue();
     expect(matchesLocale({id:'en-m',name:'English Male',profile:'MALE',language:'en',accent:null,category:null},'en')).toBeTrue();
+  }));
+  it('prioritizes exact native voices for all supported discovery languages',fakeAsync(()=>{
+    flushMicrotasks();const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
+    for(const [locale,profile] of [['pt-PT','FEMALE'],['pt-BR','FEMALE'],['es','MALE'],['fr','FEMALE'],['de','MALE']] as const){engine.voices.set([{id:'fallback',name:'English',profile,language:'en',accent:'american',category:'premade'},{id:'native',name:'Native',profile,language:locale.split('-')[0],locale,verifiedLocales:[locale],accent:null,category:'professional',source:'LIBRARY',publicOwnerId:'owner'}]);component.draft.languageLocale=locale;component.filter.set(profile);expect(component.recommendedVoices().map(v=>v.id)).toEqual(['native']);expect(component.fallbackVoices().map(v=>v.id)).toEqual(['fallback']);}
+    engine.voices.set([{id:'unknown-meta',name:'Unknown',profile:'UNKNOWN',language:null,accent:null,category:null}]);component.filter.set('ALL');expect(component.fallbackVoices()[0].profile).toBe('UNKNOWN');fixture.destroy();
+  }));
+  it('refreshes discovery when language and profile change',fakeAsync(()=>{
+    flushMicrotasks();fetchSpy.calls.reset();const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;component.draft.languageLocale='fr';component.catalogChanged();flushMicrotasks();expect(String(fetchSpy.calls.mostRecent().args[0])).toContain('locale=fr');component.chooseProfile('FEMALE');flushMicrotasks();expect(String(fetchSpy.calls.mostRecent().args[0])).toContain('gender=FEMALE');fixture.destroy();
+  }));
+  it('activates only the selected library voice before saving its id',fakeAsync(()=>{
+    flushMicrotasks();const library={id:'shared',name:'Shared',profile:'FEMALE' as const,language:'pt',locale:'pt-PT',accent:'portuguese',category:'professional',source:'LIBRARY' as const,publicOwnerId:'owner',verifiedLocales:['pt-PT']};engine.voices.set([library]);fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>String(url).endsWith('/activate')?({ok:true,json:()=>Promise.resolve({voiceId:'added'})} as Response):init?.method==='PUT'?({ok:true,json:()=>Promise.resolve({...defaultVoicePreference(),voiceId:'added',voiceName:'Shared',genderProfile:'FEMALE'})} as Response):({ok:true,json:()=>Promise.resolve({available:true,voices:[library]})} as Response));
+    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;component.draft={...defaultVoicePreference(),voiceId:'shared',voiceName:'Shared',genderProfile:'FEMALE'};void component.save();flushMicrotasks();const calls=fetchSpy.calls.all();expect(calls.filter(call=>String(call.args[0]).endsWith('/activate')).length).toBe(1);const put=calls.find(call=>call.args[1]?.method==='PUT')!;expect(JSON.parse(put.args[1].body as string).voiceId).toBe('added');fixture.destroy();
   }));
   it('does not choose or save an arbitrary ElevenLabs voice',fakeAsync(()=>{
     flushMicrotasks();fetchSpy.calls.reset();engine.speak('Ready.','en');flushMicrotasks();
@@ -69,7 +81,7 @@ describe('YvY voice engine',()=>{
   }));
   it('persists every draft field, confirms success and becomes clean',fakeAsync(()=>{
     const persisted={engine:'ELEVENLABS' as const,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'female',voiceName:'Female',speed:.85};
-    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(persisted)} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
+    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(persisted)} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
     const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
     component.draft={...persisted};expect(component.dirty()).toBeTrue();void component.save();expect(component.saving()).toBeTrue();flushMicrotasks();fixture.detectChanges();
     const put=fetchSpy.calls.all().find(call=>call.args[1]?.method==='PUT');expect(JSON.parse(put!.args[1].body as string)).toEqual(persisted);
@@ -77,7 +89,7 @@ describe('YvY voice engine',()=>{
     tick(4000);expect(component.feedback()).toBe('');fixture.destroy();
   }));
   it('keeps the draft and panel available when save fails',fakeAsync(()=>{
-    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:false,status:503} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
+    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:false,status:503} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
     const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
     component.draft.languageLocale='de';void component.save();flushMicrotasks();fixture.detectChanges();
     expect(component.draft.languageLocale).toBe('de');expect(component.dirty()).toBeTrue();expect(component.feedback()).toBe('✕ Não foi possível salvar as preferências de voz.');expect(fixture.nativeElement.querySelector('details')).not.toBeNull();fixture.destroy();

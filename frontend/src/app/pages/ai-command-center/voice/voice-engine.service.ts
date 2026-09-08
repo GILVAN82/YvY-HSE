@@ -7,7 +7,7 @@ import type { ConversationLanguage } from './voice.types';
 
 export type VoiceLocale='pt-PT'|'pt-BR'|'en'|'es'|'fr'|'de';
 export interface VoicePreference {engine:'ELEVENLABS'|'BROWSER';languageLocale:VoiceLocale;genderProfile:'FEMALE'|'MALE'|'UNKNOWN';voiceId:string|null;voiceName:string|null;speed:number}
-export interface EngineVoice {id:string;name:string;language:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';category:string|null}
+export interface EngineVoice {id:string;name:string;language:string|null;locale?:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';category:string|null;source?:'ACCOUNT'|'LIBRARY';publicOwnerId?:string|null;verifiedLocales?:string[]}
 export const defaultVoicePreference=():VoicePreference=>({engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1});
 export const previewText:Record<VoiceLocale,string>={
   'pt-PT':'Olá, eu sou a YvY. Esta é a voz selecionada para as suas interações de segurança.',
@@ -16,6 +16,7 @@ export const previewText:Record<VoiceLocale,string>={
 };
 export function matchesLocale(voice:EngineVoice,locale:VoiceLocale){
   const language=(voice.language??'').toLowerCase(),accent=(voice.accent??'').toLowerCase();
+  if(voice.locale?.toLowerCase()===locale.toLowerCase()||voice.verifiedLocales?.some(value=>value.toLowerCase()===locale.toLowerCase()))return true;
   if(locale==='pt-PT')return language==='pt-pt'||/portugal|european portuguese/.test(accent);
   if(locale==='pt-BR')return language==='pt-br'||/brazil/.test(accent);
   return language===locale;
@@ -39,6 +40,7 @@ export class VoiceEngineService {
   private url:string|null=null;
   private last:{text:string;language:ConversationLanguage}|null=null;
   private timer:ReturnType<typeof setTimeout>|null=null;
+  private catalogGeneration=0;
   muted=false;
   get lastText(){return this.last?.text??'';}
   get supported(){return this.available()||this.browser.supported;}
@@ -46,12 +48,17 @@ export class VoiceEngineService {
   reset(){this.stop();this.last=null;this.browser.lastText='';this.preference.set(defaultVoicePreference());this.voices.set([]);this.available.set(false);this.ready.set(false);this.error.set('');this.inspector.voiceEngine.set(null);}
   async load(){
     const owner=this.auth.user()?.userId;if(!owner)return;
-    const result=await Promise.allSettled([fetch(`${environment.apiUrl}/ai/voice/voices`,{credentials:'include'}).then(async r=>{if(!r.ok)throw new Error();return r.json();}),fetch(`${environment.apiUrl}/ai/voice-preferences`,{credentials:'include'}).then(async r=>{if(!r.ok)throw new Error();return r.json();})]);
+    const result=await Promise.allSettled([fetch(`${environment.apiUrl}/ai/voice/voices?locale=en`,{credentials:'include'}).then(async r=>{if(!r.ok)throw new Error();return r.json();}),fetch(`${environment.apiUrl}/ai/voice-preferences`,{credentials:'include'}).then(async r=>{if(!r.ok)throw new Error();return r.json();})]);
     if(owner!==this.auth.user()?.userId)return;
     if(result[0].status==='fulfilled'){this.voices.set(result[0].value.voices);this.available.set(result[0].value.available);}
-    if(result[1].status==='fulfilled')this.preference.set(result[1].value);else this.error.set('Não foi possível carregar as preferências.');
+    if(result[1].status==='fulfilled'){this.preference.set(result[1].value);const profile=result[1].value.genderProfile==='UNKNOWN'?'ALL':result[1].value.genderProfile;void this.loadCatalog(result[1].value.languageLocale,profile);}else this.error.set('Não foi possível carregar as preferências.');
     this.ready.set(true);
   }
+  async loadCatalog(locale:VoiceLocale,profile:'FEMALE'|'MALE'|'ALL'='ALL'){
+    const owner=this.auth.user()?.userId;if(!owner)return;const generation=++this.catalogGeneration;const query=new URLSearchParams({locale});if(profile!=='ALL')query.set('gender',profile);
+    try{const response=await fetch(`${environment.apiUrl}/ai/voice/voices?${query}`,{credentials:'include'});if(!response.ok)throw new Error();const result=await response.json();if(generation===this.catalogGeneration&&owner===this.auth.user()?.userId){this.voices.set(result.voices);this.available.set(result.available);}}catch{if(generation===this.catalogGeneration)this.error.set('Não foi possível atualizar o catálogo de vozes.');}
+  }
+  async activateVoice(voice:EngineVoice){if(voice.source==='ACCOUNT')return voice.id;const owner=this.auth.user()?.userId;if(!owner||!voice.publicOwnerId)return null;try{const response=await fetch(`${environment.apiUrl}/ai/voice/voices/activate`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({publicOwnerId:voice.publicOwnerId,voiceId:voice.id,voiceName:voice.name})});if(!response.ok)return null;const result=await response.json();if(owner!==this.auth.user()?.userId||typeof result.voiceId!=='string')return null;this.voices.update(items=>items.map(item=>item.id===voice.id?{...item,id:result.voiceId,source:'ACCOUNT',publicOwnerId:null}:item));return result.voiceId;}catch{return null;}}
   async save(value:VoicePreference){
     const owner=this.auth.user()?.userId;if(!owner)return null;
     try{const response=await fetch(`${environment.apiUrl}/ai/voice-preferences`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!response.ok)return null;const preference:VoicePreference=await response.json();if(owner!==this.auth.user()?.userId)return null;this.preference.set(preference);return preference;}catch{return null;}

@@ -9,13 +9,15 @@ export const preferenceSchema = z.object({
 export type VoicePreference = z.infer<typeof preferenceSchema>;
 export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
 export const synthesisSchema = z.object({text:z.string().trim().min(1).max(1200).refine(text=>!/[|{}]|```|https?:\/\//.test(text),'Use spoken summary only'),voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),locale:voiceLocale,speed:z.number().min(0.7).max(1.2),preview:z.boolean().optional()}).strict().refine(body=>!body.preview || body.text.length<=240);
-export type Voice = {id:string;name:string;language:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';previewUrl:string|null;category:string|null};
+export type Voice = {id:string;name:string;language:string|null;locale:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';previewUrl:string|null;category:string|null;source:'ACCOUNT'|'LIBRARY';publicOwnerId:string|null;verifiedLocales:string[]};
+export type VoiceDiscovery = {locale:z.infer<typeof voiceLocale>;gender?:'FEMALE'|'MALE'};
 export class VoiceFailure extends Error {
   constructor(public code:string,public fallbackAllowed=true,public status=503){super(code);}
 }
 export class ElevenLabsAdapter {
   readonly model:string;
   readonly available:boolean;
+  private readonly discoveryCache=new Map<string,{expires:number;voices:Voice[]}>();
   constructor(private readonly env:NodeJS.ProcessEnv=process.env,private readonly request:typeof fetch=fetch,private readonly timeoutMs=20000){
     this.model=env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
     this.available=!!env.ELEVENLABS_API_KEY && env.ELEVENLABS_ENABLED!=='false';
@@ -42,14 +44,15 @@ export class ElevenLabsAdapter {
   async voices(signal?:AbortSignal):Promise<Voice[]>{
     const voices:Voice[]=[];let cursor:string|undefined;
     for(let page=0;page<20;page++){
-      const body=await this.call<{voices?:Array<{voice_id?:unknown;name?:unknown;labels?:Record<string,unknown>;category?:unknown;preview_url?:unknown}>;has_more?:boolean;next_page_token?:unknown}>(`/v2/voices?page_size=100${cursor?`&next_page_token=${encodeURIComponent(cursor)}`:''}`,{},async r=>await r.json() as any,signal);
+      const body=await this.call<{voices?:Array<{voice_id?:unknown;name?:unknown;labels?:Record<string,unknown>;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>;has_more?:boolean;next_page_token?:unknown}>(`/v2/voices?page_size=100${cursor?`&next_page_token=${encodeURIComponent(cursor)}`:''}`,{},async r=>await r.json() as any,signal);
       for(const v of body.voices??[]){
         if(typeof v.voice_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id))continue;
         const label=(key:string)=>{const value=v.labels?.[key];return typeof value==='string'?value.slice(0,120):null;};
         const gender=label('gender')?.toLowerCase();
         let previewUrl:string|null=null;
         try{const url=new URL(String(v.preview_url));if(url.protocol==='https:'&&!url.username&&!url.password&&url.href.length<2000)previewUrl=url.href;}catch{/* optional official metadata */}
-        voices.push({id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:label('language'),accent:label('accent'),profile:gender==='female'?'FEMALE':gender==='male'?'MALE':'UNKNOWN',previewUrl,category:typeof v.category==='string'?v.category.slice(0,80):null});
+        const verified=this.verifiedLocales(v.verified_languages);const locale=verified[0]??null;
+        voices.push({id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:label('language')??locale?.split('-')[0]??null,locale,accent:label('accent'),profile:gender==='female'?'FEMALE':gender==='male'?'MALE':'UNKNOWN',previewUrl,category:typeof v.category==='string'?v.category.slice(0,80):null,source:'ACCOUNT',publicOwnerId:null,verifiedLocales:verified});
       }
       if(!body.has_more)return voices;
       if(typeof body.next_page_token!=='string')throw new VoiceFailure('INVALID_RESPONSE');
@@ -57,6 +60,19 @@ export class ElevenLabsAdapter {
     }
     throw new VoiceFailure('VOICE_CATALOG_LIMIT');
   }
+  async discover(input:VoiceDiscovery,signal?:AbortSignal):Promise<Voice[]> {
+    const key=`${input.locale}:${input.gender??'ALL'}`,cached=this.discoveryCache.get(key);if(cached&&cached.expires>Date.now())return cached.voices;
+    const account=await this.voices(signal),language=input.locale.split('-')[0],query=new URLSearchParams({page_size:'50',language,sort:'usage_character_count_1y'});if(input.locale.startsWith('pt-'))query.set('locale',input.locale);if(input.gender)query.set('gender',input.gender.toLowerCase());
+    const body=await this.call<{voices?:Array<{voice_id?:unknown;public_owner_id?:unknown;name?:unknown;language?:unknown;accent?:unknown;gender?:unknown;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>}>(`/v1/shared-voices?${query}`,{},async r=>await r.json() as any,signal);
+    const shared=(body.voices??[]).flatMap(v=>{if(typeof v.voice_id!=='string'||typeof v.public_owner_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id)||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.public_owner_id))return[];const gender=typeof v.gender==='string'?v.gender.toLowerCase():'';const verified=this.verifiedLocales(v.verified_languages);return[{id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:typeof v.language==='string'?v.language.slice(0,20):null,locale:verified[0]??null,accent:typeof v.accent==='string'?v.accent.slice(0,120):null,profile:gender==='female'?'FEMALE' as const:gender==='male'?'MALE' as const:'UNKNOWN' as const,previewUrl:this.safeUrl(v.preview_url),category:typeof v.category==='string'?v.category.slice(0,80):null,source:'LIBRARY' as const,publicOwnerId:v.public_owner_id,verifiedLocales:verified}];});
+    const merged=[...account,...shared.filter(v=>!account.some(a=>a.id===v.id))];this.discoveryCache.set(key,{expires:Date.now()+5*60_000,voices:merged});return merged;
+  }
+  async addShared(publicOwnerId:string,voiceId:string,name:string,signal?:AbortSignal){
+    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(publicOwnerId)||!/^[a-zA-Z0-9_-]{1,100}$/.test(voiceId))throw new VoiceFailure('INVALID_VOICE',false,400);
+    const result=await this.call<{voice_id?:unknown}>(`/v1/voices/add/${encodeURIComponent(publicOwnerId)}/${encodeURIComponent(voiceId)}`,{method:'POST',body:JSON.stringify({new_name:name.slice(0,120),bookmarked:true})},async r=>await r.json() as any,signal);if(typeof result.voice_id!=='string')throw new VoiceFailure('INVALID_RESPONSE');this.discoveryCache.clear();return result.voice_id;
+  }
+  private verifiedLocales(value:unknown){return Array.isArray(value)?value.flatMap(item=>item&&typeof item==='object'&&typeof (item as any).locale==='string'?[(item as any).locale.slice(0,20)]:[]):[];}
+  private safeUrl(value:unknown){try{const url=new URL(String(value));return url.protocol==='https:'&&!url.username&&!url.password&&url.href.length<2000?url.href:null;}catch{return null;}}
   async synthesize(input:z.infer<typeof synthesisSchema>,signal?:AbortSignal):Promise<Buffer>{
     const parsed=synthesisSchema.safeParse(input);if(!parsed.success)throw new VoiceFailure('INVALID_CONTENT',false,400);
     const voices=await this.voices(signal);

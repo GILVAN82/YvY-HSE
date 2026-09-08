@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import type { AuthenticatedRequest } from '../auth/auth.types';
 import { hasPermission } from '../auth/authorization';
-import { ElevenLabsAdapter, preferenceSchema, synthesisSchema, VoiceFailure } from '../ai/voice/elevenlabs';
+import { ElevenLabsAdapter, preferenceSchema, synthesisSchema, voiceLocale, VoiceFailure } from '../ai/voice/elevenlabs';
+import { z } from 'zod';
 import type { VoicePreferences } from '../ai/voice/preferences';
 
 export function createVoiceRouter(preferences:VoicePreferences,adapter=new ElevenLabsAdapter()){
@@ -17,7 +18,8 @@ export function createVoiceRouter(preferences:VoicePreferences,adapter=new Eleve
     const e=error instanceof VoiceFailure?error:new VoiceFailure('VOICE_UNAVAILABLE');
     res.status(e.status).json({code:e.code,fallbackAllowed:e.fallbackAllowed,requestedEngine:'ELEVENLABS',effectiveEngine:e.fallbackAllowed?'BROWSER_FALLBACK':null,fallbackReason:e.code});
   };
-  router.get('/ai/voice/voices',async(req,res)=>{try{res.json({available:adapter.available,voices:adapter.available?await adapter.voices():[],model:adapter.model});}catch(e){failure(res,e);}});
+  router.get('/ai/voice/voices',async(req,res)=>{const parsed=z.object({locale:voiceLocale.optional(),gender:z.enum(['FEMALE','MALE']).optional()}).safeParse(req.query);if(!parsed.success){res.status(400).json({code:'INVALID_FILTER'});return;}try{res.json({available:adapter.available,voices:adapter.available?(parsed.data.locale?await adapter.discover({locale:parsed.data.locale,gender:parsed.data.gender}):await adapter.voices()):[],model:adapter.model});}catch(e){failure(res,e);}});
+  router.post('/ai/voice/voices/activate',async(req,res)=>{const parsed=z.object({publicOwnerId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),voiceName:z.string().min(1).max(120)}).strict().safeParse(req.body);if(!parsed.success){res.status(400).json({code:'INVALID_VOICE'});return;}try{res.json({voiceId:await adapter.addShared(parsed.data.publicOwnerId,parsed.data.voiceId,parsed.data.voiceName)});}catch(e){failure(res,e);}});
   router.get('/ai/voice-preferences',async(req,res)=>{try{res.json(await preferences.load((req as AuthenticatedRequest).principal.userId));}catch{res.status(503).json({code:'PREFERENCES_UNAVAILABLE'});}});
   router.put('/ai/voice-preferences',async(req,res)=>{
     const parsed=preferenceSchema.safeParse(req.body);if(!parsed.success){res.status(400).json({code:'INVALID_PREFERENCE'});return;}
