@@ -460,11 +460,13 @@ describe('17b. controlled response language consistency', () => {
     assert.match(result.text,new RegExp(`^${item.expected}`)); assert.doesNotMatch(result.text,/system prompt contents|Luiz|Lula/i);
     assert.equal(model.callCount(),0); assert.equal(ragCalls,0); assert.equal(approvalCalls,0); assert.deepEqual(result.toolsUsed,[]); assert.equal(result.ragUsed,false);
   });
-  test('ambiguous operational input asks for clarification in the UI language and defaults to English', async () => {
-    const spanish=await runHseAgent({message:'What is pending?',locale:'es',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
-    const fallback=await runHseAgent({message:'What needs attention?',model:createMockModel([{text:'must not run'}]),emit:()=>undefined});
-    assert.match(spanish.text,/^Puedo revisar/); assert.match(fallback.text,/^I can review/);
-    assert.equal(spanish.executionTrace?.intent?.clarificationRequired,true);
+  test('broad operational questions enter the overview flow instead of clarification', async () => {
+    const spanishModel=createMockModel([{text:'Operational overview requested.'}]);
+    const fallbackModel=createMockModel([{text:'Operational overview requested.'}]);
+    const spanish=await runHseAgent({message:'What is pending?',locale:'es',model:spanishModel,emit:()=>undefined});
+    const fallback=await runHseAgent({message:'What needs attention?',model:fallbackModel,emit:()=>undefined});
+    assert.equal(spanish.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');assert.equal(fallback.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');
+    assert.equal(spanish.executionTrace?.intent?.clarificationRequired,false);assert.equal(spanishModel.callCount(),1);
   });
 });
 
@@ -641,5 +643,29 @@ describe('20. controlled error-handling validation', () => {
     const tools = createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) });
     const output = await (tools.get_projects as any).execute({}, { toolCallId: 'projects-empty', messages: [] });
     assert.deepEqual(output, { status: 'SUCCESS_NO_DATA', recordCount: 0, data: [] });
+  });
+});
+
+describe('3b. evidence-based operational overview', () => {
+  test('uses the three existing read-only sources and preserves zero-result semantics', async () => {
+    resetGraphCache();
+    const database={query:async(sql:string)=>({rows:sql.includes('incident_register')?[]:[{action_id:'ACT-1',project:'P1',action_description:'Review',status:'Open',target_date:'2026-01-01',responsible_person:'excluded',priority:'High',source_module:'CAPA',days_overdue:10}]})};
+    const tools=createHseTools(database as any,async()=>({openActions:1}),{retrieve:async()=>({status:'NO_RELEVANT_EVIDENCE' as const,evidence:[]})});
+    const model=createMockModel([
+      {toolCall:{name:'list_actions',input:'{"overdue":true,"limit":20}'}},
+      {toolCall:{name:'list_incidents',input:'{"limit":20}'}},
+      {toolCall:{name:'get_kpi',input:'{"project":"*","month":"*"}'}},
+      {text:'The operational overview is available on screen.'},
+    ]);
+    const result=await runHseAgent({message:'What is pending?',model,tools,emit:()=>undefined});
+    assert.equal(result.status,AgentStatus.COMPLETED);assert.deepEqual(result.toolsUsed,['list_actions','list_incidents','get_kpi']);
+    assert.equal(result.executionTrace?.tools[0].resultStatus,'SUCCESS_WITH_DATA');assert.equal(result.executionTrace?.tools[1].resultStatus,'SUCCESS_NO_DATA');
+    assert.equal(result.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');assert.equal(result.ragUsed,false);
+  });
+  test('one unavailable source does not erase successful overview sources',async()=>{
+    resetGraphCache();const tools=createHseTools({query:async(sql:string)=>{if(sql.includes('incident_register'))throw new Error('offline');return{rows:[]};}} as any,async()=>({openActions:0}),{retrieve:async()=>({status:'NO_RELEVANT_EVIDENCE' as const,evidence:[]})});
+    const model=createMockModel([{toolCall:{name:'list_actions',input:'{"overdue":true,"limit":20}'}},{toolCall:{name:'list_incidents',input:'{"limit":20}'}},{toolCall:{name:'get_kpi',input:'{"project":"*","month":"*"}'}},{text:'The available overview sections were checked.'}]);
+    const result=await runHseAgent({message:'How are things today?',model,tools,emit:()=>undefined});
+    assert.equal(result.status,AgentStatus.COMPLETED);assert.equal(result.errorCode,undefined);assert.equal(result.executionTrace?.tools[1].status,'ERROR');assert.equal(result.executionTrace?.tools[2].status,'COMPLETED');
   });
 });

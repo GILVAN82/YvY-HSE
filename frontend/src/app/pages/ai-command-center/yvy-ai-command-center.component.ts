@@ -22,10 +22,11 @@ import { SpokenResponseFormatterService } from './voice/spoken-response-formatte
 import { YvyAlertService, type YvyAlert } from './yvy-alert.service';
 import { ProactiveVoiceQueue } from './voice/proactive-voice-queue';
 import { AgentInspectorService } from '../../core/agent-inspector.service';
+import { SafeMarkdownPipe } from '../../shared/ai-chat-widget/safe-markdown.pipe';
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
-  imports: [VoiceSettingsComponent, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
+  imports: [VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
   templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss'],
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
@@ -73,7 +74,12 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   verificationLabel(item:ConversationItem){const status=item.snapshot?.executionTrace?.verification?.status;if(status==='VERIFIED')return 'Verified';if(status==='PARTIALLY_VERIFIED'||status==='INSUFFICIENT_EVIDENCE')return 'Evidence unavailable';if(status==='CONTRADICTED'||status==='SAFETY_BLOCKED')return 'Needs confirmation';return item.status==='STREAMING'?'Working…':'';}
   operationalTitle(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'Actions':tool==='list_incidents'?'Incidents':tool==='get_projects'?'Projects':tool==='get_kpi'?'Safety performance':null;}
   operationalRoute(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'/sheet/Action Log':tool==='list_incidents'?'/sheet/Incident Register':tool==='get_projects'?'/projects':tool==='get_kpi'?'/portfolio':null;}
+  operationalTools(item:ConversationItem){const supported=new Set(['list_actions','list_incidents','get_projects','get_kpi']);return (item.snapshot?.executionTrace?.tools??[]).filter(tool=>supported.has(tool.name));}
+  operationalLabel(tool:string){return tool==='list_actions'?'Actions':tool==='list_incidents'?'Incidents':tool==='get_projects'?'Projects':tool==='get_kpi'?'Safety performance':'Approved knowledge';}
+  operationalToolRoute(tool:string){return tool==='list_actions'?'/sheet/Action Log':tool==='list_incidents'?'/sheet/Incident Register':tool==='get_projects'?'/projects':'/portfolio';}
+  isOperationalOverview(item:ConversationItem){return item.snapshot?.executionTrace?.intent?.intent==='OPERATIONAL_OVERVIEW';}
   evidenceCount(item:ConversationItem){return item.snapshot?.executionTrace?.verification?.evidenceItemsConsidered??0;}
+  evidenceSources(item:ConversationItem){return (item.snapshot?.executionTrace?.verification?.sources??[]).map(source=>this.operationalLabel(source));}
   async copyMessage(item:ConversationItem){try{await navigator.clipboard.writeText(item.text);}catch{/* Clipboard availability does not affect the conversation. */}}
   replayMessage(item:ConversationItem){const language=(item.language as VoiceConversationTurn['language'])||'en',response=this.spokenFormatter.format(item.text,language);if(this.speechSynthesis.speak(response.spokenResponse,language,()=>this.voiceStatus.set('idle'),()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');}
   askAboutAlert(alert:YvyAlert){

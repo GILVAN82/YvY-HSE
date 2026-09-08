@@ -87,7 +87,7 @@ export interface AgentExecutionTrace {
     status: 'USED' | 'NO_MATCH' | 'COMPLETED' | 'ERROR' | 'NOT_USED';
   };
   guardrail: { status: 'PASS' | 'BLOCKED' | 'REFUSED'; reason?: RefusalCode };
-  intent?: Pick<IntentDecision, 'input' | 'normalizedQuery' | 'scope' | 'confidence' | 'intent' | 'candidateTools' | 'clarificationRequired'> & { selectedTool?: string };
+  intent?: Pick<IntentDecision, 'input' | 'normalizedQuery' | 'scope' | 'confidence' | 'intent' | 'candidateTools' | 'clarificationRequired'> & { selectedTool?: string; selectedTools?: string[] };
   verification: VerificationResult;
   error?: { category: AgentErrorCode; node: string; recoverable: boolean };
 }

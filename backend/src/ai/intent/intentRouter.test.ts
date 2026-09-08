@@ -4,8 +4,16 @@ import { INTENT_EVALUATION_DATASET } from './intentEvaluation.dataset';
 import { classifyIntent } from './intentRouter';
 
 test('intent evaluation dataset contains all required categories and at least 100 cases',()=>{
- assert.equal(INTENT_EVALUATION_DATASET.length,120);
+ assert.ok(INTENT_EVALUATION_DATASET.length>=125);
  for(const item of INTENT_EVALUATION_DATASET)assert.ok(item.input&&item.language&&item.expectedScope&&item.expectedIntent);
+});
+test('overview and evidence follow-up use only the existing read-only operational sources',()=>{
+ const overview=classifyIntent('What is pending?');
+ assert.equal(overview.intent,'OPERATIONAL_OVERVIEW');assert.equal(overview.clarificationRequired,false);
+ assert.deepEqual(overview.candidateTools,['list_actions','list_incidents','get_kpi']);
+ const followUp=classifyIntent('What evidence supports that?',[{role:'user',content:'What is pending?'},{role:'assistant',content:'There are pending items.'}]);
+ assert.equal(followUp.intent,'OPERATIONAL_OVERVIEW');assert.equal(followUp.clarificationRequired,false);
+ const isolated=classifyIntent('Which one?');assert.equal(isolated.scope,'AMBIGUOUS');
 });
 test('intent evaluation dataset routes conversational inputs',()=>{
  for(const item of INTENT_EVALUATION_DATASET){

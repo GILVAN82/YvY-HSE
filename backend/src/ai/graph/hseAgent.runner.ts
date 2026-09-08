@@ -218,7 +218,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
           status: memoryTool ? (final.errorCode === AgentErrorCode.TOOL_FAILURE ? 'ERROR' : 'COMPLETED') : longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED',
         },
         guardrail: { status: final.status === AgentStatus.REFUSED ? 'REFUSED' : 'PASS', ...(final.refusalReason ? { reason: final.refusalReason } : {}) },
-        intent: { ...intentDecision, selectedTool: final.toolNames[0] },
+        intent: { ...intentDecision, selectedTool: final.toolNames[0], selectedTools: final.toolNames },
         verification: final.verificationResult ?? { status:'INSUFFICIENT_EVIDENCE',claimsConsidered:0,verifiedClaims:0,unsupportedClaims:0,evidenceItemsConsidered:final.evidence.length,evidenceSourceTypes:[],sources:[],reasons:['Verification did not complete.'] },
         ...(final.errorCode ? { error: { category: final.errorCode, node: final.executedRoute.at(-1) ?? 'unknown', recoverable: final.errorCode !== AgentErrorCode.HITL_PERSISTENCE } } : {}),
       },
