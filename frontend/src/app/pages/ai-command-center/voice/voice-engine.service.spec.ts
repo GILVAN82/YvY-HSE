@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { AuthService } from '../../../core/auth.service';
 import { AgentInspectorService } from '../../../core/agent-inspector.service';
@@ -11,14 +11,14 @@ describe('YvY voice engine',()=>{
   let engine:VoiceEngineService;let browser:jasmine.SpyObj<SpeechSynthesisService>;let fetchSpy:jasmine.Spy;let user:ReturnType<typeof signal<any>>;
   beforeEach(fakeAsync(()=>{
     user=signal<any>({userId:'A'});browser=jasmine.createSpyObj('browser',['speak','stop','setMuted'],{supported:true});browser.speak.and.returnValue(true);
-    fetchSpy=spyOn(window,'fetch').and.callFake(async(url:any)=>String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):String(url).endsWith('/voice-preferences')?({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response):({ok:true,headers:new Headers({'content-type':'audio/mpeg'}),blob:()=>Promise.resolve(new Blob(['audio']))} as Response));
+    fetchSpy=spyOn(window,'fetch').and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(JSON.parse(init.body as string))} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):String(url).endsWith('/voice-preferences')?({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response):({ok:true,headers:new Headers({'content-type':'audio/mpeg'}),blob:()=>Promise.resolve(new Blob(['audio']))} as Response));
     TestBed.configureTestingModule({providers:[{provide:AuthService,useValue:{user}},{provide:SpeechSynthesisService,useValue:browser}]});
     engine=TestBed.inject(VoiceEngineService);TestBed.flushEffects();flushMicrotasks();
   }));
   afterEach(()=>engine.stop());
   it('loads real catalog and save/load preferences',fakeAsync(()=>{
     flushMicrotasks();expect(engine.preference().languageLocale).toBe('en');expect(engine.preference().voiceId).toBeNull();expect(engine.voices().length).toBe(3);expect(engine.available()).toBeTrue();
-    let saved=false;engine.save({...defaultVoicePreference(),engine:'BROWSER'}).then(value=>saved=value);flushMicrotasks();expect(saved).toBeTrue();
+    let saved=null as ReturnType<typeof defaultVoicePreference>|null;engine.save({...defaultVoicePreference(),engine:'BROWSER'}).then(value=>saved=value);flushMicrotasks();expect(saved?.engine).toBe('BROWSER');
     expect(fetchSpy.calls.mostRecent().args[1].credentials).toBe('include');
   }));
   it('filters female, male and unknown without inventing metadata',fakeAsync(()=>{
@@ -45,7 +45,7 @@ describe('YvY voice engine',()=>{
     flushMicrotasks();let audio:HTMLMediaElement|undefined;
     spyOn(HTMLMediaElement.prototype,'play').and.callFake(function(this:HTMLMediaElement){audio=this;return Promise.resolve();});
     const end=jasmine.createSpy('end');engine.preference.set({...defaultVoicePreference(),voiceId:'male'});engine.speak('Olá.','pt',end);flushMicrotasks();
-    expect(audio).toBeDefined();expect(end).not.toHaveBeenCalled();expect(TestBed.inject(AgentInspectorService).voiceEngine()?.effectiveEngine).toBe('ELEVENLABS');
+    expect(audio).toBeDefined();expect(end).not.toHaveBeenCalled();expect(TestBed.inject(AgentInspectorService).voiceEngine()).toEqual({requestedEngine:'ELEVENLABS',effectiveEngine:'ELEVENLABS',fallbackReason:null,voiceName:null});
     audio!.onended!(new Event('ended'));expect(end).toHaveBeenCalledTimes(1);
   }));
   it('falls back once for technical failure and preserves locale and speed',fakeAsync(()=>{
@@ -66,6 +66,31 @@ describe('YvY voice engine',()=>{
     const draft={...defaultVoicePreference(),engine:'BROWSER' as const,languageLocale:'pt-BR' as const,speed:1.2};engine.preview(draft);flushMicrotasks();
     expect(browser.speak.calls.mostRecent().args[0]).toContain('para suas interações');expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-BR',rate:1.2});
     engine.preference.set({...defaultVoicePreference(),speed:.9});engine.replay();flushMicrotasks();expect(browser.speak.calls.mostRecent().args[0]).toBe('Resposta verificada.');expect(browser.speak.calls.mostRecent().args[4]?.rate).toBe(.9);
+  }));
+  it('persists every draft field, confirms success and becomes clean',fakeAsync(()=>{
+    const persisted={engine:'ELEVENLABS' as const,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'female',voiceName:'Female',speed:.85};
+    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(persisted)} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
+    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
+    component.draft={...persisted};expect(component.dirty()).toBeTrue();void component.save();expect(component.saving()).toBeTrue();flushMicrotasks();fixture.detectChanges();
+    const put=fetchSpy.calls.all().find(call=>call.args[1]?.method==='PUT');expect(JSON.parse(put!.args[1].body as string)).toEqual(persisted);
+    expect(component.feedback()).toBe('✓ Preferências salvas');expect(component.dirty()).toBeFalse();expect(engine.preference()).toEqual(persisted);
+    tick(4000);expect(component.feedback()).toBe('');fixture.destroy();
+  }));
+  it('keeps the draft and panel available when save fails',fakeAsync(()=>{
+    fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:false,status:503} as Response):String(url).endsWith('/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
+    const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
+    component.draft.languageLocale='de';void component.save();flushMicrotasks();fixture.detectChanges();
+    expect(component.draft.languageLocale).toBe('de');expect(component.dirty()).toBeTrue();expect(component.feedback()).toBe('✕ Não foi possível salvar as preferências de voz.');expect(fixture.nativeElement.querySelector('details')).not.toBeNull();fixture.destroy();
+  }));
+  it('reopens with the exact persisted voice preference',fakeAsync(()=>{
+    const persisted={engine:'ELEVENLABS' as const,languageLocale:'en' as const,genderProfile:'MALE' as const,voiceId:'male',voiceName:'Male',speed:1.15};engine.preference.set(persisted);
+    let fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();expect(fixture.componentInstance.draft).toEqual(persisted);fixture.destroy();
+    fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();expect(fixture.componentInstance.draft).toEqual(persisted);expect(fixture.componentInstance.dirty()).toBeFalse();fixture.destroy();
+  }));
+  it('previews the selected ElevenLabs voice without saving it',fakeAsync(()=>{
+    spyOn(HTMLMediaElement.prototype,'play').and.resolveTo();fetchSpy.calls.reset();const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;
+    component.draft={...defaultVoicePreference(),voiceId:'male',voiceName:'Male',genderProfile:'MALE'};component.preview();flushMicrotasks();fixture.detectChanges();
+    expect(fetchSpy.calls.all().some(call=>call.args[1]?.method==='PUT')).toBeFalse();expect(TestBed.inject(AgentInspectorService).voiceEngine()).toEqual({requestedEngine:'ELEVENLABS',effectiveEngine:'ELEVENLABS',fallbackReason:null,voiceName:'Male'});expect(fixture.nativeElement.textContent).toContain('ElevenLabs · Male');fixture.destroy();
   }));
   it('stop aborts pending preview and ignores late audio',fakeAsync(()=>{
     flushMicrotasks();let resolve!:(response:Response)=>void;fetchSpy.and.callFake(()=>new Promise<Response>(r=>resolve=r));

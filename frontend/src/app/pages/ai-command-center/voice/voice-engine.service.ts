@@ -53,8 +53,8 @@ export class VoiceEngineService {
     this.ready.set(true);
   }
   async save(value:VoicePreference){
-    const owner=this.auth.user()?.userId;if(!owner)return false;
-    try{const response=await fetch(`${environment.apiUrl}/ai/voice-preferences`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!response.ok)return false;const preference=await response.json();if(owner!==this.auth.user()?.userId)return false;this.preference.set(preference);return true;}catch{return false;}
+    const owner=this.auth.user()?.userId;if(!owner)return null;
+    try{const response=await fetch(`${environment.apiUrl}/ai/voice-preferences`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!response.ok)return null;const preference:VoicePreference=await response.json();if(owner!==this.auth.user()?.userId)return null;this.preference.set(preference);return preference;}catch{return null;}
   }
   speak(text:string,language:ConversationLanguage,onEnd?:()=>void,onError?:()=>void){
     if(this.muted||!this.auth.user()||!text.trim())return false;
@@ -69,7 +69,7 @@ export class VoiceEngineService {
     this.stop();this.busy.set(true);const token=this.generation,owner=this.auth.user()!.userId;
     const current=()=>token===this.generation&&owner===this.auth.user()?.userId&&!this.muted;
     const locale=language==='pt'&&preference.languageLocale.startsWith('pt-')?preference.languageLocale:language;
-    const record=(engine:'ELEVENLABS'|'BROWSER_FALLBACK',reason?:string)=>this.inspector.voiceEngine.set({requestedEngine:preference.engine,effectiveEngine:engine,fallbackReason:reason??null});
+    const record=(engine:'ELEVENLABS'|'BROWSER_FALLBACK',reason?:string)=>this.inspector.voiceEngine.set({requestedEngine:preference.engine,effectiveEngine:engine,fallbackReason:reason??null,voiceName:engine==='ELEVENLABS'?preference.voiceName:null});
     const complete=()=>{if(!current())return;this.stop();onEnd?.();};
     const failed=()=>{if(!current())return;this.stop();onError?.();};
     let usedFallback=false;

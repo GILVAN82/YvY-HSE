@@ -1,5 +1,5 @@
 <main class="inspector-page">
-  <section *ngIf="inspector.voiceEngine() as voice"><h2>Voice Engine</h2><p>Requested: {{voice.requestedEngine}} ? Effective: {{voice.effectiveEngine}}</p><p *ngIf="voice.fallbackReason">Fallback: {{voice.fallbackReason}}</p></section>
+  <section *ngIf="inspector.voiceEngine() as voice"><h2>Voice Engine</h2><p>Requested: {{voice.requestedEngine}} · Effective: {{voice.effectiveEngine}}</p><p *ngIf="voice.voiceName">Voice: {{voice.voiceName}}</p><p *ngIf="voice.fallbackReason">Fallback: {{voice.fallbackReason}}</p></section>
   <header class="page-head">
     <div>
       <span class="eyebrow">Demo Mode — Turing College</span>

@@ -62,7 +62,8 @@ test('authenticated HTTP preference ownership, validation and fallback metadata'
 });
 test('Postgres preferences bind session user and do not interpolate supplied values',async()=>{
   const calls:any[]=[];const repo=new PostgresVoicePreferences({query:async(sql:string,args:any[])=>{calls.push({sql,args});return{rows:[]};}} as any);
-  await repo.load('userA');await repo.save('userA',defaultPreference);assert.equal(calls[0].args[0],'userA');assert.match(calls[0].sql,/WHERE user_id=\$1/);assert.equal(calls[1].args[0],'userA');
+  const preference={...defaultPreference,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'voice1',voiceName:'Test',speed:.85};
+  await repo.load('userA');await repo.save('userA',preference);assert.equal(calls[0].args[0],'userA');assert.match(calls[0].sql,/WHERE user_id=\$1/);assert.deepEqual(calls[1].args,['userA','ELEVENLABS','pt-BR','FEMALE','voice1','Test',.85]);
 });
 test('claim reserves only; cooldown and VOICE_SPOKEN require successful completion',async()=>{
   const calls:any[]=[];const row={id:'alert',severity:'CRITICAL',evidence:[]};
