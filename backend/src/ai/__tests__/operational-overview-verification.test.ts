@@ -42,7 +42,7 @@ test('verification node preserves usable partial evidence without turning the ru
 test('composes a useful localized overview only from source-specific facts',()=>{
   const items=[evidence('list_actions','SUCCESS_WITH_DATA',8),evidence('list_incidents','SUCCESS_WITH_DATA',11),evidence('get_kpi','SUCCESS_WITH_DATA',1,{trir:0.7,daysSinceLTI:42})];
   const text=composeOperationalOverview(items,'pt','Gilvan');
-  assert.match(text,/Gilvan, encontrei 8 ações e 11 incidentes no escopo atual/i);
+  assert.match(text,/Gilvan, encontrei 8 ações pendentes e 11 incidentes em aberto no escopo atual/i);
   assert.match(text,/desempenho de segurança/i);
   assert.equal(verifyEvidenceContract(text,items).status,'VERIFIED');
 });
@@ -53,11 +53,15 @@ test('zero incidents and partial source failure retain verified useful content',
   assert.equal(operationalPresentationSummary('list_incidents',{status:'SUCCESS_NO_DATA',recordCount:0,data:[]},'pt'),'Nenhum incidente em aberto');
   const partial=[evidence('list_actions','SUCCESS_WITH_DATA',8),evidence('list_incidents','ERROR',0),evidence('get_kpi','SUCCESS_WITH_DATA',1,{trir:0.7})];
   const text=composeOperationalOverview(partial,'pt');
-  assert.match(text,/Encontrei 8 ações/i);assert.match(text,/precisa de confirmação/i);assert.doesNotMatch(text,/incidentes encontrados/i);
+  assert.match(text,/Encontrei 8 ações pendentes/i);assert.match(text,/precisa de confirmação/i);assert.doesNotMatch(text,/incidentes encontrados/i);
 });
 
 test('KPI presentation uses values or an availability statement, never row-count language',()=>{
   const summary=operationalPresentationSummary('get_kpi',{status:'SUCCESS_WITH_DATA',recordCount:1,data:{trir:0.7,daysSinceLTI:42}},'en');
   assert.equal(summary,'TRIR: 0.7 · Days since LTI: 42');
   assert.doesNotMatch(summary,/record/i);
+});
+
+test('KPI no-data is a valid localized result',()=>{
+  assert.equal(operationalPresentationSummary('get_kpi',{status:'SUCCESS_NO_DATA',recordCount:0,data:{}},'pt'),'Nenhum indicador correspondente disponível');
 });

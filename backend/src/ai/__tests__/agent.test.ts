@@ -84,7 +84,7 @@ describe('3. multi-step tool calling with a final answer', () => {
     assert.ok(events.some((e) => e.type === 'tool_use' && e.name === 'get_projects'));
     assert.equal(result.executionTrace?.tools[0]?.name, 'get_projects');
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
-    assert.match(result.executionTrace?.tools[0]?.resultSummary ?? '', /record/);
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '12 projects found');
   });
 });
 
@@ -468,6 +468,17 @@ describe('17b. controlled response language consistency', () => {
     assert.equal(spanish.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');assert.equal(fallback.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');
     assert.equal(spanish.executionTrace?.intent?.clarificationRequired,false);assert.equal(spanishModel.callCount(),1);
   });
+
+  test('open operational filters use the real terminal statuses', async () => {
+    const calls:Array<{sql:string;params:unknown[]}>=[];
+    const database={query:async(sql:string,params:unknown[]=[])=>{calls.push({sql,params});return{rows:[]};}};
+    const tools=createHseTools(database as any,async()=>({}),{retrieve:async()=>({status:'NO_RELEVANT_EVIDENCE' as const,evidence:[]})});
+    await (tools.list_actions as any).execute({open:true,limit:20},{});
+    await (tools.list_incidents as any).execute({open:true,limit:20},{});
+    assert.match(calls[0].sql,/status IS DISTINCT FROM 'Closed'/);
+    assert.match(calls[1].sql,/investigation_status IS DISTINCT FROM 'Closed'/);
+    assert.match(calls[1].sql,/SELECT project_code, date_of_incident, incident_type, severity, investigation_status/);
+  });
 });
 
 describe('17c. specific controlled security and memory rejections', () => {
@@ -661,13 +672,15 @@ describe('3b. evidence-based operational overview', () => {
     assert.equal(result.status,AgentStatus.COMPLETED);assert.deepEqual(result.toolsUsed,['list_actions','list_incidents','get_kpi']);
     assert.equal(result.executionTrace?.tools[0].resultStatus,'SUCCESS_WITH_DATA');assert.equal(result.executionTrace?.tools[1].resultStatus,'SUCCESS_NO_DATA');
     assert.equal(result.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');assert.equal(result.ragUsed,false);
-    assert.match(result.text,/1 action/i);assert.match(result.text,/No open incidents/i);assert.doesNotMatch(result.text,/operational overview is available/i);
+    assert.match(result.text,/1 pending action/i);assert.match(result.text,/No open incidents/i);assert.doesNotMatch(result.text,/operational overview is available/i);
+    assert.deepEqual(result.executionTrace?.tools[0].arguments,{open:true,overdue:false,limit:20});
+    assert.deepEqual(result.executionTrace?.tools[1].arguments,{open:true,limit:20});
   });
   test('one unavailable source does not erase successful overview sources',async()=>{
     resetGraphCache();const tools=createHseTools({query:async(sql:string)=>{if(sql.includes('incident_register'))throw new Error('offline');return{rows:[]};}} as any,async()=>({openActions:0}),{retrieve:async()=>({status:'NO_RELEVANT_EVIDENCE' as const,evidence:[]})});
     const model=createMockModel([{toolCall:{name:'list_actions',input:'{"overdue":true,"limit":20}'}},{toolCall:{name:'list_incidents',input:'{"limit":20}'}},{toolCall:{name:'get_kpi',input:'{"project":"*","month":"*"}'}},{text:'The available overview sections were checked.'}]);
     const result=await runHseAgent({message:'How are things today?',model,tools,emit:()=>undefined});
     assert.equal(result.status,AgentStatus.COMPLETED);assert.equal(result.errorCode,undefined);assert.equal(result.executionTrace?.tools[1].status,'ERROR');assert.equal(result.executionTrace?.tools[2].status,'COMPLETED');
-    assert.equal(result.executionTrace?.verification.status,'PARTIALLY_VERIFIED');assert.match(result.text,/0 actions/i);assert.match(result.text,/needs confirmation/i);
+    assert.equal(result.executionTrace?.verification.status,'PARTIALLY_VERIFIED');assert.match(result.text,/0 pending actions/i);assert.match(result.text,/needs confirmation/i);
   });
 });

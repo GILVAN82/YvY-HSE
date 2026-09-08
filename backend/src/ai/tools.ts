@@ -77,12 +77,13 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
 
   list_incidents: tool({
     description:
-      'Lists individual HSE incidents, accidents, occurrences or safety events (date, type, severity and description), optionally filtered by project. Use for open/current/recent incident questions and incident details rather than aggregate KPI values.',
+      'Lists individual HSE incidents, accidents, occurrences or safety events (date, type, severity, investigation status and description), optionally filtered by project. Use open=true for open, pending, active or unresolved incident questions; this excludes the real terminal investigation status Closed.',
     inputSchema: z.object({
       project: z.string().optional().describe('Project code to filter by; omit for all projects'),
+      open: z.boolean().optional().describe('true returns only incidents whose investigation status is not Closed'),
       limit: z.number().int().min(1).max(50).default(20),
     }),
-    execute: async ({ project, limit }) =>
+    execute: async ({ project, open, limit }) =>
       safely('list_incidents', async () => {
         const params: any[] = [];
         const clauses:string[]=[]; check(project);
@@ -92,10 +93,11 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
         } else if(scoped){
           params.push(scoped); clauses.push(`project_code = ANY($${params.length}::text[])`);
         }
+        if (open === true) clauses.push(`investigation_status IS DISTINCT FROM 'Closed'`);
         const where=clauses.length?`WHERE ${clauses.join(' AND ')}`:'';
         params.push(limit);
         const r = await database.query(
-          `SELECT project_code, date_of_incident, incident_type, severity, description
+          `SELECT project_code, date_of_incident, incident_type, severity, investigation_status, description
            FROM incident_register ${where}
            ORDER BY date_of_incident DESC NULLS LAST
            LIMIT $${params.length}`,
@@ -111,10 +113,11 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
     inputSchema: z.object({
       project: z.string().optional(),
       status: z.string().optional().describe('For example: Open, Closed or In Progress'),
+      open: z.boolean().optional().describe('true returns every action still requiring follow-up: any real status except Closed'),
       overdue: z.boolean().optional().describe('true applies the official rule: not closed and due before the current time'),
       limit: z.number().int().min(1).max(50).default(20),
     }),
-    execute: async ({ project, status, overdue, limit }) =>
+    execute: async ({ project, status, open, overdue, limit }) =>
       safely('list_actions', async () => {
         const where: string[] = [];
         const params: any[] = [];
@@ -133,6 +136,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
           params.push(normalizedStatus);
           where.push(`status = $${params.length}`);
         }
+        if (open === true) where.push(`status IS DISTINCT FROM 'Closed'`);
         if (overdue === true) where.push(ACTION_OVERDUE_SQL);
         params.push(limit);
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
