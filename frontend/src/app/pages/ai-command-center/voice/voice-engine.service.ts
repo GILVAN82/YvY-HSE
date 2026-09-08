@@ -6,9 +6,10 @@ import { SpeechSynthesisService } from './speech-synthesis.service';
 import type { ConversationLanguage } from './voice.types';
 
 export type VoiceLocale='pt-PT'|'pt-BR'|'en'|'es'|'fr'|'de';
-export interface VoicePreference {engine:'ELEVENLABS'|'BROWSER';languageLocale:VoiceLocale;genderProfile:'FEMALE'|'MALE'|'UNKNOWN';voiceId:string|null;voiceName:string|null;speed:number}
+export type VoiceResponseMode='OFF'|'VOICE_INPUT_ONLY'|'ALL_RESPONSES';
+export interface VoicePreference {engine:'ELEVENLABS'|'BROWSER';languageLocale:VoiceLocale;voiceResponseMode:VoiceResponseMode;genderProfile:'FEMALE'|'MALE'|'UNKNOWN';voiceId:string|null;voiceName:string|null;speed:number}
 export interface EngineVoice {id:string;name:string;language:string|null;locale?:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';category:string|null;source?:'ACCOUNT'|'LIBRARY';publicOwnerId?:string|null;verifiedLocales?:string[]}
-export const defaultVoicePreference=():VoicePreference=>({engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1});
+export const defaultVoicePreference=():VoicePreference=>({engine:'ELEVENLABS',languageLocale:'en',voiceResponseMode:'VOICE_INPUT_ONLY',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1});
 export const previewText:Record<VoiceLocale,string>={
   'pt-PT':'Olá, eu sou a YvY. Esta é a voz selecionada para as suas interações de segurança.',
   'pt-BR':'Olá, eu sou a YvY. Esta é a voz selecionada para suas interações de segurança.',

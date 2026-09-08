@@ -49,10 +49,14 @@ test('authenticated HTTP preference ownership, validation and fallback metadata'
   });
   try{
     assert.equal((await request('GET','/ai/voice/voices')).status,401);
-    const preference={...defaultPreference,engine:'BROWSER',languageLocale:'pt-BR'};
+    const preference={...defaultPreference,engine:'BROWSER',languageLocale:'pt-BR',voiceResponseMode:'ALL_RESPONSES' as const};
     assert.equal((await request('PUT','/ai/voice-preferences','A',preference)).status,200);
     assert.equal((await request('GET','/ai/voice-preferences','A')).body.languageLocale,'pt-BR');
     assert.equal((await request('GET','/ai/voice-preferences','B')).body.languageLocale,'en');
+    assert.equal((await request('GET','/ai/voice-preferences','A')).body.voiceResponseMode,'ALL_RESPONSES');
+    await request('PUT','/ai/voice-preferences','B',{...defaultPreference,voiceResponseMode:'OFF'});
+    assert.equal((await request('GET','/ai/voice-preferences','B')).body.voiceResponseMode,'OFF');
+    assert.equal((await request('GET','/ai/voice-preferences','A')).body.voiceResponseMode,'ALL_RESPONSES');
     await request('PUT','/ai/voice-preferences','C',{...preference,languageLocale:'pt-PT'});
     assert.equal((await request('GET','/ai/voice-preferences','C')).body.languageLocale,'pt-PT');
     assert.equal((await request('PUT','/ai/voice-preferences','A',{...preference,userId:'B'})).status,400);
@@ -63,7 +67,7 @@ test('authenticated HTTP preference ownership, validation and fallback metadata'
 test('Postgres preferences bind session user and do not interpolate supplied values',async()=>{
   const calls:any[]=[];const repo=new PostgresVoicePreferences({query:async(sql:string,args:any[])=>{calls.push({sql,args});return{rows:[]};}} as any);
   const preference={...defaultPreference,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'voice1',voiceName:'Test',speed:.85};
-  await repo.load('userA');await repo.save('userA',preference);assert.equal(calls[0].args[0],'userA');assert.match(calls[0].sql,/WHERE user_id=\$1/);assert.deepEqual(calls[1].args,['userA','ELEVENLABS','pt-BR','FEMALE','voice1','Test',.85]);
+  await repo.load('userA');await repo.save('userA',preference);assert.equal(calls[0].args[0],'userA');assert.match(calls[0].sql,/WHERE user_id=\$1/);assert.deepEqual(calls[1].args,['userA','ELEVENLABS','pt-BR','VOICE_INPUT_ONLY','FEMALE','voice1','Test',.85]);
 });
 test('discovers filtered shared voices, preserves verified metadata and caches briefly',async()=>{
   const calls:string[]=[];const adapter=new ElevenLabsAdapter(env,(async(url)=>{calls.push(String(url));return String(url).includes('/shared-voices')?Response.json({voices:[{voice_id:'shared1',public_owner_id:'owner1',name:'Lisboa',gender:'Female',language:'pt',accent:'portuguese',category:'professional',verified_languages:[{language:'pt',locale:'pt-PT',model_id:'eleven_multilingual_v2'}]}]}):catalog();}) as typeof fetch);

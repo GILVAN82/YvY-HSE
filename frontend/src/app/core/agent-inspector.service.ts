@@ -26,6 +26,7 @@ export interface AgentInspectorSnapshot {
   executionTrace?: {
     timestamp: string;
     responseLanguage?: string;
+    authenticatedUser?: string;
     route: string[];
     tools: AgentToolTrace[];
     rag: { used: boolean; status: string; chunksRetrieved: number };
@@ -59,6 +60,7 @@ const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 @Injectable({ providedIn: 'root' })
 export class AgentInspectorService {
   readonly voiceEngine=signal<{requestedEngine:string;effectiveEngine:string;fallbackReason:string|null;voiceName:string|null}|null>(null);
+  readonly voiceSession=signal<{authenticatedUser:string|null;voiceResponseMode:string;inputMode:'TEXT'|'VOICE';autoVoice:boolean}|null>(null);
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
   readonly alertEvents = signal<YvyAlertEvent[]>(this.readAlertEvents());
   readonly attentionScheduler=signal<AttentionSchedulerHealth|null>(null);
@@ -76,6 +78,7 @@ export class AgentInspectorService {
     this.latest.set(null);
     this.alertEvents.set([]);
     this.attentionScheduler.set(null);
+    this.voiceSession.set(null);
     try { sessionStorage.removeItem(STORAGE_KEY);sessionStorage.removeItem(ALERT_STORAGE_KEY); } catch { /* In-memory trace is already cleared. */ }
   }
 

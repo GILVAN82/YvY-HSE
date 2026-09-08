@@ -20,6 +20,7 @@ import type { NormalizedAttachment } from '../attachments/attachment.types';
 import { resolveResponseLanguage } from '../responseLanguage';
 import { resolveResponseStatus } from '../responseStatus';
 import { classifyIntent, clarificationMessage } from '../intent/intentRouter';
+import { contextualGreeting } from '../personalization';
 
 export interface RunAgentInput {
   message: string;
@@ -44,6 +45,8 @@ export interface RunAgentInput {
   locale?: string;
   /** Per-turn language detected from voice input. It never changes saved preferences. */
   voiceLanguage?: string;
+  /** Trusted first name derived from the authenticated principal at the HTTP boundary. */
+  authenticatedFirstName?: string;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -109,7 +112,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       const text = controlledRefusalMessage(refusalReason, input.message, input.locale);
       input.emit({ type: 'text', text });
       return { runId, conversationId, status: AgentStatus.REFUSED, responseStatus: 'REFUSED', text, toolsUsed: [], stepCount: 0, refusalReason, ragUsed: false, citations: [], executionTrace: {
-        timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
+        timestamp: executionTimestamp, responseLanguage, authenticatedUser:input.authenticatedFirstName, route: ['guard', 'refuse'], tools: [],
         rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
         conversation: { stateActive: false, messageCount: 0 },
         memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
@@ -123,7 +126,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
     const text = ({ en: 'Attachments are temporary and cannot be stored as long-term memory.', pt: 'Os anexos são temporários e não podem ser guardados na memória de longo prazo.', es: 'Los archivos adjuntos son temporales y no pueden guardarse en la memoria a largo plazo.', fr: 'Les pièces jointes sont temporaires et ne peuvent pas être enregistrées dans la mémoire à long terme.', de: 'Anhänge sind temporär und können nicht im Langzeitgedächtnis gespeichert werden.' } as const)[responseLanguage];
     input.emit({ type: 'text', text });
     return { runId, conversationId, status: AgentStatus.REFUSED, responseStatus: 'REFUSED', text, toolsUsed: [], stepCount: 0, refusalReason: 'OUT_OF_SCOPE', ragUsed: false, citations: [], executionTrace: {
-      timestamp: executionTimestamp, route: ['guard', 'refuse'], tools: [],
+      timestamp: executionTimestamp, responseLanguage, authenticatedUser:input.authenticatedFirstName, route: ['guard', 'refuse'], tools: [],
       rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
       conversation: { stateActive: false, messageCount: 0 },
       memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
@@ -134,6 +137,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
 
   persisted ??= input.threadStore ? await input.threadStore.load(conversationId, ownerId) : null;
   const history = (persisted?.messages ?? input.history ?? []).slice(-MAX_HISTORY_TURNS);
+  const firstInteraction = history.length === 0;
   const intentDecision = classifyIntent(input.message, history);
   if (intentDecision.scope === 'OUT_OF_SCOPE' || (intentDecision.clarificationRequired && intentDecision.intent === 'OPERATIONAL_ATTENTION')) {
     const refused = intentDecision.scope === 'OUT_OF_SCOPE';
@@ -143,7 +147,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       runId, conversationId, status: refused ? AgentStatus.REFUSED : AgentStatus.COMPLETED,
       responseStatus: refused ? 'REFUSED' : 'SUCCESS', text, toolsUsed: [], stepCount: 0,
       ...(refused ? { refusalReason: 'OUT_OF_SCOPE' as const } : {}), ragUsed: false, citations: [],
-      executionTrace: { timestamp: executionTimestamp, responseLanguage, route: ['guard', refused ? 'refuse' : 'clarify'], tools: [],
+      executionTrace: { timestamp: executionTimestamp, responseLanguage, authenticatedUser:input.authenticatedFirstName, route: ['guard', refused ? 'refuse' : 'clarify'], tools: [],
         rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 }, conversation: { stateActive: false, messageCount: history.length + 1 },
         memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
         guardrail: { status: refused ? 'REFUSED' : 'PASS', ...(refused ? { reason: 'OUT_OF_SCOPE' as const } : {}) },
@@ -172,7 +176,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], evidence: [], finalText: '' },
       {
         configurable: {
-          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage, intentDecision },
+          runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage, intentDecision, authenticatedFirstName:input.authenticatedFirstName, firstInteraction, contextualGreeting:contextualGreeting(responseLanguage,input.authenticatedFirstName) },
           // Only consulted when a checkpointer is attached.
           thread_id: conversationId,
         },
@@ -200,6 +204,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       executionTrace: {
         timestamp: executionTimestamp,
         responseLanguage,
+        authenticatedUser: input.authenticatedFirstName,
         route: final.executedRoute,
         tools: final.toolTrace,
         rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length },
@@ -249,7 +254,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       ragUsed: false,
       citations: [],
       executionTrace: {
-        timestamp: executionTimestamp, route: ['guard', 'agent'], tools: [],
+        timestamp: executionTimestamp, responseLanguage, authenticatedUser:input.authenticatedFirstName, route: ['guard', 'agent'], tools: [],
         rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 },
         conversation: { stateActive: false, messageCount: messages.length },
         memory: { used: longTermMemories.length > 0, operation: longTermMemories.length ? 'READ' : 'NONE', categories: [...new Set(longTermMemories.map((memory) => memory.category))], status: longTermMemories.length ? 'USED' : input.memoryService ? 'NO_MATCH' : 'NOT_USED' },

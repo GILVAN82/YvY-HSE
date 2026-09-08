@@ -226,6 +226,12 @@ describe('POST /api/ai/approvals HTTP boundary', () => {
     assert.equal(duplicate.status, 409); assert.equal(duplicate.body.code, 'AI_APPROVAL_NOT_PENDING');
   });
 
+  test('identity fields supplied in the chat body are ignored in favor of RequestPrincipal',async()=>{
+    const model=createMockModel([{text:'HSE assistance is available.'}]);const {port}=await start(model);
+    const response=await post(port,{message:'HSE help',history:[],provider:'openai',model:'gpt-5.5',firstName:'Spoofed',displayName:'Spoofed User'});
+    assert.ok(response.some(event=>event.type==='done'));const input=JSON.stringify(model.callInputs()[0]);assert.match(input,/Trusted first name: Test/);assert.doesNotMatch(input,/Spoofed/);
+  });
+
   test('persists rejection and keeps the critical action blocked', async () => {
     const approvals = new HttpApprovalService(); const pending = await approvals.create(threadId);
     const { port } = await start(createMockModel([{ text: 'unused' }]), undefined, approvals);

@@ -25,6 +25,10 @@
       <article class="metric wide"><span>Thread ID</span><code>{{ run.threadId }}</code></article>
       <article class="metric"><span>Timestamp</span><strong>{{ trace()?.timestamp ? (trace()!.timestamp | date:'medium') : 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
       <article class="metric"><span>Response Language</span><strong>{{ trace()?.responseLanguage || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Authenticated user</span><strong>{{ trace()?.authenticatedUser || inspector.voiceSession()?.authenticatedUser || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Voice response mode</span><strong>{{ inspector.voiceSession()?.voiceResponseMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Input mode</span><strong>{{ inspector.voiceSession()?.inputMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Auto voice</span><strong>{{ inspector.voiceSession()?.autoVoice ? 'YES' : 'NO' }}</strong></article>
     </section>
 
     <section class="card route-card">

@@ -23,6 +23,10 @@ export class YvyCommandCenterAgentService {
     catch{this.error.set('Unable to verify the assistant configuration. Check the server connection.');}
   }
 
+  resetSession(){
+    this.threadId=null;this.history=[];this.question.set('');this.answer.set('');this.error.set('');this.activeTool.set(null);this.approval.set(null);this.voiceMetadata.set(null);this.activeAlertContext.set([]);this.runtimeState.set('idle');
+  }
+
   async send(message:string,voiceMetadata?:VoiceTurnMetadata){
     const text=message.trim();if(!text||this.loading())return false;await this.initialize();if(!this.provider||!this.modelId){this.runtimeState.set('error');return false;}
     this.question.set(text);this.voiceMetadata.set(voiceMetadata??null);this.answer.set('');this.error.set('');this.activeTool.set(null);this.approval.set(null);this.runtimeState.set('analysing');

@@ -3,11 +3,12 @@ import { z } from 'zod';
 export const voiceLocale = z.enum(['pt-PT','pt-BR','en','es','fr','de']);
 export const preferenceSchema = z.object({
   engine:z.enum(['ELEVENLABS','BROWSER']), languageLocale:voiceLocale,
+  voiceResponseMode:z.enum(['OFF','VOICE_INPUT_ONLY','ALL_RESPONSES']),
   genderProfile:z.enum(['FEMALE','MALE','UNKNOWN']), voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/).nullable(),
   voiceName:z.string().max(120).nullable(), speed:z.number().min(0.7).max(1.2),
 }).strict();
 export type VoicePreference = z.infer<typeof preferenceSchema>;
-export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
+export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'en',voiceResponseMode:'VOICE_INPUT_ONLY',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
 export const synthesisSchema = z.object({text:z.string().trim().min(1).max(1200).refine(text=>!/[|{}]|```|https?:\/\//.test(text),'Use spoken summary only'),voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),locale:voiceLocale,speed:z.number().min(0.7).max(1.2),preview:z.boolean().optional()}).strict().refine(body=>!body.preview || body.text.length<=240);
 export type Voice = {id:string;name:string;language:string|null;locale:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';previewUrl:string|null;category:string|null;source:'ACCOUNT'|'LIBRARY';publicOwnerId:string|null;verifiedLocales:string[]};
 export type VoiceDiscovery = {locale:z.infer<typeof voiceLocale>;gender?:'FEMALE'|'MALE'};

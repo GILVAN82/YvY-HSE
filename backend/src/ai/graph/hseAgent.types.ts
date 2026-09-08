@@ -71,6 +71,7 @@ export interface AgentToolTrace {
 export interface AgentExecutionTrace {
   timestamp: string;
   responseLanguage?: ResponseLanguage;
+  authenticatedUser?: string;
   route: string[];
   tools: AgentToolTrace[];
   rag: {
@@ -106,6 +107,9 @@ export interface AgentRuntime {
   attachmentContext?: string;
   attachments?: NormalizedAttachment[];
   responseLanguage?: ResponseLanguage;
+  authenticatedFirstName?: string;
+  firstInteraction?: boolean;
+  contextualGreeting?: string;
   intentDecision?: IntentDecision;
   /** Test/diagnostic seam. Production uses the shared createHseTools registry. */
   tools?: ToolSet;

@@ -6,6 +6,7 @@ import { VoiceEngineService, defaultVoicePreference, matchesLocale, type VoicePr
 function samePreference(left: VoicePreference, right: VoicePreference) {
   return left.engine === right.engine
     && left.languageLocale === right.languageLocale
+    && left.voiceResponseMode === right.voiceResponseMode
     && left.genderProfile === right.genderProfile
     && left.voiceId === right.voiceId
     && left.voiceName === right.voiceName
@@ -20,6 +21,7 @@ function samePreference(left: VoicePreference, right: VoicePreference) {
     <p *ngIf="engine.playback()?.effectiveEngine==='BROWSER_FALLBACK'">Última reprodução: voz do navegador (fallback). Motivo: {{engine.playback()?.fallbackReason}}.</p>
     <label>Engine <select [(ngModel)]="draft.engine" (ngModelChange)="changed()"><option value="ELEVENLABS">ElevenLabs</option><option value="BROWSER">Browser</option></select></label>
     <label>Language <select [(ngModel)]="draft.languageLocale" (ngModelChange)="catalogChanged()"><option value="en">English</option><option value="pt-PT">Português — Portugal</option><option value="pt-BR">Português — Brasil</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option></select></label>
+    <label>Voice responses <select [(ngModel)]="draft.voiceResponseMode" (ngModelChange)="changed()"><option value="OFF">Off</option><option value="VOICE_INPUT_ONLY">Voice questions only</option><option value="ALL_RESPONSES">All responses</option></select></label>
     <fieldset><legend>Voice profile</legend><button type="button" (click)="chooseProfile('FEMALE')" [attr.aria-pressed]="filter()==='FEMALE'">Feminina</button><button type="button" (click)="chooseProfile('MALE')" [attr.aria-pressed]="filter()==='MALE'">Masculina</button><button type="button" (click)="chooseProfile('ALL')" [attr.aria-pressed]="filter()==='ALL'">Todas</button></fieldset>
     <label>Voice <select [(ngModel)]="draft.voiceId" (ngModelChange)="selectVoice()"><option [ngValue]="null">Selecione uma voz</option><optgroup [label]="'Vozes verificadas para ' + draft.languageLocale"><option *ngFor="let voice of recommendedVoices()" [ngValue]="voice.id">{{voice.name}} — {{voice.profile}} — {{displayLocale(voice)}}{{voice.accent ? ' (' + voice.accent + ')' : ''}}{{voice.category ? ' · ' + voice.category : ''}}</option></optgroup></select></label>
     <p *ngIf="!localeMatch()">Sotaque exato não confirmado. A voz disponível poderá usar outro sotaque.</p>

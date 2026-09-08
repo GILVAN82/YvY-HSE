@@ -80,7 +80,7 @@ describe('YvY voice engine',()=>{
     engine.preference.set({...defaultVoicePreference(),speed:.9});engine.replay();flushMicrotasks();expect(browser.speak.calls.mostRecent().args[0]).toBe('Resposta verificada.');expect(browser.speak.calls.mostRecent().args[4]?.rate).toBe(.9);
   }));
   it('persists every draft field, confirms success and becomes clean',fakeAsync(()=>{
-    const persisted={engine:'ELEVENLABS' as const,languageLocale:'pt-BR' as const,genderProfile:'FEMALE' as const,voiceId:'female',voiceName:'Female',speed:.85};
+    const persisted={engine:'ELEVENLABS' as const,languageLocale:'pt-BR' as const,voiceResponseMode:'ALL_RESPONSES' as const,genderProfile:'FEMALE' as const,voiceId:'female',voiceName:'Female',speed:.85};
     fetchSpy.and.callFake(async(url:any,init?:RequestInit)=>init?.method==='PUT'?({ok:true,json:()=>Promise.resolve(persisted)} as Response):String(url).includes('/voice/voices')?({ok:true,json:()=>Promise.resolve({available:true,voices})} as Response):({ok:true,json:()=>Promise.resolve(defaultVoicePreference())} as Response));
     const fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();const component=fixture.componentInstance;component.panelOpen.set(true);
     component.draft={...persisted};expect(component.dirty()).toBeTrue();void component.save();expect(component.saving()).toBeTrue();flushMicrotasks();fixture.detectChanges();
@@ -98,7 +98,7 @@ describe('YvY voice engine',()=>{
     expect(component.draft.languageLocale).toBe('de');expect(component.dirty()).toBeTrue();expect(component.feedback()).toBe('✕ Não foi possível salvar as preferências de voz.');expect(fixture.nativeElement.querySelector('details')).not.toBeNull();fixture.destroy();
   }));
   it('reopens with the exact persisted voice preference',fakeAsync(()=>{
-    const persisted={engine:'ELEVENLABS' as const,languageLocale:'en' as const,genderProfile:'MALE' as const,voiceId:'male',voiceName:'Male',speed:1.15};engine.preference.set(persisted);
+    const persisted={engine:'ELEVENLABS' as const,languageLocale:'en' as const,voiceResponseMode:'OFF' as const,genderProfile:'MALE' as const,voiceId:'male',voiceName:'Male',speed:1.15};engine.preference.set(persisted);
     let fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();expect(fixture.componentInstance.draft).toEqual(persisted);fixture.destroy();
     fixture=TestBed.createComponent(VoiceSettingsComponent);fixture.detectChanges();expect(fixture.componentInstance.draft).toEqual(persisted);expect(fixture.componentInstance.dirty()).toBeFalse();fixture.destroy();
   }));

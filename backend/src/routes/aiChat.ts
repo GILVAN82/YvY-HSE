@@ -15,6 +15,7 @@ import { attachmentConfig } from '../ai/attachments/attachment.config';
 import { AttachmentError } from '../ai/attachments/attachment.types';
 import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
 import { resolveResponseStatus } from '../ai/responseStatus';
+import { safeFirstName } from '../ai/personalization';
 import type { AuthenticatedRequest } from '../auth/auth.types';
 import { hasPermission } from '../auth/authorization';
 
@@ -183,7 +184,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({message,userId:principal.userId,history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
+      ? dependencies.runHseAgent({message,userId:principal.userId,authenticatedFirstName:safeFirstName(principal.displayName),history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
       : dependencies.runLegacyAgent({message,history,conversationId,model:languageModel,emit,tools:dependencies.tools??scopedToolFactory?.(false)});
 
   const result = await run;
