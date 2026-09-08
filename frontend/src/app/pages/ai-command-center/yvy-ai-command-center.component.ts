@@ -26,7 +26,7 @@ import { AgentInspectorService } from '../../core/agent-inspector.service';
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
   imports: [VoiceSettingsComponent, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
-  templateUrl: './yvy-ai-command-center.component.html', styleUrl: './yvy-ai-command-center.component.scss',
+  templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss'],
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   @ViewChild('timeline') private timelineElement?:ElementRef<HTMLElement>;
