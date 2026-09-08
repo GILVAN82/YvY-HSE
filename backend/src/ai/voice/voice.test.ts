@@ -21,7 +21,7 @@ for(const config of [{},{...env,ELEVENLABS_ENABLED:'false'}])test('missing key o
   const adapter=new ElevenLabsAdapter(config,(async()=>{throw new Error('Must not call');}) as typeof fetch);
   assert.equal(adapter.available,false);await assert.rejects(adapter.synthesize(input),{code:'UNAVAILABLE'});
 });
-for(const status of [401,403,404,429,500,422])test(`upstream ${status} is sanitized and classified`,async()=>{
+for(const status of [401,402,403,404,429,500,422])test(`upstream ${status} is sanitized and classified`,async()=>{
   const adapter=new ElevenLabsAdapter(env,(async()=>new Response('secret-test-only',{status})) as typeof fetch);
   await assert.rejects(adapter.synthesize(input),(error:VoiceFailure)=>error.code!=='secret-test-only'&&error.fallbackAllowed===(status!==422));
 });

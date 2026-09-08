@@ -29,7 +29,10 @@ export class ElevenLabsAdapter {
     try {
       const response=await this.request(`https://api.elevenlabs.io${path}`,{...init,redirect:'error',headers:{'xi-api-key':this.env.ELEVENLABS_API_KEY!,'Content-Type':'application/json',...init.headers},signal:controller.signal});
       if(!response.ok){
-        const technical=[401,403,404,408,429].includes(response.status)||response.status>=500;
+        // 402 means the authenticated account cannot synthesize with its current
+        // plan/quota. It is an engine availability failure, so browser TTS may
+        // safely take over; the spoken content itself was not rejected.
+        const technical=[401,402,403,404,408,429].includes(response.status)||response.status>=500;
         throw new VoiceFailure(technical ? `UPSTREAM_${response.status}` : 'CONTENT_REJECTED',technical,technical?503:422);
       }
       return await consume(response);
