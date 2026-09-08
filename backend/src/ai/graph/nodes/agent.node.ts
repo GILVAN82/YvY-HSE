@@ -9,6 +9,8 @@ import { MAX_AGENT_STEPS, MODEL_TIMEOUT_MS } from '../../config';
 import { fingerprintModelFailure } from '../../modelFailure';
 import type { AgentToolTrace } from '../hseAgent.types';
 import { ragResultEvidence, toolResultEvidence, type AgentEvidence } from '../evidence.contract';
+import { composeOperationalOverview, operationalPresentationSummary } from '../operationalOverview';
+import type { ResponseLanguage } from '../../responseLanguage';
 
 const SAFE_TOOL_ARGUMENTS: Record<string, Set<string>> = {
   get_kpi: new Set(['project', 'month']),
@@ -30,7 +32,9 @@ function safeToolArguments(toolName: string, input: unknown): Record<string, str
   return entries.length ? Object.fromEntries(entries) as Record<string, string | number | boolean | null> : undefined;
 }
 
-function safeResultSummary(toolName: string, output: unknown): string {
+function safeResultSummary(toolName: string, output: unknown, language:ResponseLanguage): string {
+  const presentation=operationalPresentationSummary(toolName,output,language);
+  if(presentation)return presentation;
   if (Array.isArray(output)) return `${output.length} record(s) returned`;
   if (!output || typeof output !== 'object') return 'Result returned';
   const value = output as Record<string, unknown>;
@@ -164,7 +168,7 @@ export async function agentNode(
           const pendingTrace = [...toolTrace].reverse().find((item) => item.name === toolPart.toolName && item.status === 'NOT_OBSERVABLE');
           if (pendingTrace) {
             pendingTrace.status = output && typeof output === 'object' && output.error === true ? 'ERROR' : 'COMPLETED';
-            pendingTrace.resultSummary = safeResultSummary(toolPart.toolName ?? pendingTrace.name, output);
+            pendingTrace.resultSummary = safeResultSummary(toolPart.toolName ?? pendingTrace.name, output, runtime.responseLanguage??'en');
             if (outputRecord?.status === 'SUCCESS_WITH_DATA' || outputRecord?.status === 'SUCCESS_NO_DATA') pendingTrace.resultStatus = outputRecord.status;
           }
           if (toolPart.toolName === 'search_hse_knowledge') {
@@ -206,6 +210,9 @@ export async function agentNode(
   }
 
   const overviewAllSourcesFailed = runtime.intentDecision?.intent === 'OPERATIONAL_OVERVIEW' && toolNames.length > 0 && toolErrorCount === toolNames.length;
+  if(runtime.intentDecision?.intent==='OPERATIONAL_OVERVIEW'&&!overviewAllSourcesFailed){
+    text=composeOperationalOverview(evidence,runtime.responseLanguage??'en',runtime.authenticatedFirstName);
+  }
   return {
     status: toolNames.length ? AgentStatus.TOOL_EXECUTED : AgentStatus.PROCESSING,
     executedRoute: [...state.executedRoute, 'agent'],

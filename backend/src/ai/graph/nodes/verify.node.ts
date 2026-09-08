@@ -32,6 +32,10 @@ export async function verifyNode(state: HseAgentState, config?:LangGraphRunnable
 
   const verificationResult = verifyEvidenceContract(state.finalText, state.evidence);
   const hasUsableOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&(item.resultStatus==='SUCCESS_WITH_DATA'||item.resultStatus==='SUCCESS_NO_DATA'));
+  const hasFailedOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&item.resultStatus==='ERROR');
+  if(hasUsableOperationalEvidence&&hasFailedOperationalEvidence&&verificationResult.status===VerificationStatus.VERIFIED){
+    return {status:AgentStatus.VERIFIED,verificationResult:{...verificationResult,status:VerificationStatus.PARTIALLY_VERIFIED,reasons:[...verificationResult.reasons,'One operational source was unavailable; verified sources were preserved.']},executedRoute};
+  }
   if (hasUsableOperationalEvidence&&(verificationResult.status===VerificationStatus.PARTIALLY_VERIFIED||verificationResult.status===VerificationStatus.INSUFFICIENT_EVIDENCE)) {
     const runtime=config?.configurable?.runtime as AgentRuntime|undefined;
     return {status:AgentStatus.VERIFIED,verificationResult,finalText:evidenceLimitedMessage[runtime?.responseLanguage??'en'],executedRoute};

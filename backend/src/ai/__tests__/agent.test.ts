@@ -617,7 +617,7 @@ describe('20. controlled error-handling validation', () => {
     assert.equal(result.responseStatus, 'SUCCESS');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_WITH_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
-    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 record(s) returned');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 incident found');
   });
 
   test('empty operational result is a valid no-data answer, not a system failure', async () => {
@@ -634,7 +634,7 @@ describe('20. controlled error-handling validation', () => {
     assert.equal(result.text, 'There are currently 0 incidents matching this query.');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_NO_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
-    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '0 record(s) returned');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, 'No open incidents');
     assert.doesNotMatch(JSON.stringify(events), forbidden);
   });
 
@@ -661,11 +661,13 @@ describe('3b. evidence-based operational overview', () => {
     assert.equal(result.status,AgentStatus.COMPLETED);assert.deepEqual(result.toolsUsed,['list_actions','list_incidents','get_kpi']);
     assert.equal(result.executionTrace?.tools[0].resultStatus,'SUCCESS_WITH_DATA');assert.equal(result.executionTrace?.tools[1].resultStatus,'SUCCESS_NO_DATA');
     assert.equal(result.executionTrace?.intent?.intent,'OPERATIONAL_OVERVIEW');assert.equal(result.ragUsed,false);
+    assert.match(result.text,/1 action/i);assert.match(result.text,/No open incidents/i);assert.doesNotMatch(result.text,/operational overview is available/i);
   });
   test('one unavailable source does not erase successful overview sources',async()=>{
     resetGraphCache();const tools=createHseTools({query:async(sql:string)=>{if(sql.includes('incident_register'))throw new Error('offline');return{rows:[]};}} as any,async()=>({openActions:0}),{retrieve:async()=>({status:'NO_RELEVANT_EVIDENCE' as const,evidence:[]})});
     const model=createMockModel([{toolCall:{name:'list_actions',input:'{"overdue":true,"limit":20}'}},{toolCall:{name:'list_incidents',input:'{"limit":20}'}},{toolCall:{name:'get_kpi',input:'{"project":"*","month":"*"}'}},{text:'The available overview sections were checked.'}]);
     const result=await runHseAgent({message:'How are things today?',model,tools,emit:()=>undefined});
     assert.equal(result.status,AgentStatus.COMPLETED);assert.equal(result.errorCode,undefined);assert.equal(result.executionTrace?.tools[1].status,'ERROR');assert.equal(result.executionTrace?.tools[2].status,'COMPLETED');
+    assert.equal(result.executionTrace?.verification.status,'PARTIALLY_VERIFIED');assert.match(result.text,/0 actions/i);assert.match(result.text,/needs confirmation/i);
   });
 });
