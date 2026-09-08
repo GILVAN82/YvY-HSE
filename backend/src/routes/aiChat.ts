@@ -183,7 +183,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({message,userId:principal.userId,history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale})
+      ? dependencies.runHseAgent({message,userId:principal.userId,history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
       : dependencies.runLegacyAgent({message,history,conversationId,model:languageModel,emit,tools:dependencies.tools??scopedToolFactory?.(false)});
 
   const result = await run;

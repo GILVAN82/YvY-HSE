@@ -42,6 +42,8 @@ export interface RunAgentInput {
   attachmentContext?: string;
   attachments?: NormalizedAttachment[];
   locale?: string;
+  /** Per-turn language detected from voice input. It never changes saved preferences. */
+  voiceLanguage?: string;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -90,7 +92,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
   const runId = randomUUID();
   const conversationId = resolveThreadId(input);
   const executionTimestamp = new Date().toISOString();
-  const responseLanguage = resolveResponseLanguage({ userMessage: input.message, uiLanguage: input.locale });
+  const responseLanguage = resolveResponseLanguage({ userMessage: input.message, voiceLanguage: input.voiceLanguage, uiLanguage: input.locale });
 
   // Refuse before loading state or optional services. Out-of-scope input cannot
   // reach the model, RAG, tools, memory or the HITL persistence path.

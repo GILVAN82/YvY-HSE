@@ -40,8 +40,8 @@ export function detectRequestedResponseLanguage(message: string): ResponseLangua
   return requests.find(([pattern]) => pattern.test(message))?.[1];
 }
 
-export function resolveResponseLanguage(input: { userMessage?: string; uiLanguage?: string }): ResponseLanguage {
-  return detectRequestedResponseLanguage(input.userMessage ?? '') ?? detectMessageLanguage(input.userMessage ?? '') ?? normalizeUiLanguage(input.uiLanguage) ?? 'en';
+export function resolveResponseLanguage(input: { userMessage?: string; voiceLanguage?: string; uiLanguage?: string }): ResponseLanguage {
+  return detectRequestedResponseLanguage(input.userMessage ?? '') ?? normalizeUiLanguage(input.voiceLanguage) ?? detectMessageLanguage(input.userMessage ?? '') ?? normalizeUiLanguage(input.uiLanguage) ?? 'en';
 }
 
 export function localized<T extends string>(templates: Record<ResponseLanguage, T>, language: ResponseLanguage): T {
