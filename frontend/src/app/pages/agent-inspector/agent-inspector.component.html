@@ -29,6 +29,8 @@
       <article class="metric"><span>Voice response mode</span><strong>{{ inspector.voiceSession()?.voiceResponseMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
       <article class="metric"><span>Input mode</span><strong>{{ inspector.voiceSession()?.inputMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
       <article class="metric"><span>Auto voice</span><strong>{{ inspector.voiceSession()?.autoVoice ? 'YES' : 'NO' }}</strong></article>
+      <article class="metric"><span>Spoken policy</span><strong>{{ inspector.voiceSession()?.spokenPolicy || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Voice verification</span><strong>{{ inspector.voiceSession()?.verificationStatus || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
     </section>
 
     <section class="card route-card">

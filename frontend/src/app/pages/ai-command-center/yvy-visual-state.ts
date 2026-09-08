@@ -14,6 +14,7 @@ export type YvyAgentVisualState =
   | 'verifying'
   | 'waiting-approval'
   | 'verified'
+  | 'needs-confirmation'
   | 'error';
 
 export type YvyWorkflowStage = 'guard' | 'tools' | 'rag' | 'verify' | 'approval' | null;

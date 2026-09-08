@@ -26,7 +26,7 @@ import type { YvyAgentVisualState } from '../yvy-visual-state';
       <div class="core-light"></div>
       <div class="identity">
         <lucide-icon *ngIf="state === 'verified'" [img]="shield" [size]="32"></lucide-icon>
-        <lucide-icon *ngIf="state === 'error'" [img]="warning" [size]="32"></lucide-icon>
+        <lucide-icon *ngIf="state === 'error' || state === 'needs-confirmation'" [img]="warning" [size]="32"></lucide-icon>
         <strong>YvY</strong>
         <span>HSE Intelligence Agent</span>
         <small>{{ stateLabel }}</small>

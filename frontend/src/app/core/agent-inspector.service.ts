@@ -60,7 +60,7 @@ const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 @Injectable({ providedIn: 'root' })
 export class AgentInspectorService {
   readonly voiceEngine=signal<{requestedEngine:string;effectiveEngine:string;fallbackReason:string|null;voiceName:string|null}|null>(null);
-  readonly voiceSession=signal<{authenticatedUser:string|null;voiceResponseMode:string;inputMode:'TEXT'|'VOICE';autoVoice:boolean}|null>(null);
+  readonly voiceSession=signal<{authenticatedUser:string|null;voiceResponseMode:string;inputMode:'TEXT'|'VOICE';autoVoice:boolean;spokenPolicy:'FACTUAL'|'EVIDENCE_LIMITED'|'TECHNICAL_ERROR'|'NONE';verificationStatus:string|null}|null>(null);
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
   readonly alertEvents = signal<YvyAlertEvent[]>(this.readAlertEvents());
   readonly attentionScheduler=signal<AttentionSchedulerHealth|null>(null);
