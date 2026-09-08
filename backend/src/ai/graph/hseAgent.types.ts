@@ -70,6 +70,7 @@ export interface AgentToolTrace {
 
 export interface AgentExecutionTrace {
   timestamp: string;
+  responseLanguage?: ResponseLanguage;
   route: string[];
   tools: AgentToolTrace[];
   rag: {

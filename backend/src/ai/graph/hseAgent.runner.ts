@@ -143,7 +143,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       runId, conversationId, status: refused ? AgentStatus.REFUSED : AgentStatus.COMPLETED,
       responseStatus: refused ? 'REFUSED' : 'SUCCESS', text, toolsUsed: [], stepCount: 0,
       ...(refused ? { refusalReason: 'OUT_OF_SCOPE' as const } : {}), ragUsed: false, citations: [],
-      executionTrace: { timestamp: executionTimestamp, route: ['guard', refused ? 'refuse' : 'clarify'], tools: [],
+      executionTrace: { timestamp: executionTimestamp, responseLanguage, route: ['guard', refused ? 'refuse' : 'clarify'], tools: [],
         rag: { used: false, status: 'NOT_USED', chunksRetrieved: 0 }, conversation: { stateActive: false, messageCount: history.length + 1 },
         memory: { used: false, operation: 'NONE', categories: [], status: 'NOT_USED' },
         guardrail: { status: refused ? 'REFUSED' : 'PASS', ...(refused ? { reason: 'OUT_OF_SCOPE' as const } : {}) },
@@ -199,6 +199,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
       approvalRequest: final.approvalRequest,
       executionTrace: {
         timestamp: executionTimestamp,
+        responseLanguage,
         route: final.executedRoute,
         tools: final.toolTrace,
         rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length },

@@ -25,6 +25,7 @@ export interface AgentInspectorSnapshot {
   orchestrator: string;
   executionTrace?: {
     timestamp: string;
+    responseLanguage?: string;
     route: string[];
     tools: AgentToolTrace[];
     rag: { used: boolean; status: string; chunksRetrieved: number };

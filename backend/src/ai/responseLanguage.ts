@@ -11,7 +11,7 @@ export function detectMessageLanguage(message: string): ResponseLanguage | undef
   const text = ` ${message.toLowerCase()} `;
   if (/\b(which|what|who|please|overdue|critical|safety|procedure)\b/i.test(text)) return 'en';
   if (/\b(qué|cuál|acciones|seguridad|procedimiento|debo|seguir)\b/i.test(text)) return 'es';
-  if (/\b(qual|quais|quem|você|ações|segurança|presidente do|receita de|instruções|lembre|senha)\b/i.test(text)) return 'pt';
+  if (/\b(qual|quais|quem|tem|há|alguma|você|ações|ação|pendência|pendências|incidente|incidentes|aberto|abertos|precisa|atenção|atrasada|atrasadas|segurança|presidente do|receita de|instruções|lembre|senha)\b/i.test(text)) return 'pt';
   if (/\b(quién|cuál|dime|muestra|instrucciones|seguridad|presidente de|recuerda|contraseña)\b/i.test(text)) return 'es';
   if (/\b(quelle|montre|révèle|sécurité|président de)\b/i.test(text)) return 'fr';
   if (/\b(welche|zeige|enthülle|sicherheit|präsident)\b/i.test(text)) return 'de';

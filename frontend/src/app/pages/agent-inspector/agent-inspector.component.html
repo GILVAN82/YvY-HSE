@@ -24,6 +24,7 @@
       <article class="metric"><span>Step Count</span><strong>{{ run.stepCount }}</strong></article>
       <article class="metric wide"><span>Thread ID</span><code>{{ run.threadId }}</code></article>
       <article class="metric"><span>Timestamp</span><strong>{{ trace()?.timestamp ? (trace()!.timestamp | date:'medium') : 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Response Language</span><strong>{{ trace()?.responseLanguage || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
     </section>
 
     <section class="card route-card">
