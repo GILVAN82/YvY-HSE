@@ -15,11 +15,9 @@ export const previewText:Record<VoiceLocale,string>={
   en:'Hello, I am YvY. This is the selected voice for your safety interactions.',es:'Hola, soy YvY. Esta es la voz seleccionada para tus interacciones de seguridad.',fr:'Bonjour, je suis YvY. Voici la voix sélectionnée pour vos échanges sur la sécurité.',de:'Hallo, ich bin YvY. Dies ist die ausgewählte Stimme für Ihre Sicherheitsgespräche.',
 };
 export function matchesLocale(voice:EngineVoice,locale:VoiceLocale){
-  const language=(voice.language??'').toLowerCase(),accent=(voice.accent??'').toLowerCase();
-  if(voice.locale?.toLowerCase()===locale.toLowerCase()||voice.verifiedLocales?.some(value=>value.toLowerCase()===locale.toLowerCase()))return true;
-  if(locale==='pt-PT')return language==='pt-pt'||/portugal|european portuguese/.test(accent);
-  if(locale==='pt-BR')return language==='pt-br'||/brazil/.test(accent);
-  return language===locale;
+  const requested=locale.toLowerCase(),voiceLocale=voice.locale?.toLowerCase(),verified=voice.verifiedLocales?.map(value=>value.toLowerCase())??[];
+  if(locale.startsWith('pt-'))return voiceLocale===requested||verified.includes(requested);
+  return voiceLocale===requested||verified.includes(requested)||(voice.language??'').toLowerCase()===requested;
 }
 @Injectable({providedIn:'root'})
 export class VoiceEngineService {
