@@ -17,7 +17,7 @@ describe('YvY voice engine',()=>{
   }));
   afterEach(()=>engine.stop());
   it('loads real catalog and save/load preferences',fakeAsync(()=>{
-    flushMicrotasks();expect(engine.voices().length).toBe(3);expect(engine.available()).toBeTrue();
+    flushMicrotasks();expect(engine.preference().languageLocale).toBe('en');expect(engine.preference().voiceId).toBeNull();expect(engine.voices().length).toBe(3);expect(engine.available()).toBeTrue();
     let saved=false;engine.save({...defaultVoicePreference(),engine:'BROWSER'}).then(value=>saved=value);flushMicrotasks();expect(saved).toBeTrue();
     expect(fetchSpy.calls.mostRecent().args[1].credentials).toBe('include');
   }));
@@ -26,10 +26,20 @@ describe('YvY voice engine',()=>{
     fixture.componentInstance.filter.set('FEMALE');expect(fixture.componentInstance.filtered().map(v=>v.id)).toEqual(['female']);
     fixture.componentInstance.filter.set('MALE');expect(fixture.componentInstance.filtered().map(v=>v.id)).toEqual(['male']);
     fixture.componentInstance.filter.set('ALL');expect(fixture.componentInstance.filtered().map(v=>v.id)).toContain('unknown');
+    const options=Array.from(fixture.nativeElement.querySelectorAll('select')[1].options).map((option:any)=>option.textContent.trim());expect(options[0]).toBe('English');expect(options.slice(1)).toEqual(['Português — Portugal','Português — Brasil','Español','Français','Deutsch']);
     fixture.destroy();
+  }));
+  it('preserves persisted PT-PT and PT-BR preferences',fakeAsync(()=>{
+    for(const languageLocale of ['pt-PT','pt-BR'] as const){engine.preference.set({...defaultVoicePreference(),languageLocale});expect(engine.preference().languageLocale).toBe(languageLocale);}
   }));
   it('distinguishes PT-PT from PT-BR metadata',fakeAsync(()=>{
     flushMicrotasks();expect(matchesLocale(engine.voices()[0],'pt-BR')).toBeTrue();expect(matchesLocale(engine.voices()[0],'pt-PT')).toBeFalse();expect(matchesLocale(engine.voices()[1],'pt-PT')).toBeTrue();expect(matchesLocale(engine.voices()[2],'pt-PT')).toBeFalse();
+    expect(matchesLocale({id:'en-f',name:'English Female',profile:'FEMALE',language:'en',accent:null,category:null},'en')).toBeTrue();
+    expect(matchesLocale({id:'en-m',name:'English Male',profile:'MALE',language:'en',accent:null,category:null},'en')).toBeTrue();
+  }));
+  it('does not choose or save an arbitrary ElevenLabs voice',fakeAsync(()=>{
+    flushMicrotasks();fetchSpy.calls.reset();engine.speak('Ready.','en');flushMicrotasks();
+    expect(fetchSpy).not.toHaveBeenCalled();expect(browser.speak).toHaveBeenCalledTimes(1);expect(engine.preference().voiceId).toBeNull();expect(TestBed.inject(AgentInspectorService).voiceEngine()?.fallbackReason).toBe('VOICE_NOT_SELECTED');
   }));
   it('plays ElevenLabs audio and records the effective engine only once',fakeAsync(()=>{
     flushMicrotasks();let audio:HTMLMediaElement|undefined;
@@ -40,7 +50,7 @@ describe('YvY voice engine',()=>{
   }));
   it('falls back once for technical failure and preserves locale and speed',fakeAsync(()=>{
     flushMicrotasks();fetchSpy.and.resolveTo(({ok:false,status:503,json:()=>Promise.resolve({fallbackAllowed:true,fallbackReason:'UPSTREAM_429'})} as Response));
-    engine.preference.set({...defaultVoicePreference(),voiceId:'male',speed:.8});engine.speak('Olá.','pt');flushMicrotasks();
+    engine.preference.set({...defaultVoicePreference(),languageLocale:'pt-PT',voiceId:'male',speed:.8});engine.speak('Olá.','pt');flushMicrotasks();
     expect(browser.speak).toHaveBeenCalledTimes(1);expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-PT',rate:.8});expect(TestBed.inject(AgentInspectorService).voiceEngine()?.fallbackReason).toBe('UPSTREAM_429');
   }));
   it('does not fallback for content rejection or send visual tables',fakeAsync(()=>{

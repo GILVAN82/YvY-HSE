@@ -52,7 +52,9 @@ test('authenticated HTTP preference ownership, validation and fallback metadata'
     const preference={...defaultPreference,engine:'BROWSER',languageLocale:'pt-BR'};
     assert.equal((await request('PUT','/ai/voice-preferences','A',preference)).status,200);
     assert.equal((await request('GET','/ai/voice-preferences','A')).body.languageLocale,'pt-BR');
-    assert.equal((await request('GET','/ai/voice-preferences','B')).body.languageLocale,'pt-PT');
+    assert.equal((await request('GET','/ai/voice-preferences','B')).body.languageLocale,'en');
+    await request('PUT','/ai/voice-preferences','C',{...preference,languageLocale:'pt-PT'});
+    assert.equal((await request('GET','/ai/voice-preferences','C')).body.languageLocale,'pt-PT');
     assert.equal((await request('PUT','/ai/voice-preferences','A',{...preference,userId:'B'})).status,400);
     for(const bad of [{speed:5},{languageLocale:'xx'},{voiceId:'../bad'}])assert.equal((await request('PUT','/ai/voice-preferences','A',{...preference,...bad})).status,400);
     const fail=await request('POST','/ai/voice/synthesize','A',input);assert.equal(fail.status,503);assert.equal(fail.body.effectiveEngine,'BROWSER_FALLBACK');assert.equal(fail.body.fallbackReason,'UNAVAILABLE');assert.ok(!JSON.stringify(fail).includes('secret-test-only'));

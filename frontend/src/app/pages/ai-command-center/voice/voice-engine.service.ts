@@ -8,7 +8,7 @@ import type { ConversationLanguage } from './voice.types';
 export type VoiceLocale='pt-PT'|'pt-BR'|'en'|'es'|'fr'|'de';
 export interface VoicePreference {engine:'ELEVENLABS'|'BROWSER';languageLocale:VoiceLocale;genderProfile:'FEMALE'|'MALE'|'UNKNOWN';voiceId:string|null;voiceName:string|null;speed:number}
 export interface EngineVoice {id:string;name:string;language:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';category:string|null}
-export const defaultVoicePreference=():VoicePreference=>({engine:'ELEVENLABS',languageLocale:'pt-PT',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1});
+export const defaultVoicePreference=():VoicePreference=>({engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1});
 export const previewText:Record<VoiceLocale,string>={
   'pt-PT':'Olá, eu sou a YvY. Esta é a voz selecionada para as suas interações de segurança.',
   'pt-BR':'Olá, eu sou a YvY. Esta é a voz selecionada para suas interações de segurança.',
@@ -76,9 +76,8 @@ export class VoiceEngineService {
     const fallback=(reason:string)=>{if(!current()||usedFallback)return;usedFallback=true;if(this.audio){this.audio.onended=null;this.audio.onerror=null;this.audio.pause();this.audio=null;}if(this.url){URL.revokeObjectURL(this.url);this.url=null;}record('BROWSER_FALLBACK',reason);if(!this.browser.speak(text,language,complete,failed,{locale,rate:preference.speed}))failed();};
     if(text.length>1200||/[|{}]|```|https?:\/\//.test(text)){queueMicrotask(failed);return true;}
     if(preference.engine==='BROWSER'||!this.available()){queueMicrotask(()=>fallback(preference.engine==='BROWSER'?'USER_SELECTED':'UNAVAILABLE'));return true;}
-    const candidates=this.voices().filter(v=>preference.genderProfile==='UNKNOWN'||v.profile===preference.genderProfile);
-    const voice=preference.voiceId??(candidates.find(v=>matchesLocale(v,locale as VoiceLocale))??candidates[0])?.id;
-    if(!voice){queueMicrotask(()=>fallback('VOICE_NOT_FOUND'));return true;}
+    const voice=preference.voiceId;
+    if(!voice){queueMicrotask(()=>fallback('VOICE_NOT_SELECTED'));return true;}
     const controller=new AbortController();this.controller=controller;
     const timer=setTimeout(()=>controller.abort(),30000);this.timer=timer;
     void (async()=>{

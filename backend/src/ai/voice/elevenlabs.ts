@@ -7,7 +7,7 @@ export const preferenceSchema = z.object({
   voiceName:z.string().max(120).nullable(), speed:z.number().min(0.7).max(1.2),
 }).strict();
 export type VoicePreference = z.infer<typeof preferenceSchema>;
-export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'pt-PT',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
+export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'en',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
 export const synthesisSchema = z.object({text:z.string().trim().min(1).max(1200).refine(text=>!/[|{}]|```|https?:\/\//.test(text),'Use spoken summary only'),voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),locale:voiceLocale,speed:z.number().min(0.7).max(1.2),preview:z.boolean().optional()}).strict().refine(body=>!body.preview || body.text.length<=240);
 export type Voice = {id:string;name:string;language:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';previewUrl:string|null;category:string|null};
 export class VoiceFailure extends Error {

@@ -14,11 +14,10 @@ const words: Record<ConversationLanguage,RegExp>={
   fr:/\b(quel|quelle|actions|sécurité|procédure|expliquez)\b/gi,
   de:/\b(welche|maßnahmen|sicherheit|verfahren|erklären)\b/gi,
 };
-export function detectConversationLanguage(text:string, browserLanguage='en'):ConversationLanguage{
+export function detectConversationLanguage(text:string, _browserLanguage='en'):ConversationLanguage{
   const scores=Object.entries(words).map(([language,pattern])=>[language,(text.match(pattern)?.length??0)] as const).sort((a,b)=>b[1]-a[1]);
   if(scores[0][1]>0)return scores[0][0] as ConversationLanguage;
-  const fallback=browserLanguage.toLowerCase().split('-')[0];return ['en','pt','es','fr','de'].includes(fallback)?fallback as ConversationLanguage:'en';
+  return 'en';
 }
 export function requestedResponseLanguage(text:string):ConversationLanguage|undefined{return explicit.find(([pattern])=>pattern.test(text))?.[1];}
 export function languageName(language:ConversationLanguage){return ({en:'English',pt:'Português',es:'Español',fr:'Français',de:'Deutsch'})[language];}
-

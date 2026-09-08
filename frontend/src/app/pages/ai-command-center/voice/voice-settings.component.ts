@@ -8,7 +8,7 @@ import { VoiceEngineService, defaultVoicePreference, matchesLocale, type VoicePr
     <p>Engine: {{engine.available() && draft.engine==='ELEVENLABS' ? 'ElevenLabs' : 'Browser fallback'}}</p>
     <p *ngIf="engine.playback()?.effectiveEngine==='BROWSER_FALLBACK'">Última reprodução: voz do navegador (fallback).</p>
     <label>Engine <select [(ngModel)]="draft.engine"><option value="ELEVENLABS">ElevenLabs</option><option value="BROWSER">Browser</option></select></label>
-    <label>Language <select [(ngModel)]="draft.languageLocale"><option value="pt-PT">Português — Portugal</option><option value="pt-BR">Português — Brasil</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option></select></label>
+    <label>Language <select [(ngModel)]="draft.languageLocale"><option value="en">English</option><option value="pt-PT">Português — Portugal</option><option value="pt-BR">Português — Brasil</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option></select></label>
     <fieldset><legend>Voice profile</legend><button type="button" (click)="chooseProfile('FEMALE')" [attr.aria-pressed]="filter()==='FEMALE'">Feminina</button><button type="button" (click)="chooseProfile('MALE')" [attr.aria-pressed]="filter()==='MALE'">Masculina</button><button type="button" (click)="chooseProfile('ALL')" [attr.aria-pressed]="filter()==='ALL'">All</button></fieldset>
     <label>Voice <select [(ngModel)]="draft.voiceId" (ngModelChange)="selectVoice()"><option [ngValue]="null">Automática / disponível</option><option *ngFor="let voice of rankedVoices()" [ngValue]="voice.id">{{voice.name}} — {{voice.profile}} · {{voice.accent || voice.language || 'Unknown locale'}}</option></select></label>
     <p *ngIf="!localeMatch()">Sotaque exato não confirmado. A voz disponível poderá usar outro sotaque.</p>
@@ -25,7 +25,7 @@ export class VoiceSettingsComponent {
   readonly filtered=computed(()=>this.engine.voices().filter(v=>this.filter()==='ALL'||v.profile===this.filter()));
   message='';
   constructor(){effect(()=>{this.draft={...this.engine.preference()};this.message='';});}
-  rankedVoices(){return [...this.filtered()].sort((a,b)=>Number(matchesLocale(b,this.draft.languageLocale))-Number(matchesLocale(a,this.draft.languageLocale)));}
+  rankedVoices(){const filtered=this.filtered(),matching=filtered.filter(voice=>matchesLocale(voice,this.draft.languageLocale));return matching.length?matching:filtered;}
   chooseProfile(profile:'FEMALE'|'MALE'|'ALL'){this.filter.set(profile);this.draft.genderProfile=profile==='ALL'?'UNKNOWN':profile;const voice=this.engine.voices().find(v=>v.id===this.draft.voiceId);if(voice&&profile!=='ALL'&&voice.profile!==profile){this.draft.voiceId=null;this.draft.voiceName=null;}}
   selectVoice(){const voice=this.engine.voices().find(v=>v.id===this.draft.voiceId);this.draft.voiceName=voice?.name??null;this.draft.genderProfile=voice?.profile??'UNKNOWN';}
   localeMatch(){const voice=this.engine.voices().find(v=>v.id===this.draft.voiceId);return voice?matchesLocale(voice,this.draft.languageLocale):this.engine.voices().some(v=>matchesLocale(v,this.draft.languageLocale));}
