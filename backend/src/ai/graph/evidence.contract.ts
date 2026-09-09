@@ -26,7 +26,7 @@ export interface AgentEvidence {
   resultStatus?: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA' | 'ERROR';
   recordCount?: number;
   facts?: EvidenceFact[];
-  rag?: Pick<RagEvidence, 'chunkId' | 'documentId' | 'sourceId' | 'citationLabel' | 'jurisdiction' | 'content'>;
+  rag?: Pick<RagEvidence, 'chunkId' | 'documentId' | 'sourceId' | 'citationLabel' | 'jurisdiction' | 'content'> & Partial<Pick<RagEvidence, 'version' | 'sourceUrl' | 'sourceOrganization'>>;
 }
 
 export const VerificationStatus = {
@@ -106,6 +106,9 @@ export function ragResultEvidence(item: RagEvidence): AgentEvidence {
       citationLabel: item.citationLabel,
       jurisdiction: item.jurisdiction,
       content: item.content,
+      version: item.version,
+      sourceUrl: item.sourceUrl,
+      sourceOrganization: item.sourceOrganization,
     },
   };
 }

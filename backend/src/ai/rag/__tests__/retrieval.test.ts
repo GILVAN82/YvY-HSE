@@ -22,7 +22,7 @@ describe('RAG retrieval service', () => {
     const result = await service.retrieve('How should LOTO be applied?');
     assert.equal(result.status, 'OK');
     assert.deepEqual(embedded, ['How should LOTO be applied?']);
-    assert.deepEqual(args, [[1, 0], 3, 0.45]);
+    assert.deepEqual(args, [[1, 0], 12, 0.45]);
     assert.equal(result.evidence[0].citationLabel, evidence.citationLabel);
     assert.ok(!('embedding' in result.evidence[0]));
   });
@@ -32,7 +32,7 @@ describe('RAG retrieval service', () => {
       { embedMany: async () => [[1, 0]] }, { searchByEmbedding: async () => [] },
       { topK: 3, minSimilarity: 0.45 }, () => undefined
     );
-    assert.deepEqual(await service.retrieve('holiday policy'), { status: 'NO_RELEVANT_EVIDENCE', evidence: [] });
+    assert.equal((await service.retrieve('holiday policy')).status, 'NO_RELEVANT_EVIDENCE');
   });
 
   test('does not embed a structured operational query', async () => {

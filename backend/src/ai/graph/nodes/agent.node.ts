@@ -106,6 +106,7 @@ export async function agentNode(
   let toolErrorCount = 0;
   let ragUsed = false;
   let ragEvidence: RagEvidence[] = [];
+  let retrievalDiagnostics: HseAgentState['retrievalDiagnostics'];
   let ragStatus: HseAgentState['ragStatus'] = 'NOT_USED';
   const toolTrace: AgentToolTrace[] = [];
   const evidence: AgentEvidence[] = [];
@@ -187,6 +188,7 @@ export async function agentNode(
           }
           if (toolPart.toolName === 'search_hse_knowledge') {
             ragUsed = true;
+            retrievalDiagnostics = output?.diagnostics;
             ragStatus = output && typeof output.status === 'string' ? output.status : output?.error ? 'ERROR' : 'ERROR';
             if (output?.status === 'OK') {
               ragEvidence = output.evidence as RagEvidence[];
@@ -217,6 +219,7 @@ export async function agentNode(
       finalText: text,
       ragUsed,
       ragStatus,
+      retrievalDiagnostics,
       ragEvidence,
       evidence,
       errorCode: timedOut ? AgentErrorCode.TIMEOUT : AgentErrorCode.MODEL_ERROR,
@@ -237,6 +240,7 @@ export async function agentNode(
     finalText: text,
     ragUsed,
     ragStatus,
+    retrievalDiagnostics,
     ragEvidence,
     evidence,
     ...(toolFailed || overviewAllSourcesFailed ? { errorCode: AgentErrorCode.TOOL_FAILURE } : {}),

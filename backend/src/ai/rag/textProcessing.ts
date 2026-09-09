@@ -1,8 +1,10 @@
+import { RetrievalConfigError } from './errors';
 import { createHash } from 'node:crypto';
 import type { PreparedRagChunk } from './types';
 
 export const TOKEN_ESTIMATE_METHOD = 'estimated:ceil(characters/4)';
-export const DEFAULT_CHUNK_OPTIONS = Object.freeze({ targetTokens: 750, maxTokens: 1000, overlapTokens: 100 });
+export type ChunkOptions = { targetTokens: number; maxTokens: number; overlapTokens: number };
+export const DEFAULT_CHUNK_OPTIONS: Readonly<ChunkOptions> = Object.freeze({ targetTokens: 750, maxTokens: 1000, overlapTokens: 100 });
 
 export function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
@@ -22,57 +24,29 @@ export function contentHash(normalizedContent: string): string {
   return createHash('sha256').update(normalizedContent, 'utf8').digest('hex');
 }
 
-function splitOversized(text: string, maxChars: number, overlapChars: number): string[] {
-  const words = text.split(' ');
-  const parts: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars || !current) {
-      current = candidate;
-      continue;
-    }
-    parts.push(current);
-    const overlap = current.slice(-overlapChars).replace(/^\S*\s/, '');
-    current = overlap ? `${overlap} ${word}` : word;
+/** Canonical UTF-16 windows. Offsets allow exact reconstruction, including whitespace.
+ * The bound is the declared character-based estimate, not a provider tokenizer. */
+export function chunkContent(normalizedContent: string, options = DEFAULT_CHUNK_OPTIONS): PreparedRagChunk[] {
+  const { targetTokens, maxTokens, overlapTokens } = options;
+  if (![targetTokens, maxTokens, overlapTokens].every(Number.isInteger) ||
+      targetTokens < 1 || maxTokens < targetTokens || overlapTokens < 0 || overlapTokens >= targetTokens) {
+    throw new RetrievalConfigError('Invalid chunk configuration');
   }
-  if (current) parts.push(current);
-  return parts;
-}
-
-export function chunkContent(
-  normalizedContent: string,
-  options = DEFAULT_CHUNK_OPTIONS
-): PreparedRagChunk[] {
-  if (!normalizedContent) return [];
-  if (estimateTokens(normalizedContent) <= options.maxTokens) {
-    return [{ chunkIndex: 0, content: normalizedContent, tokenCount: estimateTokens(normalizedContent), metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD } }];
+  const chunks: PreparedRagChunk[] = [];
+  let start = 0;
+  while (start < normalizedContent.length) {
+    let end = Math.min(normalizedContent.length, start + (normalizedContent.length - start <= maxTokens * 4 ? maxTokens : targetTokens) * 4);
+    // Never separate a UTF-16 surrogate pair.
+    if (end < normalizedContent.length && /[\uD800-\uDBFF]/.test(normalizedContent[end - 1])) end--;
+    const content = normalizedContent.slice(start, end);
+    chunks.push({ chunkIndex: chunks.length, content, tokenCount: estimateTokens(content),
+      metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD, startOffset: start, endOffset: end, chunkingVersion: 'windows-v2' } });
+    if (end === normalizedContent.length) break;
+    let next = end - overlapTokens * 4;
+    if (/[\uDC00-\uDFFF]/.test(normalizedContent[next])) next--;
+    start = Math.max(start + 1, next);
   }
-
-  const targetChars = options.targetTokens * 4;
-  const maxChars = options.maxTokens * 4;
-  const overlapChars = options.overlapTokens * 4;
-  const paragraphs = normalizedContent.split(/\n\n+/).flatMap((paragraph) =>
-    paragraph.length > maxChars ? splitOversized(paragraph, maxChars, overlapChars) : [paragraph]
-  );
-  const chunks: string[] = [];
-  let current = '';
-  for (const paragraph of paragraphs) {
-    const candidate = current ? `${current}\n\n${paragraph}` : paragraph;
-    if (candidate.length <= targetChars || !current) current = candidate;
-    else {
-      chunks.push(current);
-      const overlap = current.slice(-overlapChars).replace(/^\S*\s/, '').trim();
-      current = overlap ? `${overlap}\n\n${paragraph}` : paragraph;
-    }
-  }
-  if (current) chunks.push(current);
-  return chunks.map((content, chunkIndex) => ({
-    chunkIndex,
-    content,
-    tokenCount: estimateTokens(content),
-    metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD },
-  }));
+  return chunks;
 }
 
 const SUSPICIOUS_PATTERNS = [

@@ -81,8 +81,9 @@ export interface AgentExecutionTrace {
   tools: AgentToolTrace[];
   rag: {
     used: boolean;
-    status: 'OK' | 'NO_RELEVANT_EVIDENCE' | 'NOT_APPROPRIATE' | 'NOT_USED' | 'ERROR';
+    status: 'OK' | 'NO_RELEVANT_EVIDENCE' | 'RETRIEVAL_UNAVAILABLE' | 'PARTIAL_REQUIRED_EVIDENCE' | 'NOT_APPROPRIATE' | 'NOT_USED' | 'ERROR';
     chunksRetrieved: number;
+    diagnostics?: { retrievalMode: string; relevanceState: string; reformulationStatus: string; configFingerprint: string };
   };
   conversation: { stateActive: boolean; messageCount: number };
   memory: {

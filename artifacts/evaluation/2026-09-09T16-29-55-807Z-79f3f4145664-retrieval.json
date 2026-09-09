@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "datasetFingerprint": "dc901c7ed6d3c467a17ebe95a5ea8bc815fbbd3a04cb2f251c32da82e12ba6ca",
+  "dataset": [
+    {
+      "id": "loto-code",
+      "query": "LOTO EQ-123 isolation",
+      "requiredSources": [
+        "loto"
+      ],
+      "relevantSources": [
+        "loto"
+      ],
+      "irrelevantSources": [
+        "ptw",
+        "fire"
+      ]
+    },
+    {
+      "id": "permit",
+      "query": "PTW permit authorization",
+      "requiredSources": [
+        "ptw"
+      ],
+      "relevantSources": [
+        "ptw"
+      ],
+      "irrelevantSources": [
+        "fire",
+        "loto"
+      ]
+    },
+    {
+      "id": "fire",
+      "query": "fire evacuation assembly",
+      "requiredSources": [
+        "fire"
+      ],
+      "relevantSources": [
+        "fire"
+      ],
+      "irrelevantSources": [
+        "loto",
+        "ptw"
+      ]
+    },
+    {
+      "id": "multi-source",
+      "query": "LOTO PTW isolation authorization",
+      "requiredSources": [
+        "loto",
+        "ptw"
+      ],
+      "relevantSources": [
+        "loto",
+        "ptw"
+      ],
+      "irrelevantSources": [
+        "fire"
+      ]
+    },
+    {
+      "id": "wrong-jurisdiction",
+      "query": "Portugal law LOTO isolation",
+      "requiredSources": [],
+      "relevantSources": [],
+      "irrelevantSources": [
+        "loto",
+        "ptw",
+        "fire"
+      ],
+      "jurisdiction": "Portugal"
+    },
+    {
+      "id": "no-evidence",
+      "query": "astronomy telescope",
+      "requiredSources": [],
+      "relevantSources": [],
+      "irrelevantSources": [
+        "loto",
+        "ptw",
+        "fire"
+      ]
+    }
+  ],
+  "corpusMode": "SYNTHETIC CORPUS",
+  "embeddingsMode": "MOCK EMBEDDINGS",
+  "lexicalMode": "INJECTED TOKEN COVERAGE FAKE, NOT POSTGRESQL",
+  "corpus": {
+    "version": "corpus-v1",
+    "documentCount": 3,
+    "documents": [
+      {
+        "identity": [
+          "synthetic",
+          "fire"
+        ],
+        "version": "1",
+        "hash": "4389662d904ac1d356a64f14695943cc0f857e8eecb6855e5457e06506af3e39",
+        "metadata": {
+          "jurisdiction": "United Kingdom"
+        }
+      },
+      {
+        "identity": [
+          "synthetic",
+          "loto"
+        ],
+        "version": "1",
+        "hash": "9a63cd030ae6ac557f267f26b6dfd919c8676ebf52dccd60fbf7590c28d5ac7d",
+        "metadata": {
+          "jurisdiction": "United States"
+        }
+      },
+      {
+        "identity": [
+          "synthetic",
+          "ptw"
+        ],
+        "version": "1",
+        "hash": "fd3a15d8594efe330da467fa0609d759ce042af2033157e59ce3587d596c1e86",
+        "metadata": {
+          "jurisdiction": "United Kingdom"
+        }
+      }
+    ],
+    "config": {
+      "chunking": {
+        "targetTokens": 750,
+        "maxTokens": 1000,
+        "overlapTokens": 100
+      },
+      "embedding": {
+        "provider": "mock",
+        "model": "two-dimensional-collision-v1",
+        "dimensions": 2
+      },
+      "preprocessing": "normalize-lines-v1/windows-v2/utf16-estimate-v1"
+    },
+    "fingerprint": "d2a93d3517b92dc07fed4c4108ad7ced4232aa0c06f95b3fdbca64bcb951a205"
+  },
+  "comparisonConfigFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3",
+  "modes": [
+    {
+      "mode": "SEMANTIC_ONLY",
+      "config": {
+        "version": "hybrid-v1",
+        "topK": 3,
+        "minSimilarity": 0.45,
+        "semanticCandidateLimit": 12,
+        "lexicalCandidateLimit": 12,
+        "rrfK": 60,
+        "lexicalMinCoverage": 0.6,
+        "allowLexicalFallback": true,
+        "fusion": "SEMANTIC_ONLY",
+        "lexicalDictionary": "simple",
+        "reformulation": "deterministic-v1"
+      },
+      "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139",
+      "cases": [
+        {
+          "id": "loto-code",
+          "sources": [
+            "loto"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 0,
+          "retrieved": 1,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "permit",
+          "sources": [
+            "loto",
+            "ptw"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 1,
+          "retrieved": 2,
+          "reciprocalRank": 0.5,
+          "top1": 0,
+          "passed": false
+        },
+        {
+          "id": "fire",
+          "sources": [
+            "fire"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 0,
+          "retrieved": 1,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "multi-source",
+          "sources": [
+            "loto",
+            "ptw"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 2,
+          "requiredTotal": 2,
+          "relevantFound": 2,
+          "relevantTotal": 2,
+          "irrelevantFound": 0,
+          "retrieved": 2,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "wrong-jurisdiction",
+          "sources": [],
+          "status": "NO_RELEVANT_EVIDENCE",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "NO_RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 0,
+          "requiredTotal": 0,
+          "relevantFound": 0,
+          "relevantTotal": 0,
+          "irrelevantFound": 0,
+          "retrieved": 0,
+          "reciprocalRank": 0,
+          "top1": 0,
+          "passed": true
+        },
+        {
+          "id": "no-evidence",
+          "sources": [],
+          "status": "NO_RELEVANT_EVIDENCE",
+          "diagnostics": {
+            "retrievalMode": "SEMANTIC_ONLY",
+            "relevanceState": "NO_RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "14289403f1f93f3fd9088f24eccfd3a8195b21c0085834e28295a5a940cfb139"
+          },
+          "requiredFound": 0,
+          "requiredTotal": 0,
+          "relevantFound": 0,
+          "relevantTotal": 0,
+          "irrelevantFound": 0,
+          "retrieved": 0,
+          "reciprocalRank": 0,
+          "top1": 0,
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "requiredSourceRecall": 1,
+        "relevantRecallAtK": 1,
+        "irrelevantRetrievalRate": 0.16666666666666666,
+        "mrr": 0.875,
+        "top1SourceAccuracy": 0.75
+      }
+    },
+    {
+      "mode": "RRF",
+      "config": {
+        "version": "hybrid-v1",
+        "topK": 3,
+        "minSimilarity": 0.45,
+        "semanticCandidateLimit": 12,
+        "lexicalCandidateLimit": 12,
+        "rrfK": 60,
+        "lexicalMinCoverage": 0.6,
+        "allowLexicalFallback": true,
+        "fusion": "RRF",
+        "lexicalDictionary": "simple",
+        "reformulation": "deterministic-v1"
+      },
+      "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3",
+      "cases": [
+        {
+          "id": "loto-code",
+          "sources": [
+            "loto"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 0,
+          "retrieved": 1,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "permit",
+          "sources": [
+            "ptw",
+            "loto"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 1,
+          "retrieved": 2,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": false
+        },
+        {
+          "id": "fire",
+          "sources": [
+            "fire"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 1,
+          "requiredTotal": 1,
+          "relevantFound": 1,
+          "relevantTotal": 1,
+          "irrelevantFound": 0,
+          "retrieved": 1,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "multi-source",
+          "sources": [
+            "loto",
+            "ptw"
+          ],
+          "status": "OK",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 2,
+          "requiredTotal": 2,
+          "relevantFound": 2,
+          "relevantTotal": 2,
+          "irrelevantFound": 0,
+          "retrieved": 2,
+          "reciprocalRank": 1,
+          "top1": 1,
+          "passed": true
+        },
+        {
+          "id": "wrong-jurisdiction",
+          "sources": [],
+          "status": "NO_RELEVANT_EVIDENCE",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "NO_RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 0,
+          "requiredTotal": 0,
+          "relevantFound": 0,
+          "relevantTotal": 0,
+          "irrelevantFound": 0,
+          "retrieved": 0,
+          "reciprocalRank": 0,
+          "top1": 0,
+          "passed": true
+        },
+        {
+          "id": "no-evidence",
+          "sources": [],
+          "status": "NO_RELEVANT_EVIDENCE",
+          "diagnostics": {
+            "retrievalMode": "HYBRID",
+            "relevanceState": "NO_RELEVANT_EVIDENCE",
+            "reformulationStatus": "DETERMINISTIC",
+            "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+          },
+          "requiredFound": 0,
+          "requiredTotal": 0,
+          "relevantFound": 0,
+          "relevantTotal": 0,
+          "irrelevantFound": 0,
+          "retrieved": 0,
+          "reciprocalRank": 0,
+          "top1": 0,
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "requiredSourceRecall": 1,
+        "relevantRecallAtK": 1,
+        "irrelevantRetrievalRate": 0.16666666666666666,
+        "mrr": 1,
+        "top1SourceAccuracy": 1
+      }
+    }
+  ],
+  "provenance": {
+    "evaluationSchemaVersion": 2,
+    "datasetVersion": 1,
+    "datasetFingerprint": "1f45f5eff729621035b47a8af4f946af9f92ee170d3d4f27745ad45077e8a394",
+    "gitCommit": "79f3f4145664f0c8ee3cb95fa94863d9bac15726",
+    "workingTreeDirty": true,
+    "sourceFingerprint": "5ee02710ef1da61830ff0b304478537927eadb8a7d26f2e0b71e17623defdd8b",
+    "timestamp": "2026-09-09T16:29:55.807Z",
+    "agentPatternVersion": "3ab1faa078564e92589e8b8a7901b7402e6acc82373256a2b9ecc7885eeece45",
+    "modelMode": "SIMULATED",
+    "modelProvider": null,
+    "modelId": null,
+    "promptVersion": "057d01af407126cca4c62b2df227fd49869340490a7f430bebe3a31e1435a6e9",
+    "corpusFingerprint": "d2a93d3517b92dc07fed4c4108ad7ced4232aa0c06f95b3fdbca64bcb951a205",
+    "corpusMode": "SYNTHETIC",
+    "retrievalConfigVersion": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3",
+    "toolContractVersion": "f74b89e83ef9f8062fe2203938036a0d4359b33edd8e9208aa8e5a26b74d918d",
+    "verificationFingerprint": "5fa1e7b9ef1aeee8728911b552f14fe274e49929f667606b5e31aac501c96634",
+    "intentFingerprint": "b89487fcea1056bcc89d6ac4c89583b46eebf702c892763fe261dd051aa3a840",
+    "approvalPolicyFingerprint": "3ec0f3af845ce628aae2c5f7e2ced3a36c5b177fe719d774acd53976e66e7161",
+    "configurationFingerprint": "5a23a1f2316b08bb51db76a4fcc0116122ff69cc738dfaec5b8847d5d8c84b8e"
+  }
+}

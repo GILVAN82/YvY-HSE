@@ -16,14 +16,14 @@ export class PostgresRagRepository implements RagRepository {
 
   async findDocument(sourceType: string, sourceReference: string): Promise<StoredRagDocument | null> {
     const result = await this.db.query(
-      `SELECT id::text, source_type, source_reference, version, content_hash
+      `SELECT id::text, source_type, source_reference, version, content_hash, metadata
        FROM rag_documents WHERE source_type = $1 AND source_reference = $2
        ORDER BY updated_at DESC LIMIT 1`,
       [sourceType, sourceReference]
     );
     if (!result.rowCount) return null;
     const row = result.rows[0];
-    return { id: row.id, sourceType: row.source_type, sourceReference: row.source_reference, version: row.version, contentHash: row.content_hash };
+    return { id: row.id, sourceType: row.source_type, sourceReference: row.source_reference, version: row.version, contentHash: row.content_hash, ingestionFingerprint: row.metadata?.ingestionFingerprint };
   }
 
   async replaceDocument(document: RagSourceDocument, hash: string, chunks: readonly EmbeddedRagChunk[]) {
@@ -37,6 +37,7 @@ export class PostgresRagRepository implements RagRepository {
       );
       const minimizedMetadata = {
         sensitivity: document.sensitivity,
+        ingestionFingerprint: document.metadata?.ingestionFingerprint,
         ...(document.metadata?.language ? { language: document.metadata.language } : {}),
         ...(document.metadata?.citationLabel ? { citationLabel: document.metadata.citationLabel } : {}),
         ...(document.metadata?.sourcePath ? { sourcePath: document.metadata.sourcePath } : {}),

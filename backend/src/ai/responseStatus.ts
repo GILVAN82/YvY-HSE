@@ -22,8 +22,8 @@ export function resolveResponseStatus(input: {
   if (input.approvalStatus === 'APPROVED') return ResponseStatus.APPROVED;
   if (input.approvalStatus === 'REJECTED') return ResponseStatus.REJECTED;
   if (input.status === AgentStatus.REFUSED) return ResponseStatus.REFUSED;
-  if (input.status === AgentStatus.FAILED || input.errorCode || input.ragStatus === 'ERROR' || input.tools?.some((tool) => tool.status === 'ERROR')) return ResponseStatus.ERROR;
+  if (input.status === AgentStatus.FAILED || input.errorCode || (input.ragStatus === 'ERROR' || input.ragStatus === 'RETRIEVAL_UNAVAILABLE') || input.tools?.some((tool) => tool.status === 'ERROR')) return ResponseStatus.ERROR;
   if (input.status === AgentStatus.AWAITING_HUMAN_APPROVAL || input.approvalStatus === 'PENDING') return ResponseStatus.PENDING;
-  if (input.ragStatus === 'NO_RELEVANT_EVIDENCE' || input.tools?.some((tool) => tool.resultStatus === 'SUCCESS_NO_DATA')) return ResponseStatus.NO_DATA;
+  if ((input.ragStatus === 'NO_RELEVANT_EVIDENCE' || input.ragStatus === 'PARTIAL_REQUIRED_EVIDENCE') || input.tools?.some((tool) => tool.resultStatus === 'SUCCESS_NO_DATA')) return ResponseStatus.NO_DATA;
   return ResponseStatus.SUCCESS;
 }

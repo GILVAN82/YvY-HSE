@@ -20,6 +20,7 @@ export type RagSourceDocument = {
     secondarySourceUrl?: string;
     contentStatus?: string;
     accessedOn?: string;
+    ingestionFingerprint?: string;
   }>;
 };
 
@@ -38,6 +39,7 @@ export type StoredRagDocument = {
   sourceReference: string;
   version: string;
   contentHash: string;
+  ingestionFingerprint?: string;
 };
 
 export type RagSourceDefinition = {
@@ -64,6 +66,7 @@ export type RagSourceDefinition = {
 export type IngestionError = { sourceReference: string; message: string };
 
 export type IngestionSummary = {
+  corpus?: ReturnType<typeof import('./identity').corpusFingerprint>;
   dryRun: boolean;
   sourcesExamined: number;
   sourcesExcluded: number;

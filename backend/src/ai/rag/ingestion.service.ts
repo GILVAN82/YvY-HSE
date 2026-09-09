@@ -1,3 +1,5 @@
+import { corpusFingerprint, stableChunkIdentity, fingerprint, PREPROCESSING_VERSION, type CorpusConfig } from './identity';
+import { DEFAULT_CHUNK_OPTIONS } from './textProcessing';
 import { validateEmbedding, type EmbeddingService } from './embedding.service';
 import { readEmbeddingConfig } from '../embedding.config';
 import type { RagRepository } from './rag.repository';
@@ -9,11 +11,13 @@ export class RagIngestionService {
   constructor(
     private readonly repository: RagRepository,
     private readonly embeddings: EmbeddingService,
-    private readonly dimensions = readEmbeddingConfig().dimensions
+    private readonly dimensions = readEmbeddingConfig().dimensions,
+    private readonly corpusConfig: CorpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding: { provider: 'openai', ...readEmbeddingConfig(), dimensions }, preprocessing: PREPROCESSING_VERSION }
   ) {}
 
   async ingest(sources: readonly RagSourceDocument[], options: { dryRun: boolean }): Promise<IngestionSummary> {
     const summary: IngestionSummary = {
+      corpus: corpusFingerprint(sources, this.corpusConfig),
       dryRun: options.dryRun, sourcesExamined: sources.length, sourcesExcluded: EXCLUDED_SOURCE_REGISTRY.length,
       documentsCreated: 0, documentsUpdated: 0, documentsSkipped: 0, chunksCreated: 0,
       embeddingsCreated: 0, warnings: [], errors: [], documents: [],
@@ -24,11 +28,12 @@ export class RagIngestionService {
         const normalized = normalizeContent(source.content);
         if (!normalized) throw new Error('Source content is empty after normalization');
         const hash = contentHash(normalized);
-        const chunks = chunkContent(normalized);
+        const chunks = chunkContent(normalized, this.corpusConfig.chunking);
+        const ingestionFingerprint = fingerprint({ hash, version: source.version, config: this.corpusConfig, metadata: source.metadata ?? {} });
         const suspicious = detectSuspiciousInstructions(normalized);
         const flaggedChunks = chunks.map((chunk) => ({
           ...chunk,
-          metadata: { ...chunk.metadata, ...(suspicious.length ? { suspiciousInstructions: true } : {}) },
+          metadata: { ...chunk.metadata, stableChunkId: stableChunkIdentity(source, chunk, this.corpusConfig), ...(suspicious.length ? { suspiciousInstructions: true } : {}) },
         }));
         if (suspicious.length) summary.warnings.push(`${source.sourceReference}: suspicious instruction-like content flagged`);
         summary.documents.push({ title: source.title, module: source.module, sourceReference: source.sourceReference,
@@ -37,11 +42,11 @@ export class RagIngestionService {
           sourceOrganization: source.metadata?.sourceOrganization, jurisdiction: source.metadata?.jurisdiction });
         if (options.dryRun) continue;
         const existing = await this.repository.findDocument(source.sourceType, source.sourceReference);
-        if (existing?.contentHash === hash) { summary.documentsSkipped++; continue; }
+        if (existing?.contentHash === hash && existing.version === source.version && existing.ingestionFingerprint === ingestionFingerprint) { summary.documentsSkipped++; continue; }
         const vectors = await this.embeddings.embedMany(chunks.map((chunk) => chunk.content));
         if (vectors.length !== chunks.length) throw new Error('Embedding provider returned an unexpected vector count');
         const stored = await this.repository.replaceDocument(
-          { ...source, content: normalized }, hash,
+          { ...source, content: normalized, metadata: { ...source.metadata, ingestionFingerprint } }, hash,
           flaggedChunks.map((chunk, index) => ({ ...chunk, embedding: validateEmbedding(vectors[index], this.dimensions) }))
         );
         if (stored === 'created') summary.documentsCreated++; else summary.documentsUpdated++;

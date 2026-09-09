@@ -209,7 +209,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
         authenticatedUser: input.authenticatedFirstName,
         route: final.executedRoute,
         tools: final.toolTrace,
-        rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length },
+        rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length, diagnostics: final.retrievalDiagnostics },
         conversation: {
           stateActive: Boolean(input.threadStore && (final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL)),
           messageCount: messages.length + ((final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL) ? 1 : 0),

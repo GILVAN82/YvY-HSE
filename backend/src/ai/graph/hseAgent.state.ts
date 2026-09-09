@@ -5,6 +5,7 @@ import { EvidenceAuthority, EvidenceSourceType, VerificationStatus } from './evi
 
 const ragEvidenceSchema = z.object({
   chunkId: z.string(), documentId: z.string(), content: z.string(), score: z.number(),
+  semanticRank: z.number().int().positive().optional(), lexicalRank: z.number().int().positive().optional(), fusionScore: z.number().optional(),
   sourceId: z.string(), title: z.string(), module: z.string(), version: z.string(),
   citationLabel: z.string(), sourceOrganization: z.string(), jurisdiction: z.string(), sourceUrl: z.string(),
 });
@@ -15,7 +16,7 @@ const agentEvidenceSchema = z.object({
   authority: z.enum([EvidenceAuthority.OPERATIONAL, EvidenceAuthority.APPROVED_KNOWLEDGE]),
   toolName: z.string().optional(), resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA', 'ERROR']).optional(),
   recordCount: z.number().int().min(0).optional(), facts: z.array(evidenceFactSchema).max(80).optional(),
-  rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string() }).optional(),
+  rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string(),version:z.string().optional(),sourceUrl:z.string().optional(),sourceOrganization:z.string().optional() }).optional(),
 });
 const verificationResultSchema = z.object({
   status: z.enum([VerificationStatus.VERIFIED,VerificationStatus.PARTIALLY_VERIFIED,VerificationStatus.INSUFFICIENT_EVIDENCE,VerificationStatus.CONTRADICTED,VerificationStatus.SAFETY_BLOCKED]),
@@ -69,7 +70,8 @@ export const hseAgentStateSchema = z.object({
     resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA']).optional(),
   })).default([]),
   ragUsed: z.boolean().default(false),
-  ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
+  retrievalDiagnostics: z.object({ retrievalMode: z.enum(['HYBRID', 'SEMANTIC_ONLY', 'LEXICAL_FALLBACK']), relevanceState: z.string(), reformulationStatus: z.string(), configFingerprint: z.string() }).optional(),
+  ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'RETRIEVAL_UNAVAILABLE', 'PARTIAL_REQUIRED_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
   ragEvidence: z.array(ragEvidenceSchema).default([]),
   evidence: z.array(agentEvidenceSchema).default([]),
   verificationResult: verificationResultSchema.optional(),

@@ -1,0 +1,21 @@
+{
+  "sourceFingerprintsMatched": [
+    "datasetFingerprint",
+    "sourceFingerprint",
+    "agentPatternVersion",
+    "promptVersion",
+    "corpusFingerprint",
+    "retrievalConfigVersion",
+    "toolContractVersion",
+    "verificationFingerprint",
+    "intentFingerprint",
+    "approvalPolicyFingerprint",
+    "configurationFingerprint"
+  ],
+  "agentPassed": 44,
+  "intentPassed": 134,
+  "retrievalModesAndCorpusIdentical": true,
+  "patchSha256Verified": true,
+  "agentArtifact": "2026-09-09T16-29-54-835Z-79f3f4145664-offline.json",
+  "retrievalArtifact": "2026-09-09T16-29-55-807Z-79f3f4145664-retrieval.json"
+}

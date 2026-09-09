@@ -36,7 +36,7 @@ class FakeRepository implements RagRepository {
     this.replaceCalls++;
     this.receivedDocument = document;
     const action = this.document ? 'updated' : 'created';
-    this.document = { id: '1', sourceType: document.sourceType, sourceReference: document.sourceReference, version: document.version, contentHash: hash };
+    this.document = { id: '1', sourceType: document.sourceType, sourceReference: document.sourceReference, version: document.version, contentHash: hash, ingestionFingerprint: document.metadata?.ingestionFingerprint };
     this.chunks = [...chunks];
     return action;
   }
@@ -52,7 +52,7 @@ describe('RAG text processing', () => {
     const text = Array.from({ length: 20 }, (_, i) => `Section ${i}\n${'word '.repeat(180)}`).join('\n\n');
     const first = chunkContent(text); const second = chunkContent(text);
     assert.ok(first.length > 1); assert.deepEqual(first, second);
-    assert.ok(first.every((chunk) => chunk.tokenCount <= 1100));
+    assert.ok(first.every((chunk) => chunk.tokenCount <= 1000));
   });
   test('content hash is deterministic and normalization-aware', () => {
     assert.equal(contentHash(normalizeContent('a\r\n b')), contentHash(normalizeContent('a\n b')));
@@ -72,11 +72,11 @@ describe('RAG ingestion behavior', () => {
     assert.equal(result.documents.length, 2); assert.equal(repo.findCalls, 0); assert.equal(repo.replaceCalls, 0); assert.equal(embeddings.calls, 0);
     assert.deepEqual(result.documents.map((d) => d.chunks), [1, 1]);
   });
-  test('unchanged document is skipped without embedding', async () => {
+  test('legacy document is reindexed to establish configuration identity', async () => {
     const repo = new FakeRepository(); const normalized = normalizeContent(source().content);
     repo.document = { id: '1', sourceType: 'approved-test', sourceReference: 'test/reference', version: '1', contentHash: contentHash(normalized) };
     const embeddings = new FakeEmbeddings(); const result = await new RagIngestionService(repo, embeddings, 3).ingest([source()], { dryRun: false });
-    assert.equal(result.documentsSkipped, 1); assert.equal(embeddings.calls, 0); assert.equal(repo.replaceCalls, 0);
+    assert.equal(result.documentsUpdated, 1); assert.equal(embeddings.calls, 1); assert.equal(repo.replaceCalls, 1);
   });
   test('changed document reindexes and repeated ingestion creates no duplicate chunks', async () => {
     const repo = new FakeRepository(); const embeddings = new FakeEmbeddings(); const service = new RagIngestionService(repo, embeddings, 3);
@@ -88,7 +88,7 @@ describe('RAG ingestion behavior', () => {
   test('mock embedding service is accepted and source metadata remains minimized', async () => {
     const repo = new FakeRepository(); const input = { ...source(), workerName: 'must-not-persist', metadata: { language: 'en' } } as RagSourceDocument;
     const result = await new RagIngestionService(repo, new FakeEmbeddings(), 3).ingest([input], { dryRun: false });
-    assert.equal(result.embeddingsCreated, 1); assert.deepEqual(repo.receivedDocument?.metadata, { language: 'en' });
+    assert.equal(result.embeddingsCreated, 1); assert.equal(repo.receivedDocument?.metadata?.language, 'en'); assert.match(repo.receivedDocument?.metadata?.ingestionFingerprint ?? '', /^[a-f0-9]{64}$/);
   });
   test('invalid embedding dimension prevents persistence', async () => {
     const repo = new FakeRepository(); const result = await new RagIngestionService(repo, new FakeEmbeddings(2), 3).ingest([source()], { dryRun: false });
