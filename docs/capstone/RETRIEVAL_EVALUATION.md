@@ -1,5 +1,7 @@
 # Retrieval evaluation — Sprint F
 
+Sprint F.1 update: the four approved sources have now been reingested and validated against PostgreSQL. See [approved corpus validation](APPROVED_CORPUS_VALIDATION.md) for real-corpus metrics, idempotence, external calls and remaining limits. The Sprint F observations below are historical.
+
 Run from `backend`: `npm run eval:retrieval`. Default evaluation blocks sockets/fetch and
 requires no database, provider key or internet. It writes an immutable timestamped JSON
 artifact with source/commit/dataset/corpus/config fingerprints. `npm run eval:offline`

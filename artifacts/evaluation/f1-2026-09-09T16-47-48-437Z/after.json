@@ -1,0 +1,326 @@
+{
+  "snapshot": {
+    "documents": [
+      {
+        "id": "10",
+        "source_type": "official_guidance_summary",
+        "source_reference": "yvy-kb-emergency-procedures-hse",
+        "version": "YvY-curated-summary-v1.0",
+        "content_hash": "29d977a65dcf01089b2946087230e8dfb5f0ac82706863c9ec69cff42ab3704a",
+        "metadata": {
+          "language": "en",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "accessedOn": "2026-08-08",
+          "sourcePath": "04_emergency_procedures_hse.md",
+          "sensitivity": "public-reference",
+          "jurisdiction": "United Kingdom",
+          "citationLabel": "HSE - Emergency Procedures",
+          "contentStatus": "curated_summary_not_official_text",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "ingestionFingerprint": "5006bb91cd20be37a70f8f13756cdb549fd2a0c73784131fe5bdf5054f9c1cc0"
+        }
+      },
+      {
+        "id": "7",
+        "source_type": "regulatory_reference_summary",
+        "source_reference": "yvy-kb-loto-osha-1910-147",
+        "version": "YvY-curated-summary-v1.0",
+        "content_hash": "0a96b61f4551459cc4a9527c6eca71f618e1259a6c8af4d460c9f796009c088c",
+        "metadata": {
+          "language": "en",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "accessedOn": "2026-08-08",
+          "sourcePath": "01_loto_osha.md",
+          "sensitivity": "public-reference",
+          "jurisdiction": "United States - Federal General Industry",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "contentStatus": "curated_summary_not_official_text",
+          "secondarySourceUrl": "https://www.osha.gov/etools/lockout-tagout/hot-topics/energy-control-program/training-retraining",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "ingestionFingerprint": "21b897198765a5609525e25d15b558b272045bd48d5a109caa7bd629bcefa325"
+        }
+      },
+      {
+        "id": "8",
+        "source_type": "official_guidance_summary",
+        "source_reference": "yvy-kb-ptw-hse-hsg250",
+        "version": "YvY-curated-summary-v1.0",
+        "content_hash": "a0f9ed68042c5bc814ef483a5cc4039fb6680e73fb86068a353981c8e9217fdf",
+        "metadata": {
+          "language": "en",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "accessedOn": "2026-08-08",
+          "sourcePath": "02_permit_to_work_hse.md",
+          "sensitivity": "public-reference",
+          "jurisdiction": "United Kingdom",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "contentStatus": "curated_summary_not_official_text",
+          "secondarySourceUrl": "https://www.hse.gov.uk/coshh/basics/permits.htm",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "ingestionFingerprint": "3d17cbbfc3a445b7dfb3f28bb790af8badc576970b0efb1a8e3f6649dad096ec"
+        }
+      },
+      {
+        "id": "9",
+        "source_type": "official_guidance_summary",
+        "source_reference": "yvy-kb-risk-assessment-hse",
+        "version": "YvY-curated-summary-v1.0",
+        "content_hash": "0bc8bd1d43c884065b77293f406ff8fbf7065e1bfad78a5c67fb20176bcf2f44",
+        "metadata": {
+          "language": "en",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "accessedOn": "2026-08-08",
+          "sourcePath": "03_risk_assessment_hse.md",
+          "sensitivity": "public-reference",
+          "jurisdiction": "United Kingdom",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "contentStatus": "curated_summary_not_official_text",
+          "secondarySourceUrl": "https://www.hse.gov.uk/simple-health-safety/risk/steps-needed-to-manage-risk.htm",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "ingestionFingerprint": "de5109edb819df6813ce1aa89f21bd61b4d51f2e5bc0cf2abe9a5b230215c0dd"
+        }
+      }
+    ],
+    "chunks": [
+      {
+        "id": "62",
+        "document_id": "10",
+        "chunk_index": 0,
+        "token_count": 538,
+        "metadata": {
+          "endOffset": 2151,
+          "startOffset": 0,
+          "stableChunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "chunkingVersion": "windows-v2",
+          "tokenCountMethod": "estimated:ceil(characters/4)"
+        },
+        "dimensions": 1536,
+        "contentHash": "29d977a65dcf01089b2946087230e8dfb5f0ac82706863c9ec69cff42ab3704a"
+      },
+      {
+        "id": "59",
+        "document_id": "7",
+        "chunk_index": 0,
+        "token_count": 648,
+        "metadata": {
+          "endOffset": 2591,
+          "startOffset": 0,
+          "stableChunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "chunkingVersion": "windows-v2",
+          "tokenCountMethod": "estimated:ceil(characters/4)"
+        },
+        "dimensions": 1536,
+        "contentHash": "0a96b61f4551459cc4a9527c6eca71f618e1259a6c8af4d460c9f796009c088c"
+      },
+      {
+        "id": "60",
+        "document_id": "8",
+        "chunk_index": 0,
+        "token_count": 572,
+        "metadata": {
+          "endOffset": 2287,
+          "startOffset": 0,
+          "stableChunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "chunkingVersion": "windows-v2",
+          "tokenCountMethod": "estimated:ceil(characters/4)"
+        },
+        "dimensions": 1536,
+        "contentHash": "a0f9ed68042c5bc814ef483a5cc4039fb6680e73fb86068a353981c8e9217fdf"
+      },
+      {
+        "id": "61",
+        "document_id": "9",
+        "chunk_index": 0,
+        "token_count": 600,
+        "metadata": {
+          "endOffset": 2399,
+          "startOffset": 0,
+          "stableChunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "chunkingVersion": "windows-v2",
+          "tokenCountMethod": "estimated:ceil(characters/4)"
+        },
+        "dimensions": 1536,
+        "contentHash": "0bc8bd1d43c884065b77293f406ff8fbf7065e1bfad78a5c67fb20176bcf2f44"
+      }
+    ],
+    "documentCount": 4,
+    "chunkCount": 4,
+    "fingerprint": "1e1b1c1c1e9273cb70814da4472917b532904aca1b66de295aa1344e88e4745a"
+  },
+  "validation": {
+    "passed": true,
+    "corpusFingerprint": "cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1",
+    "embeddingConfigFingerprint": "8409d0f783f63f92d3d02fe8da09b4350ed2ce50a0f13532e7892a217cade5e2",
+    "stableIds": [
+      "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+      "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+      "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+      "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253"
+    ],
+    "documentCount": 4,
+    "chunkCount": 4
+  },
+  "secondIngestion": {
+    "corpus": {
+      "version": "corpus-v1",
+      "documentCount": 4,
+      "documents": [
+        {
+          "identity": [
+            "official_guidance_summary",
+            "yvy-kb-emergency-procedures-hse"
+          ],
+          "version": "YvY-curated-summary-v1.0",
+          "hash": "29d977a65dcf01089b2946087230e8dfb5f0ac82706863c9ec69cff42ab3704a",
+          "metadata": {
+            "language": "en",
+            "citationLabel": "HSE - Emergency Procedures",
+            "sourcePath": "04_emergency_procedures_hse.md",
+            "sourceOrganization": "UK Health and Safety Executive (HSE)",
+            "jurisdiction": "United Kingdom",
+            "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+            "contentStatus": "curated_summary_not_official_text",
+            "accessedOn": "2026-08-08"
+          }
+        },
+        {
+          "identity": [
+            "official_guidance_summary",
+            "yvy-kb-ptw-hse-hsg250"
+          ],
+          "version": "YvY-curated-summary-v1.0",
+          "hash": "a0f9ed68042c5bc814ef483a5cc4039fb6680e73fb86068a353981c8e9217fdf",
+          "metadata": {
+            "language": "en",
+            "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+            "sourcePath": "02_permit_to_work_hse.md",
+            "sourceOrganization": "UK Health and Safety Executive (HSE)",
+            "jurisdiction": "United Kingdom",
+            "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+            "secondarySourceUrl": "https://www.hse.gov.uk/coshh/basics/permits.htm",
+            "contentStatus": "curated_summary_not_official_text",
+            "accessedOn": "2026-08-08"
+          }
+        },
+        {
+          "identity": [
+            "official_guidance_summary",
+            "yvy-kb-risk-assessment-hse"
+          ],
+          "version": "YvY-curated-summary-v1.0",
+          "hash": "0bc8bd1d43c884065b77293f406ff8fbf7065e1bfad78a5c67fb20176bcf2f44",
+          "metadata": {
+            "language": "en",
+            "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+            "sourcePath": "03_risk_assessment_hse.md",
+            "sourceOrganization": "UK Health and Safety Executive (HSE)",
+            "jurisdiction": "United Kingdom",
+            "sourceUrl": "https://www.hse.gov.uk/risk/",
+            "secondarySourceUrl": "https://www.hse.gov.uk/simple-health-safety/risk/steps-needed-to-manage-risk.htm",
+            "contentStatus": "curated_summary_not_official_text",
+            "accessedOn": "2026-08-08"
+          }
+        },
+        {
+          "identity": [
+            "regulatory_reference_summary",
+            "yvy-kb-loto-osha-1910-147"
+          ],
+          "version": "YvY-curated-summary-v1.0",
+          "hash": "0a96b61f4551459cc4a9527c6eca71f618e1259a6c8af4d460c9f796009c088c",
+          "metadata": {
+            "language": "en",
+            "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+            "sourcePath": "01_loto_osha.md",
+            "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+            "jurisdiction": "United States - Federal General Industry",
+            "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+            "secondarySourceUrl": "https://www.osha.gov/etools/lockout-tagout/hot-topics/energy-control-program/training-retraining",
+            "contentStatus": "curated_summary_not_official_text",
+            "accessedOn": "2026-08-08"
+          }
+        }
+      ],
+      "config": {
+        "chunking": {
+          "targetTokens": 750,
+          "maxTokens": 1000,
+          "overlapTokens": 100
+        },
+        "embedding": {
+          "provider": "openai",
+          "model": "text-embedding-3-small",
+          "dimensions": 1536
+        },
+        "preprocessing": "normalize-lines-v1/windows-v2/utf16-estimate-v1"
+      },
+      "fingerprint": "cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1"
+    },
+    "dryRun": false,
+    "sourcesExamined": 4,
+    "sourcesExcluded": 18,
+    "documentsCreated": 0,
+    "documentsUpdated": 0,
+    "documentsSkipped": 4,
+    "chunksCreated": 0,
+    "embeddingsCreated": 0,
+    "warnings": [],
+    "errors": [],
+    "documents": [
+      {
+        "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+        "module": "LOTO",
+        "sourceReference": "yvy-kb-loto-osha-1910-147",
+        "sensitivity": "public-reference",
+        "normalizedCharacters": 2591,
+        "chunks": 1,
+        "contentHash": "0a96b61f4551459cc4a9527c6eca71f618e1259a6c8af4d460c9f796009c088c",
+        "version": "YvY-curated-summary-v1.0",
+        "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+        "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+        "jurisdiction": "United States - Federal General Industry"
+      },
+      {
+        "title": "Permit-to-Work Systems - Curated Reference Summary",
+        "module": "Permit to Work",
+        "sourceReference": "yvy-kb-ptw-hse-hsg250",
+        "sensitivity": "public-reference",
+        "normalizedCharacters": 2287,
+        "chunks": 1,
+        "contentHash": "a0f9ed68042c5bc814ef483a5cc4039fb6680e73fb86068a353981c8e9217fdf",
+        "version": "YvY-curated-summary-v1.0",
+        "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+        "sourceOrganization": "UK Health and Safety Executive (HSE)",
+        "jurisdiction": "United Kingdom"
+      },
+      {
+        "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+        "module": "HIRA / Risk Assessment",
+        "sourceReference": "yvy-kb-risk-assessment-hse",
+        "sensitivity": "public-reference",
+        "normalizedCharacters": 2399,
+        "chunks": 1,
+        "contentHash": "0bc8bd1d43c884065b77293f406ff8fbf7065e1bfad78a5c67fb20176bcf2f44",
+        "version": "YvY-curated-summary-v1.0",
+        "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+        "sourceOrganization": "UK Health and Safety Executive (HSE)",
+        "jurisdiction": "United Kingdom"
+      },
+      {
+        "title": "Emergency Procedures - Curated Reference Summary",
+        "module": "Emergency Preparedness and Response",
+        "sourceReference": "yvy-kb-emergency-procedures-hse",
+        "sensitivity": "public-reference",
+        "normalizedCharacters": 2151,
+        "chunks": 1,
+        "contentHash": "29d977a65dcf01089b2946087230e8dfb5f0ac82706863c9ec69cff42ab3704a",
+        "version": "YvY-curated-summary-v1.0",
+        "citationLabel": "HSE - Emergency Procedures",
+        "sourceOrganization": "UK Health and Safety Executive (HSE)",
+        "jurisdiction": "United Kingdom"
+      }
+    ]
+  },
+  "idempotent": true,
+  "extraEmbeddingCallsOnRepeat": 0
+}

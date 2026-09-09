@@ -1,0 +1,25 @@
+{
+  "agentArtifact": "2026-09-09T16-56-42-761Z-14e3c4756eb6-offline.json",
+  "isolatedRetrieval": "retrieval-2026-09-09T16-56-49-420Z.json",
+  "integratedRetrieval": "retrieval-2026-09-09T16-56-36-739Z.json",
+  "replayedRetrieval": "retrieval-2026-09-09T16-58-03-948Z.json",
+  "sourceFingerprintsMatched": [
+    "datasetFingerprint",
+    "sourceFingerprint",
+    "agentPatternVersion",
+    "promptVersion",
+    "corpusFingerprint",
+    "retrievalConfigVersion",
+    "toolContractVersion",
+    "verificationFingerprint",
+    "intentFingerprint",
+    "approvalPolicyFingerprint",
+    "configurationFingerprint"
+  ],
+  "queryAndDocumentVectorsMatched": true,
+  "retrievalObservationsMatched": true,
+  "agentPassed": 44,
+  "intentPassed": 134,
+  "additionalHttpCalls": 0,
+  "patchSha256": "95ce8de8b0f959744735e4945312c11af8a10b56b213e7085696525935364604"
+}

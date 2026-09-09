@@ -1,0 +1,30 @@
+{
+  "calls": [
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    },
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    },
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    },
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    },
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    }
+  ],
+  "total": 5
+}

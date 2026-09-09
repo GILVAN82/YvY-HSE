@@ -1,0 +1,361 @@
+diff --git a/backend/package.json b/backend/package.json
+index 4ebe9a4..6cc804c 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -10,6 +10,7 @@
+     "start": "node dist/index.js",
+     "test": "node --test --require ts-node/register/transpile-only \"src/**/*.test.ts\"",
+     "eval:retrieval": "node --require ts-node/register/transpile-only src/ai/rag/retrieval.evaluation.cli.ts",
++    "rag:approved:validate": "node --require ts-node/register/transpile-only src/ai/rag/approved-corpus.cli.ts",
+     "rag:ingest": "node --require ts-node/register/transpile-only src/ai/rag/ingest.cli.ts",
+     "rag:retrieve:smoke": "node --require ts-node/register/transpile-only src/ai/rag/retrieve.cli.ts",
+     "state:smoke": "node --require ts-node/register/transpile-only src/ai/graph/threadState.smoke.cli.ts",
+diff --git a/backend/src/ai/rag/__tests__/approved-corpus-validation.test.ts b/backend/src/ai/rag/__tests__/approved-corpus-validation.test.ts
+new file mode 100644
+index 0000000..157f400
+--- /dev/null
++++ b/backend/src/ai/rag/__tests__/approved-corpus-validation.test.ts
+@@ -0,0 +1,58 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { loadApprovedSources } from '../sourceRegistry';
++import { APPROVED_CORPUS_CASES } from '../approved-corpus.dataset';
++import { compareCorpus, validateIndexedCorpus, publicSnapshot, retrievalMetrics, type CorpusSnapshot } from '../approved-corpus.validation';
++import { RagIngestionService } from '../ingestion.service';
++import { DEFAULT_CHUNK_OPTIONS } from '../textProcessing';
++import { PREPROCESSING_VERSION, type CorpusConfig } from '../identity';
++import type { RagRepository } from '../rag.repository';
++import { withoutNetwork } from '../../evaluation/offline-network';
++
++test('approved files traverse canonical ingestion twice without duplicate identities or further embeddings', async () => {
++  await withoutNetwork(async () => {
++    const sources = await loadApprovedSources(), snapshot: CorpusSnapshot = { documents: [], chunks: [] };
++    const config: CorpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding: { provider: 'mock', model: 'hermetic', dimensions: 2 }, preprocessing: PREPROCESSING_VERSION };
++    const repo: RagRepository = {
++      findDocument: async (type, reference) => {
++        const d = snapshot.documents.find(d => d.source_type === type && d.source_reference === reference);
++        return d ? { id: d.id, sourceType: type, sourceReference: reference, version: d.version, contentHash: d.content_hash, ingestionFingerprint: d.metadata.ingestionFingerprint } : null;
++      },
++      replaceDocument: async (s, hash, chunks) => {
++        assert.ok(!snapshot.documents.some(d => d.source_reference === s.sourceReference), 'Second ingestion must skip');
++        const id = String(snapshot.documents.length + 1);
++        snapshot.documents.push({ id, source_type: s.sourceType, source_reference: s.sourceReference, version: s.version, content_hash: hash, metadata: { ...s.metadata } });
++        snapshot.chunks.push(...chunks.map(c => ({ id: `${id}-${c.chunkIndex}`, document_id: id, chunk_index: c.chunkIndex, content: c.content, token_count: c.tokenCount, metadata: { ...c.metadata }, dimensions: 2 })));
++        return 'created';
++      }, counts: async () => ({ documents: snapshot.documents.length, chunks: snapshot.chunks.length }),
++    };
++    let calls = 0;
++    const service = new RagIngestionService(repo, { embedMany: async texts => { calls++; return texts.map(() => [0.5, 0.5]); } }, 2, config);
++    assert.equal((await service.ingest(sources, { dryRun: false })).errors.length, 0);
++    const first = validateIndexedCorpus(sources, snapshot, config), original = publicSnapshot(snapshot);
++    const second = await service.ingest(sources, { dryRun: false });
++    assert.equal(second.documentsSkipped, 4); assert.equal(calls, 4);
++    assert.deepEqual(validateIndexedCorpus(sources, snapshot, config), first); assert.deepEqual(publicSnapshot(snapshot), original);
++    assert.ok(compareCorpus(sources, snapshot).every(c => c.status === 'MATCH'));
++    snapshot.chunks[0].metadata.stableChunkId = 'tampered';
++    assert.throws(() => validateIndexedCorpus(sources, snapshot, config));
++  });
++});
++
++test('comparison distinguishes missing, unexpected, content and version changes', async () => {
++  const sources = await loadApprovedSources();
++  const snapshot: CorpusSnapshot = { documents: [
++    { id: '1', source_type: sources[0].sourceType, source_reference: sources[0].sourceReference, version: sources[0].version, content_hash: 'old', metadata: {} },
++    { id: '2', source_type: sources[1].sourceType, source_reference: sources[1].sourceReference, version: 'old', content_hash: 'old', metadata: {} },
++    { id: '3', source_type: 'unexpected', source_reference: 'unexpected', version: '1', content_hash: 'old', metadata: {} },
++  ], chunks: [] };
++  assert.deepEqual(compareCorpus(sources, snapshot).map(c => c.status), ['CONTENT_CHANGED', 'VERSION_CHANGED', 'MISSING', 'MISSING', 'UNEXPECTED']);
++});
++
++test('multi-source recall does not pass for a single relevant source; negative retrieval is counted', () => {
++  const multi = APPROVED_CORPUS_CASES.find(c => c.id === 'distinguish-controls')!;
++  const negative = APPROVED_CORPUS_CASES.find(c => c.id === 'no-evidence')!;
++  const metrics = retrievalMetrics([{ labels: multi, sources: [multi.requiredSources[0]] }, { labels: negative, sources: [multi.requiredSources[0]] }]);
++  assert.equal(metrics.requiredSourceRecall, 0.5); assert.equal(metrics.falseRetrievalsOnNegativeQueries, 1);
++  assert.equal(metrics.irrelevantRetrievalRate, 0.5);
++});
+diff --git a/backend/src/ai/rag/approved-corpus.cli.ts b/backend/src/ai/rag/approved-corpus.cli.ts
+new file mode 100644
+index 0000000..f336522
+--- /dev/null
++++ b/backend/src/ai/rag/approved-corpus.cli.ts
+@@ -0,0 +1,173 @@
++import '../../config/env.bootstrap';
++import assert from 'node:assert/strict';
++import { Pool } from 'pg';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import { execFileSync } from 'node:child_process';
++import { loadApprovedSources, RAG_SOURCE_REGISTRY } from './sourceRegistry';
++import { DEFAULT_CHUNK_OPTIONS } from './textProcessing';
++import { readEmbeddingConfig } from '../embedding.config';
++import { corpusFingerprint, fingerprint, PREPROCESSING_VERSION, type CorpusConfig } from './identity';
++import { OpenAIEmbeddingService, type EmbeddingService } from './embedding.service';
++import { RagIngestionService } from './ingestion.service';
++import { PostgresRagRepository } from './rag.repository';
++import { PostgresRagRetrievalRepository } from './retrieval.repository';
++import { RagRetrievalService } from './retrieval.service';
++import { readRagRetrievalConfig, retrievalConfigFingerprint } from './retrieval.config';
++import { APPROVED_CORPUS_CASES } from './approved-corpus.dataset';
++import { compareCorpus, publicSnapshot, validateIndexedCorpus, retrievalMetrics, type CorpusSnapshot } from './approved-corpus.validation';
++import { EmbeddingProviderError } from './errors';
++import { provenance } from '../evaluation/evaluation.provenance';
++import { createMockModel } from '../evaluation/simulated-model';
++import { runHseAgent } from '../graph/hseAgent.runner';
++import { createHseTools } from '../tools';
++
++const root = path.resolve(__dirname, '../../../..');
++const argument = (name: string) => { const i = process.argv.indexOf(name); return i < 0 ? undefined : process.argv[i + 1]; };
++const write = (file: string, data: unknown) => fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n', { flag: 'wx' });
++async function snapshot(db: Pool): Promise<CorpusSnapshot> {
++  const client = await db.connect();
++  try {
++    await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
++    const documents = await client.query('SELECT id::text,source_type,source_reference,version,content_hash,metadata FROM rag_documents ORDER BY source_reference,id');
++    const chunks = await client.query('SELECT id::text,document_id::text,chunk_index,content,token_count,metadata,vector_dims(embedding) dimensions,embedding::text FROM rag_chunks ORDER BY document_id,chunk_index');
++    await client.query('COMMIT'); return { documents: documents.rows, chunks: chunks.rows };
++  } finally { client.release(); }
++}
++async function main() {
++  const sources = await loadApprovedSources(); assert.equal(sources.length, 4);
++  const embedding = { provider: 'openai', ...readEmbeddingConfig() };
++  const config: CorpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding, preprocessing: PREPROCESSING_VERSION };
++  const manifest = corpusFingerprint(sources, config), retrievalConfig = readRagRetrievalConfig();
++  const db = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000 });
++  const dir = argument('--run-dir') ?? path.join(root, 'artifacts/evaluation', `f1-${new Date().toISOString().replace(/[:.]/g, '-')}`);
++  const externalCalls: Array<{ host: string; path: string; status: number | 'TRANSPORT_ERROR' }> = [];
++  const nativeFetch = globalThis.fetch;
++  try {
++    if (!process.argv.includes('--confirm-live') && !process.argv.includes('--evaluate-cached')) {
++      fs.mkdirSync(dir, { recursive: true });
++      const before = await snapshot(db), comparisons = compareCorpus(sources, before);
++      assert.ok(comparisons.every(c => c.status !== 'UNEXPECTED' && c.databaseIds.length <= 1));
++      const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'yvy-f1-rag-backup-'));
++      write(path.join(backupDir, 'rag-before.json'), before);
++      const dryRun = await new RagIngestionService(new PostgresRagRepository(db), { embedMany: async () => { throw new Error('Dry-run must not embed'); } }, embedding.dimensions, config).ingest(sources, { dryRun: true });
++      assert.equal(dryRun.errors.length, 0);
++      const audit = { timestamp: new Date().toISOString(), gitCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
++        approved: RAG_SOURCE_REGISTRY, manifest, embeddingConfigFingerprint: fingerprint(embedding),
++        retrievalConfig, retrievalConfigFingerprint: retrievalConfigFingerprint(retrievalConfig),
++        dataset: APPROVED_CORPUS_CASES, datasetFingerprint: fingerprint(APPROVED_CORPUS_CASES),
++        before: publicSnapshot(before), comparisons, backupDir, dryRun };
++      write(path.join(dir, 'before.json'), audit);
++      console.log(JSON.stringify({ runDir: dir, comparisons, documents: before.documents.length, chunks: before.chunks.length, embedding, keyConfigured: !!process.env.OPENAI_API_KEY, backupDir }, null, 2));
++      return;
++    }
++    assert.ok(argument('--run-dir'), 'An audited run directory is required');
++    const audit = JSON.parse(fs.readFileSync(path.join(dir, 'before.json'), 'utf8'));
++    assert.equal(audit.manifest.fingerprint, manifest.fingerprint, 'Approved corpus/config changed since audit');
++    assert.equal(audit.datasetFingerprint, fingerprint(APPROVED_CORPUS_CASES), 'Labels changed since audit');
++    const retainedCache = path.join(dir, 'real-embedding-cache.json');
++    const cacheFile = fs.existsSync(retainedCache) ? retainedCache : path.join(audit.backupDir, 'query-embeddings.json');
++    const provider = new OpenAIEmbeddingService(embedding);
++    if (process.argv.includes('--evaluate-cached')) globalThis.fetch = async () => { throw new Error('HTTP forbidden during cached evaluation'); };
++    if (process.argv.includes('--confirm-live')) {
++      assert.ok(!fs.existsSync(path.join(dir, 'ingestion.json')), 'Ingestion already recorded; use --evaluate-cached');
++      assert.equal(publicSnapshot(await snapshot(db)).fingerprint, audit.before.fingerprint, 'Database changed since audit');
++      globalThis.fetch = async (input, init) => {
++        const url = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url);
++        try { const response = await nativeFetch(input, init); externalCalls.push({ host: url.host, path: url.pathname, status: response.status }); return response; }
++        catch (error) { externalCalls.push({ host: url.host, path: url.pathname, status: 'TRANSPORT_ERROR' }); throw error; }
++      };
++      let embeddedTexts = 0;
++      const counted: EmbeddingService = { embedMany: async texts => { embeddedTexts += texts.length; return provider.embedMany(texts); } };
++      const ingestion = new RagIngestionService(new PostgresRagRepository(db), counted, embedding.dimensions, config);
++      const first = await ingestion.ingest(sources, { dryRun: false });
++      const sanitized = { ...first, errors: first.errors.map(e => ({ sourceReference: e.sourceReference, message: 'INGESTION_FAILED' })) };
++      write(path.join(dir, 'ingestion.json'), { result: sanitized, embeddedTexts });
++      assert.equal(first.errors.length, 0, 'Ingestion failed; inspect safe audit and backup');
++      const after = await snapshot(db), validation = validateIndexedCorpus(sources, after, config);
++      const callsBeforeRepeat = externalCalls.length, textsBeforeRepeat = embeddedTexts;
++      const second = await ingestion.ingest(sources, { dryRun: false });
++      assert.equal(second.errors.length, 0); assert.equal(second.documentsSkipped, 4);
++      const repeated = await snapshot(db), secondValidation = validateIndexedCorpus(sources, repeated, config);
++      assert.deepEqual(secondValidation, validation); assert.deepEqual(publicSnapshot(repeated), publicSnapshot(after));
++      assert.equal(externalCalls.length, callsBeforeRepeat); assert.equal(embeddedTexts, textsBeforeRepeat);
++      write(path.join(dir, 'after.json'), { snapshot: publicSnapshot(after), validation, secondIngestion: second, idempotent: true, extraEmbeddingCallsOnRepeat: 0 });
++      // Embed each distinct original query once; reuse exact vectors across modes and threshold probes.
++      const queries = APPROVED_CORPUS_CASES.map(c => c.query);
++      const vectors = await provider.embedMany(queries);
++      write(cacheFile, { datasetFingerprint: fingerprint(APPROVED_CORPUS_CASES), corpusFingerprint: manifest.fingerprint,
++        embeddingConfigFingerprint: fingerprint(embedding), queries, vectors });
++    }
++    const indexedSnapshot = await snapshot(db);
++    const indexed = validateIndexedCorpus(sources, indexedSnapshot, config);
++    const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
++    assert.equal(cache.datasetFingerprint, fingerprint(APPROVED_CORPUS_CASES)); assert.equal(cache.corpusFingerprint, manifest.fingerprint);
++    assert.equal(cache.embeddingConfigFingerprint, fingerprint(embedding));
++    if (cache.documents) for (const document of cache.documents) {
++      const stored = indexedSnapshot.chunks.find(c => c.metadata.stableChunkId === document.chunkId);
++      assert.ok(stored); assert.equal(stored.content, document.content);
++      assert.deepEqual(JSON.parse(stored.embedding!), document.embedding, 'Stored vectors changed since retained baseline');
++    }
++    const cached: EmbeddingService = { embedMany: async texts => texts.map(query => { const i = cache.queries.indexOf(query); assert.ok(i >= 0); return cache.vectors[i]; }) };
++    const repository = new PostgresRagRetrievalRepository(db, embedding.dimensions);
++    const evaluations = [];
++    for (const threshold of [0.35, retrievalConfig.minSimilarity, 0.55].filter((v, i, all) => all.indexOf(v) === i)) {
++      for (const fusion of ['SEMANTIC_ONLY', 'RRF'] as const) {
++        const modeConfig = { ...retrievalConfig, minSimilarity: threshold, fusion };
++        const retriever = new RagRetrievalService(cached, repository, modeConfig, () => {});
++        const cases = [];
++        for (const labels of APPROVED_CORPUS_CASES) {
++          const result = await retriever.retrieve(labels.query);
++          for (const hit of result.evidence) {
++            const source = sources.find(s => s.sourceReference === hit.sourceId); assert.ok(source);
++            assert.equal(hit.version, source.version); assert.equal(hit.jurisdiction, source.metadata?.jurisdiction);
++            assert.equal(hit.citationLabel, source.metadata?.citationLabel); assert.equal(hit.sourceUrl, source.metadata?.sourceUrl);
++            assert.ok(indexed.stableIds.includes(hit.chunkId));
++          }
++          cases.push({ labels, sources: result.evidence.map(e => e.sourceId), status: result.status, diagnostics: result.diagnostics,
++            evidence: result.evidence.map(({ content, ...hit }) => hit) });
++        }
++        evaluations.push({ fusion, threshold, configFingerprint: retrievalConfigFingerprint(modeConfig), cases, metrics: retrievalMetrics(cases) });
++      }
++    }
++    const unavailable: EmbeddingService = { embedMany: async () => { throw new EmbeddingProviderError('Simulated outage; no provider request'); } };
++    const fallback = await new RagRetrievalService(unavailable, repository, retrievalConfig, () => {}).retrieve('LOTO');
++    assert.equal(fallback.diagnostics?.retrievalMode, 'LEXICAL_FALLBACK'); assert.ok(fallback.evidence.some(e => e.sourceId === 'yvy-kb-loto-osha-1910-147'));
++    const empty = await new RagRetrievalService(cached, repository, retrievalConfig, () => {}).retrieve(APPROVED_CORPUS_CASES.find(c => c.id === 'no-evidence')!.query);
++    assert.equal(empty.status, 'NO_RELEVANT_EVIDENCE');
++    const baselineHybrid = evaluations.find(e => e.threshold === retrievalConfig.minSimilarity && e.fusion === 'RRF')!;
++    for (const source of sources) assert.ok(baselineHybrid.cases.some(c => c.evidence.some(e => e.sourceId === source.sourceReference)), 'Each approved source needs a citation trace case');
++    const inspectorModes = [];
++    for (const scenario of [
++      { name: 'HYBRID', service: new RagRetrievalService(cached, repository, retrievalConfig, () => {}), query: APPROVED_CORPUS_CASES[0].query },
++      { name: 'SEMANTIC_ONLY', service: new RagRetrievalService(cached, repository, { ...retrievalConfig, fusion: 'SEMANTIC_ONLY' }, () => {}), query: APPROVED_CORPUS_CASES[0].query },
++      { name: 'LEXICAL_FALLBACK', service: new RagRetrievalService(unavailable, repository, retrievalConfig, () => {}), query: 'LOTO' },
++      { name: 'NO_RELEVANT_EVIDENCE', service: new RagRetrievalService(cached, repository, retrievalConfig, () => {}), query: APPROVED_CORPUS_CASES.find(c => c.id === 'no-evidence')!.query },
++    ]) {
++      const result = await runHseAgent({ message: 'Explain LOTO reference guidance.',
++        model: createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: JSON.stringify({ query: scenario.query }) } }, { text: 'I cannot confirm a site-specific safety decision.' }]),
++        tools: createHseTools({ query: async () => { throw new Error('Operational SQL forbidden in corpus validation'); } } as any, async () => ({}), scenario.service), emit: () => {} });
++      const trace = result.executionTrace?.rag;
++      assert.ok(trace?.diagnostics);
++      assert.equal(scenario.name === 'NO_RELEVANT_EVIDENCE' ? trace.status : trace.diagnostics.retrievalMode, scenario.name);
++      inspectorModes.push({ scenario: scenario.name, trace, generation: 'SCRIPTED MODEL; NOT ANSWER QUALITY EVALUATION' });
++    }
++    const { gitCommit, workingTreeDirty, sourceFingerprint } = provenance(APPROVED_CORPUS_CASES, 'SIMULATED', null, null, 1);
++    const report = { timestamp: new Date().toISOString(), gitCommit, workingTreeDirty, sourceFingerprint, datasetVersion: 1, generationModel: 'SCRIPTED ONLY FOR INSPECTOR CHECKS', executionProfile: argument('--profile') ?? 'INTEGRATED_WORKSPACE',
++      corpusMode: 'REAL APPROVED CORPUS', embeddingsMode: 'REAL EMBEDDINGS, REUSED QUERY VECTORS', lexicalMode: 'REAL POSTGRESQL',
++      corpusFingerprint: indexed.corpusFingerprint, embeddingConfig: embedding, embeddingConfigFingerprint: fingerprint(embedding),
++      queryEmbeddingFingerprint: fingerprint(cache.vectors),
++      indexedEmbeddingFingerprint: fingerprint(indexedSnapshot.chunks.map(c => ({ chunkId: c.metadata.stableChunkId, embedding: JSON.parse(c.embedding!) }))),
++      datasetFingerprint: fingerprint(APPROVED_CORPUS_CASES), sampleSize: APPROVED_CORPUS_CASES.length,
++      baselineConfig: retrievalConfig, evaluations, citationTracePassed: true,
++      failureBehavior: { embeddingOutage: 'INJECTED', fallback: fallback.diagnostics, noEvidenceStatus: empty.status, noEvidenceDiagnostics: empty.diagnostics, inspectorModes } };
++    write(path.join(dir, `retrieval-${new Date().toISOString().replace(/[:.]/g, '-')}.json`), report);
++    console.log(JSON.stringify({ validation: indexed, baseline: evaluations.filter(e => e.threshold === retrievalConfig.minSimilarity).map(e => ({ fusion: e.fusion, metrics: e.metrics })), failureBehavior: report.failureBehavior, externalCalls }, null, 2));
++  } finally {
++    globalThis.fetch = nativeFetch;
++    if (externalCalls.length) write(path.join(dir, `external-calls-${new Date().toISOString().replace(/[:.]/g, '-')}.json`), { calls: externalCalls, total: externalCalls.length });
++    await db.end();
++  }
++}
++if (require.main === module) main().catch(error => { console.error(JSON.stringify({ error: error?.name ?? 'UnknownError', message: 'Corpus validation stopped; inspect retained audit. No credentials are logged.' })); process.exitCode = 1; });
+diff --git a/backend/src/ai/rag/approved-corpus.dataset.ts b/backend/src/ai/rag/approved-corpus.dataset.ts
+new file mode 100644
+index 0000000..8e5bec4
+--- /dev/null
++++ b/backend/src/ai/rag/approved-corpus.dataset.ts
+@@ -0,0 +1,29 @@
++import type { RetrievalCase } from './retrieval.evaluation';
++const L = 'yvy-kb-loto-osha-1910-147', P = 'yvy-kb-ptw-hse-hsg250';
++const R = 'yvy-kb-risk-assessment-hse', E = 'yvy-kb-emergency-procedures-hse';
++const all = [L, P, R, E];
++type ApprovedCase = RetrievalCase & { language: 'en' | 'pt'; rationale: string };
++const item = (id: string, query: string, language: 'en' | 'pt', requiredSources: string[], rationale: string): ApprovedCase =>
++  ({ id, query, language, requiredSources, relevantSources: requiredSources,
++    irrelevantSources: all.filter(s => !requiredSources.includes(s)), rationale });
++
++/** Manual source-section labels frozen before any retrieval results were inspected.
++ * These judge which summaries directly answer the question, not generic topical overlap. */
++export const APPROVED_CORPUS_CASES: ApprovedCase[] = [
++  item('loto-code', 'What does OSHA 1910.147 say about hazardous energy control?', 'en', [L], 'LOTO: Purpose and scope, exact standard identifier.'),
++  item('loto-sequence', 'Explain preparation, shutdown, stored energy control and verification of isolation in LOTO.', 'en', [L], 'LOTO: Core control sequence.'),
++  item('loto-pt', 'Como controlar a energia residual e verificar o isolamento antes da manutenção?', 'pt', [L], 'LOTO: Core control sequence; Portuguese paraphrase.'),
++  item('ptw-code', 'Explain PTW under HSE HSG250.', 'en', [P], 'PTW: Purpose and handling notes, publication identifier.'),
++  item('ptw-lifecycle', 'Describe permit-to-work issue, acceptance, suspension, handover, hand-back and closure.', 'en', [P], 'PTW: Essential features.'),
++  item('ptw-pt', 'Uma permissão de trabalho torna a tarefa segura por si só?', 'pt', [P], 'PTW: Purpose explicitly rejects permit alone as safety guarantee.'),
++  item('risk-cycle', 'Explain the risk assessment cycle: identify hazards, assess risks, control, record and review.', 'en', [R], 'Risk Assessment: Risk-management cycle.'),
++  item('risk-controls', 'Why consider eliminating a hazard before substitution, reduced exposure and PPE?', 'en', [R], 'Risk Assessment: Assess and control.'),
++  item('risk-pt', 'Quando devemos revisar a avaliação de riscos após mudanças no trabalho ou quase acidentes?', 'pt', [R], 'Risk Assessment: Record and review.'),
++  item('emergency-planning', 'What should emergency arrangements cover for alarms, escape, assembly and emergency lighting?', 'en', [E], 'Emergency: Elements of an emergency arrangement.'),
++  item('emergency-recovery', 'Should normal work resume while serious danger remains after an emergency?', 'en', [E], 'Emergency: Recovery.'),
++  item('emergency-pt', 'Como planejar evacuação, alarmes e apoio a trabalhadores que precisam de assistência adicional?', 'pt', [E], 'Emergency: Elements and training needs.'),
++  item('no-evidence', 'Explain telescope calibration for detecting distant galaxies.', 'en', [], 'None of the four summaries discusses astronomy.'),
++  { ...item('jurisdiction-trap', 'Does OSHA 1910.147 establish the law for LOTO in Portugal?', 'en', [], 'US summary explicitly cannot establish Portuguese law.'), jurisdiction: 'Portugal' },
++  item('distinguish-controls', 'Distinguish hazardous energy isolation in LOTO from work authorization in PTW.', 'en', [L, P], 'LOTO core sequence versus PTW purpose and authorization.'),
++  item('integrated-risk-permit', 'How do hazard identification and risk assessment connect to permit-to-work precautions and authorization?', 'en', [R, P], 'Risk methodology plus PTW interface; both sources required.'),
++];
+diff --git a/backend/src/ai/rag/approved-corpus.validation.ts b/backend/src/ai/rag/approved-corpus.validation.ts
+new file mode 100644
+index 0000000..d853b1b
+--- /dev/null
++++ b/backend/src/ai/rag/approved-corpus.validation.ts
+@@ -0,0 +1,65 @@
++import assert from 'node:assert/strict';
++import { chunkContent, contentHash, normalizeContent } from './textProcessing';
++import { corpusFingerprint, fingerprint, stableChunkIdentity, type CorpusConfig } from './identity';
++import type { RagSourceDocument } from './types';
++import { measureRetrieval } from './retrieval.evaluation';
++import type { RetrievalCase } from './retrieval.evaluation';
++
++export type CorpusSnapshot = {
++  documents: Array<{ id: string; source_type: string; source_reference: string; version: string; content_hash: string; metadata: Record<string, any> }>;
++  chunks: Array<{ id: string; document_id: string; chunk_index: number; content: string; token_count: number; metadata: Record<string, any>; dimensions: number; embedding?: string }>;
++};
++export function compareCorpus(sources: readonly RagSourceDocument[], snapshot: CorpusSnapshot) {
++  const comparisons = sources.map(source => {
++    const rows = snapshot.documents.filter(d => d.source_reference === source.sourceReference && d.source_type === source.sourceType);
++    const d = rows[0];
++    return { sourceId: source.sourceReference, databaseIds: rows.map(r => r.id),
++      status: !d ? 'MISSING' : d.version !== source.version ? 'VERSION_CHANGED' : d.content_hash !== contentHash(normalizeContent(source.content)) ? 'CONTENT_CHANGED' : 'MATCH' };
++  });
++  const unexpected = snapshot.documents.filter(d => !sources.some(s => s.sourceReference === d.source_reference && s.sourceType === d.source_type));
++  return [...comparisons, ...unexpected.map(d => ({ sourceId: d.source_reference, databaseIds: [d.id], status: 'UNEXPECTED' }))];
++}
++export function publicSnapshot(snapshot: CorpusSnapshot) {
++  const data = { documents: snapshot.documents, chunks: snapshot.chunks.map(({ embedding, content, ...c }) => ({ ...c, contentHash: contentHash(content) })) };
++  return { ...data, documentCount: data.documents.length, chunkCount: data.chunks.length, fingerprint: fingerprint(data) };
++}
++/** Checks persisted content, configuration identity and provenance, not just document counts. */
++export function validateIndexedCorpus(sources: readonly RagSourceDocument[], snapshot: CorpusSnapshot, config: CorpusConfig) {
++  assert.equal(snapshot.documents.length, sources.length, 'Unexpected or duplicate documents');
++  let expectedChunks = 0;
++  const reconstructed = sources.map(source => {
++    const documents = snapshot.documents.filter(d => d.source_reference === source.sourceReference && d.source_type === source.sourceType);
++    assert.equal(documents.length, 1); const d = documents[0];
++    const normalized = normalizeContent(source.content), chunks = chunkContent(normalized, config.chunking);
++    const stored = snapshot.chunks.filter(c => c.document_id === d.id).sort((a, b) => a.chunk_index - b.chunk_index);
++    expectedChunks += chunks.length; assert.equal(stored.length, chunks.length);
++    assert.equal(d.content_hash, contentHash(normalized)); assert.equal(d.version, source.version);
++    assert.equal(d.metadata.ingestionFingerprint, fingerprint({ hash: d.content_hash, version: source.version, config, metadata: source.metadata ?? {} }));
++    for (const [key, value] of Object.entries(source.metadata ?? {})) assert.equal(d.metadata[key], value, `${source.sourceReference}: ${key}`);
++    let content = '', covered = 0;
++    chunks.forEach((c, i) => {
++      assert.equal(stored[i].chunk_index, i); assert.equal(stored[i].content, c.content);
++      assert.equal(stored[i].metadata.stableChunkId, stableChunkIdentity(source, c, config));
++      assert.equal(stored[i].dimensions, config.embedding.dimensions); assert.equal(stored[i].token_count, c.tokenCount);
++      assert.equal(stored[i].metadata.startOffset, c.metadata.startOffset); assert.equal(stored[i].metadata.endOffset, c.metadata.endOffset);
++      content += stored[i].content.slice(covered - Number(c.metadata.startOffset)); covered = Number(c.metadata.endOffset);
++    });
++    return { ...source, sourceType: d.source_type, sourceReference: d.source_reference, version: d.version, content, metadata: d.metadata };
++  });
++  assert.equal(snapshot.chunks.length, expectedChunks);
++  const actual = corpusFingerprint(reconstructed, config), expected = corpusFingerprint(sources, config);
++  assert.equal(actual.fingerprint, expected.fingerprint);
++  return { passed: true, corpusFingerprint: actual.fingerprint, embeddingConfigFingerprint: fingerprint(config.embedding),
++    stableIds: snapshot.chunks.map(c => c.metadata.stableChunkId).sort(), documentCount: sources.length, chunkCount: expectedChunks };
++}
++export function retrievalMetrics(cases: Array<{ labels: RetrievalCase; sources: string[] }>) {
++  const measured = cases.map(c => measureRetrieval(c.labels, c.sources));
++  const sum = (key: 'requiredFound' | 'requiredTotal' | 'relevantFound' | 'relevantTotal' | 'irrelevantFound' | 'retrieved') => measured.reduce((n, c) => n + c[key], 0);
++  const positives = measured.filter(c => c.relevantTotal > 0);
++  return { requiredSourceRecall: sum('requiredFound') / sum('requiredTotal'), relevantRecallAtK: sum('relevantFound') / sum('relevantTotal'),
++    irrelevantRetrievalRate: sum('irrelevantFound') / (sum('retrieved') || 1),
++    mrr: positives.reduce((n, c) => n + c.reciprocalRank, 0) / positives.length,
++    top1SourceAccuracy: positives.reduce((n, c) => n + c.top1, 0) / positives.length,
++    falseAbstentions: measured.filter(c => c.requiredTotal > 0 && c.retrieved === 0).length,
++    falseRetrievalsOnNegativeQueries: measured.filter(c => c.relevantTotal === 0 && c.retrieved > 0).length };
++}

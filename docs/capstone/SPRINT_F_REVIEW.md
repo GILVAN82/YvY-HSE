@@ -1,5 +1,7 @@
 # Sprint F review and defence
 
+Sprint F.1 update: the four approved sources have now been reingested and validated against PostgreSQL. See [approved corpus validation](APPROVED_CORPUS_VALIDATION.md) for real-corpus metrics, idempotence, external calls and remaining limits. The Sprint F observations below are historical.
+
 ## Review dashboard
 
 | Review perspective | Evidence added | Remaining limit |
