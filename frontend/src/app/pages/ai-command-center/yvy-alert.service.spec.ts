@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { AuthService } from '../../core/auth.service';
 import { YvyAlertService, type YvyAlert } from './yvy-alert.service';
 
 describe('YvyAlertService', () => {
@@ -61,5 +63,36 @@ describe('YvyAlertService', () => {
     const service = new YvyAlertService(); spyOn(service, 'refresh').and.resolveTo(true); const refreshed=jasmine.createSpy('refreshed');
     const stop=service.startContinuousAttention(refreshed, 1_000);jasmine.clock().tick(1_001);await Promise.resolve();
     expect(service.refresh).toHaveBeenCalled();stop();jasmine.clock().uninstall();
+  });
+});
+
+describe('attention identity isolation without a Command Center',()=>{
+  const user=(id:string)=>({userId:id,email:id+'@example.invalid',displayName:id,role:'HSE_USER' as const,permissions:['AI_USE'],allowedProjectIds:['PRJ-A']});
+  afterEach(()=>TestBed.resetTestingModule());
+  it('clears all user A state when A logs out and B logs in',()=>{
+    TestBed.configureTestingModule({providers:[AuthService,YvyAlertService]});
+    const auth=TestBed.inject(AuthService);auth.user.set(user('A'));
+    const service=TestBed.inject(YvyAlertService);TestBed.flushEffects();
+    service.alerts.set([{id:'A-private'} as any]);service.events.set([{id:'A-event'} as any]);service.voiceCandidates.set([{id:'A-claim'} as any]);service.error.set('A-error');service.evaluatedAt.set('A-time');service.returnSummary.set({INFO:0,ATTENTION:0,HIGH:1,CRITICAL:0,total:1});
+    auth.user.set(null);TestBed.flushEffects();auth.user.set(user('B'));TestBed.flushEffects();
+    expect(service.alerts()).toEqual([]);expect(service.events()).toEqual([]);expect(service.voiceCandidates()).toEqual([]);expect(service.returnSummary().total).toBe(0);expect(service.error()).toBe('');expect(service.evaluatedAt()).toBe('');
+  });
+  it('discards a late A response before effects have flushed for B',async()=>{
+    TestBed.configureTestingModule({providers:[AuthService,YvyAlertService]});
+    const auth=TestBed.inject(AuthService);auth.user.set(user('A'));
+    const service=TestBed.inject(YvyAlertService);TestBed.flushEffects();
+    let finish!:(r:Response)=>void;
+    spyOn(window,'fetch').and.callFake(()=>new Promise<Response>(resolve=>finish=resolve));
+    const pending=service.refresh();auth.user.set(user('B'));
+    finish(new Response(JSON.stringify({alerts:[{id:'A-private'}],events:[{id:'A-event'}]})));
+    expect(await pending).toBeFalse();expect(service.alerts()).toEqual([]);expect(service.events()).toEqual([]);expect(service.error()).toBe('');
+  });
+  it('does not let a late A mutation replace B state',async()=>{
+    TestBed.configureTestingModule({providers:[AuthService,YvyAlertService]});
+    const auth=TestBed.inject(AuthService);auth.user.set(user('A'));const service=TestBed.inject(YvyAlertService);TestBed.flushEffects();
+    let finish!:(r:Response)=>void;spyOn(window,'fetch').and.callFake(()=>new Promise<Response>(resolve=>finish=resolve));
+    const pending=service.acknowledge('A-private');auth.user.set(user('B'));TestBed.flushEffects();service.alerts.set([{id:'B-private'} as any]);
+    finish(new Response(JSON.stringify({alert:{id:'A-private',summary:'private'}})));
+    expect(await pending).toBeFalse();expect(service.alerts().map(a=>a.id)).toEqual(['B-private']);
   });
 });

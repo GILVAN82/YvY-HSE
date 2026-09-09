@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { pool } from '../db/pool';
 import { buildFilter, findTable, TableMeta } from './generic';
 import type { AuthenticatedRequest } from '../auth/auth.types';
-import { assertProjectAccess,hasPermission,requirePermission } from '../auth/authorization';
+import { AuthorizationError,assertProjectAccess,hasPermission,requirePermission } from '../auth/authorization';
 
 export const statsRouter = Router();
 statsRouter.use(requirePermission('HSE_DATA_READ'));
@@ -39,6 +39,7 @@ interface Ctx {
   rows: Row[];
   total: number;
   project: string;
+  allowed: readonly string[]|null;
 }
 
 function num(v: any): number | null {
@@ -86,13 +87,14 @@ async function rateBase(): Promise<number> {
 }
 
 /** Man-hours for the current project scope — the denominator for TRIR/LTIFR. */
-async function manHours(project: string): Promise<number> {
+async function manHours(project: string, allowed:readonly string[]|null): Promise<number> {
   const params: any[] = [];
   let where = '';
   if (project) {
     params.push(project);
     where = 'WHERE project_code = $1';
   }
+  if(!project && allowed!==null){params.push(allowed);where='WHERE project_code=ANY($1::text[])';}
   const r = await pool.query(`SELECT COALESCE(SUM(total_manhours),0) AS mh FROM manpower_log ${where}`, params);
   return Number(r.rows[0].mh);
 }
@@ -108,14 +110,14 @@ const SPECS: Record<string, (c: Ctx) => Promise<StatCard[]> | StatCard[]> = {
     const lti = count(c.rows, r => r['incident_type'] === 'Lost Time Injury');
     const nearMiss = count(c.rows, r => r['incident_type'] === 'Near Miss');
     const rb = await rateBase();
-    const mh = await manHours(c.project);
+    const mh = await manHours(c.project,c.allowed);
     const trir = mh > 0 ? (recordable * rb) / mh : null;
     // "Days since LTI" is a project-scope milestone, not a property of the filtered
     // subset — it comes from the last LTI on record for the selected project.
     const lastLti = await pool.query(
       `SELECT MAX(date_of_incident) AS last FROM incident_register WHERE incident_type = 'Lost Time Injury'` +
-        (c.project ? ' AND project_code = $1' : ''),
-      c.project ? [c.project] : []
+        (c.project ? ' AND project_code = $1' : c.allowed!==null?' AND project_code=ANY($1::text[])':''),
+      c.project ? [c.project] : c.allowed!==null?[c.allowed]:[]
     );
     const last = date(lastLti.rows[0]?.last);
     return [
@@ -349,19 +351,20 @@ function genericCards(c: Ctx): StatCard[] {
  * table underneath always describe the same set of rows.
  */
 statsRouter.get('/stats/:sheet/:tableIndex(\\d+)?', async (req: Request, res: Response) => {
+ try {
   const sheet = decodeURIComponent(req.params.sheet);
   const ti = req.params.tableIndex ? Number(req.params.tableIndex) : 0;
   const t = findTable(sheet, ti);
   if (!t) return res.status(404).json({ error: 'Unknown sheet/table' });
 
   const principal=(req as AuthenticatedRequest).principal; const requested=(req.query as Record<string,string>).project;
-  if(requested)try{assertProjectAccess(principal,requested);}catch{return res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});}
+  if(requested)try{assertProjectAccess(principal,requested);}catch{return res.status(403).json({error:'Access denied.',code:'PROJECT_SCOPE_DENIED'});}
   const {whereSql,params}=buildFilter(t,req.query as Record<string,string>,hasPermission(principal,'ADMIN_ACCESS')?null:principal.allowedProjectIds);
   const countRes = await pool.query(`SELECT COUNT(*) FROM "${t.db_table}" ${whereSql}`, params);
   const total = Number(countRes.rows[0].count);
   const rowsRes = await pool.query(`SELECT * FROM "${t.db_table}" ${whereSql} LIMIT ${MAX_ROWS}`, params);
 
-  const ctx: Ctx = { sheet, ti, t, rows: rowsRes.rows, total, project: (req.query.project as string) || '' };
+  const ctx: Ctx = { sheet, ti, t, rows: rowsRes.rows, total, project: (req.query.project as string) || '', allowed:hasPermission(principal,'ADMIN_ACCESS')?null:principal.allowedProjectIds };
   const spec = SPECS[`${sheet}#${ti}`];
   const cards = spec ? await spec(ctx) : genericCards(ctx);
 
@@ -372,4 +375,5 @@ statsRouter.get('/stats/:sheet/:tableIndex(\\d+)?', async (req: Request, res: Re
     truncated: total > MAX_ROWS,
     cards: cards.filter(c => c.value !== null && c.value !== undefined),
   });
+ } catch(error) {res.status(error instanceof AuthorizationError?403:503).json({code:error instanceof AuthorizationError?error.code:'DATA_QUERY_FAILED',error:'The requested data is unavailable.'});}
 });

@@ -1,3 +1,4 @@
+import { AuthorizationError } from '../../../auth/authorization';
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
 import { AgentErrorCode, AgentStatus, type AgentRuntime } from '../hseAgent.types';
@@ -13,7 +14,8 @@ export async function approvalGateNode(state: HseAgentState, config: LangGraphRu
     const approvalRequest = await runtime.approvalService.create(state.conversationId, 'LOTO_SAFETY_EXECUTION');
     if (state.finalText) runtime.emit({ type:'text', text:state.finalText });
     return { status: AgentStatus.AWAITING_HUMAN_APPROVAL, approvalRequest, executedRoute };
-  } catch {
+  } catch(error) {
+    if(error instanceof AuthorizationError)return {status:AgentStatus.FAILED,errorCode:error.code,finalText:'',executedRoute};
     return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };
   }
 }

@@ -81,6 +81,12 @@ test('adds only an explicitly selected shared voice with sanitized projection',a
 test('claim reserves only; cooldown and VOICE_SPOKEN require successful completion',async()=>{
   const calls:any[]=[];const row={id:'alert',severity:'CRITICAL',evidence:[]};
   const repo=new PostgresAlertRepository({query:async(sql:string,args:any[])=>{calls.push({sql,args});return{rows:[row],rowCount:1};}} as any);
-  await repo.claimVoice('A',['alert']);assert.match(calls[0].sql,/voice_claim_until/);assert.doesNotMatch(calls[0].sql,/SET last_voice_notification_at|notification_count=notification_count/);assert.equal(calls[1].args[3],'VOICE_QUEUED');
-  await repo.markVoiceSpoken('A','alert','claim');assert.match(calls[2].sql,/notification_count=notification_count\+1/);assert.match(calls[2].sql,/voice_claim_until>now/);assert.equal(calls[3].args[3],'VOICE_SPOKEN');
+  await repo.claimVoice('A',['alert']);
+  const claim=calls.find(c=>c.sql.startsWith('UPDATE'));
+  assert.match(calls[0].sql,/app_user_project/);assert.match(claim.sql,/voice_claim_until/);assert.doesNotMatch(claim.sql,/SET last_voice_notification_at|notification_count=notification_count/);
+  assert.ok(calls.some(c=>c.args[3]==='VOICE_QUEUED'));
+  calls.length=0;
+  await repo.markVoiceSpoken('A','alert','claim');
+  const spoken=calls.find(c=>c.sql.startsWith('UPDATE'));
+  assert.match(spoken.sql,/notification_count=notification_count\+1/);assert.match(spoken.sql,/voice_claim_until>now/);assert.ok(calls.some(c=>c.args[3]==='VOICE_SPOKEN'));
 });

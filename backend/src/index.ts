@@ -1,7 +1,8 @@
+import { accessLogContext } from './auth/access-log';
 import './config/env.bootstrap';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { genericRouter } from './routes/generic';
+import { createGenericRouter } from './routes/generic';
 import { projectsRouter, listsRouter } from './routes/projects';
 import { createKpiRouter } from './routes/kpi';
 import { statsRouter } from './routes/sheetStats';
@@ -49,6 +50,7 @@ app.use('/api', requireTrustedOrigin(corsOrigins));
 app.get('/api/health', (_req, res) => res.json({ ok: true, orchestrator, attentionScheduler:attentionScheduler.health() }));
 app.use('/api', createAuthRouter(authService));
 app.use('/api', requireAuthentication(authService));
+app.use('/api', accessLogContext);
 
 /**
  * Defense-in-depth write guard retained until Sprint 3.3 adds RBAC.
@@ -68,7 +70,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use('/api', createVoiceRouter(new PostgresVoicePreferences(pool)));
-app.use('/api', genericRouter);
+app.use('/api', createGenericRouter(pool));
 app.use('/api', projectsRouter);
 app.use('/api', listsRouter);
 app.use('/api', createKpiRouter(pool));

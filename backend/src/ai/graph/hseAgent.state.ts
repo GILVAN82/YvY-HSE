@@ -85,6 +85,10 @@ export const hseAgentStateSchema = z.object({
     .optional(),
   errorCode: z
     .enum([
+      AgentErrorCode.AUTHORIZATION_DENIED,
+      AgentErrorCode.PROJECT_SCOPE_DENIED,
+      AgentErrorCode.RESOURCE_OWNERSHIP_DENIED,
+      AgentErrorCode.RESOURCE_NOT_FOUND,
       AgentErrorCode.PROVIDER_UNAVAILABLE,
       AgentErrorCode.EMPTY_ANSWER,
       AgentErrorCode.STEP_LIMIT,

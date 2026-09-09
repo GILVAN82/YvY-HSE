@@ -13,6 +13,8 @@ const FAILURE_MESSAGES: Record<string, Record<ResponseLanguage, string>> = {
   [AgentErrorCode.SEMANTIC_VERIFICATION]: { en:"I don't have sufficient verified evidence to confirm that answer.",pt:'Não tenho evidências verificadas suficientes para confirmar essa resposta.',es:'No tengo evidencia verificada suficiente para confirmar esa respuesta.',fr:"Je ne dispose pas de preuves vérifiées suffisantes pour confirmer cette réponse.",de:'Ich verfüge nicht über ausreichend verifizierte Nachweise, um diese Antwort zu bestätigen.' },
 };
 
+for(const code of ['AUTHORIZATION_DENIED','PROJECT_SCOPE_DENIED','RESOURCE_OWNERSHIP_DENIED','RESOURCE_NOT_FOUND'])FAILURE_MESSAGES[code]={en:'The requested resource is not available within your current permissions and project scope. A LOTO request must identify its project.',pt:'O recurso solicitado n?o est? dispon?vel nas suas permiss?es e projetos atuais. Uma solicita??o LOTO deve identificar o projeto.',es:'El recurso no est? disponible con sus permisos y proyectos actuales. Identifique el proyecto de la solicitud LOTO.',fr:'La ressource n?est pas disponible dans vos autorisations et projets actuels. Pr?cisez le projet de la demande LOTO.',de:'Die Ressource ist mit Ihren aktuellen Berechtigungen und Projekten nicht verf?gbar. Geben Sie das Projekt der LOTO-Anfrage an.'};
+
 export async function finalizeNode(state: HseAgentState, config: LangGraphRunnableConfig): Promise<Partial<HseAgentState>> {
   const runtime = config.configurable?.runtime as AgentRuntime | undefined;
   if (state.finalText) runtime?.emit({ type:'text', text:state.finalText });

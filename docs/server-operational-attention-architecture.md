@@ -42,3 +42,8 @@ Server reconciliation can create alerts with no browser open. On return, the fir
 ## Limitations
 
 Scheduling exists only while at least one backend instance is running. Advisory locking coordinates instances sharing the same PostgreSQL database; it is not a deployment uptime guarantee. Browser state uses compact polling rather than WebSocket push. External delivery channels require a future explicit opt-in integration.
+
+
+## Sprint D authorization update ? 2026-09-09
+
+See [Sprint D security policy and validation](security-authorization-sprint-d.md) for current project policies, revocation-safe history, approval ownership, write permissions, shared reconciliation lock, validation and remaining limitations. This update supersedes earlier authorization descriptions where they differ.

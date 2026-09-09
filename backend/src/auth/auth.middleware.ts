@@ -7,7 +7,7 @@ export function readCookie(req: Request, name: string): string | undefined {
   if (!header) return undefined;
   for (const part of header.split(';')) {
     const [key, ...value] = part.trim().split('=');
-    if (key === name) return decodeURIComponent(value.join('='));
+    if (key === name) { try { return decodeURIComponent(value.join('=')); } catch { return undefined; } }
   }
   return undefined;
 }
@@ -15,11 +15,11 @@ export function readCookie(req: Request, name: string): string | undefined {
 export const requireAuthentication = (service: AuthService): RequestHandler => async (req, res, next) => {
   try {
     const principal = await service.authenticate(readCookie(req, SESSION_COOKIE));
-    if (!principal) { res.status(401).json({ error: 'Authentication required.', code: 'AUTH_REQUIRED' }); return; }
+    if (!principal) { res.status(401).json({ error: 'Authentication required.', code: 'AUTHENTICATION_REQUIRED' }); return; }
     (req as AuthenticatedRequest).principal = principal;
     next();
   } catch {
-    res.status(401).json({ error: 'Authentication required.', code: 'AUTH_REQUIRED' });
+    res.status(503).json({ error: 'Authentication is temporarily unavailable.', code: 'AUTH_UNAVAILABLE' });
   }
 };
 

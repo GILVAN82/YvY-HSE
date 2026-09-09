@@ -100,6 +100,7 @@ export async function agentNode(
 
   const toolNames: string[] = [];
   let text = '';
+  let authorizationFailure:AgentErrorCode|undefined;
   let steps = 0;
   let toolFailed = false;
   let toolErrorCount = 0;
@@ -172,6 +173,7 @@ export async function agentNode(
           const toolPart = part as { output?: unknown; toolName?: string };
           const output = toolPart.output as ({ error?: boolean } & Partial<RagRetrievalResult>) | undefined;
           const outputRecord = output as Record<string, unknown> | undefined;
+          if(typeof outputRecord?.code==='string'&&['AUTHORIZATION_DENIED','PROJECT_SCOPE_DENIED','RESOURCE_OWNERSHIP_DENIED','RESOURCE_NOT_FOUND'].includes(outputRecord.code)){authorizationFailure=outputRecord.code as AgentErrorCode;toolFailed=true;}
           if (output && typeof output === 'object' && output.error === true) {
             toolErrorCount += 1;
             if (runtime.intentDecision?.intent !== 'OPERATIONAL_OVERVIEW') toolFailed = true;
@@ -221,6 +223,7 @@ export async function agentNode(
     };
   }
 
+  if(authorizationFailure)return {status:AgentStatus.FAILED,errorCode:authorizationFailure,executedRoute:[...state.executedRoute,'agent'],toolNames,toolTrace,evidence,finalText:''};
   const overviewAllSourcesFailed = runtime.intentDecision?.intent === 'OPERATIONAL_OVERVIEW' && toolNames.length > 0 && toolErrorCount === toolNames.length;
   if(runtime.intentDecision?.intent==='OPERATIONAL_OVERVIEW'&&!overviewAllSourcesFailed){
     text=composeOperationalOverview(evidence,runtime.responseLanguage??'en',runtime.authenticatedFirstName);

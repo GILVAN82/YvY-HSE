@@ -215,3 +215,8 @@ Hermetic testing and frontend reliability directly address reviewer feedback. Th
 ### Conclusion
 
 The evaluated architecture preserves identity, authorization, scope and safety authority outside the language model. Automated evidence demonstrates fail-closed authentication, server-side RBAC, pre-model project filtering, user-owned state and human control of safety-critical decisions. Remaining limitations are explicit and should guide future governed hardening rather than be interpreted as certification gaps closed by this report.
+
+
+## Sprint D authorization update ? 2026-09-09
+
+See [Sprint D security policy and validation](../security-authorization-sprint-d.md) for current project policies, revocation-safe history, approval ownership, write permissions, shared reconciliation lock, validation and remaining limitations. This update supersedes earlier authorization descriptions where they differ.

@@ -1,3 +1,4 @@
+import { setAgentLogContext } from '../../auth/access-log';
 import { randomUUID } from 'node:crypto';
 import type { LanguageModel, ToolSet } from 'ai';
 import { buildHseAgentGraph, createDevCheckpointer } from './hseAgent.graph';
@@ -94,6 +95,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
   const ownerId = input.userId ?? '00000000-0000-4000-8000-000000000000';
   const runId = randomUUID();
   const conversationId = resolveThreadId(input);
+  setAgentLogContext(runId,conversationId);
   const executionTimestamp = new Date().toISOString();
   const responseLanguage = resolveResponseLanguage({ userMessage: input.message, voiceLanguage: input.voiceLanguage, uiLanguage: input.locale });
 

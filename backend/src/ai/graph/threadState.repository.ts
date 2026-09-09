@@ -1,3 +1,5 @@
+import type { RequestPrincipal } from '../../auth/auth.types';
+import { denyAccess, hasPermission } from '../../auth/authorization';
 import type { Pool } from 'pg';
 import { MAX_HISTORY_TURNS } from '../config';
 import type { ChatTurn } from './hseAgent.state';
@@ -20,6 +22,7 @@ export interface PersistedThreadState {
 }
 
 export interface ThreadStateStore {
+  forPrincipal?(principal:RequestPrincipal):ThreadStateStore;
   load(threadId: string, userId: string): Promise<PersistedThreadState | null>;
   save(state: Omit<PersistedThreadState, 'version' | 'updatedAt'>): Promise<void>;
   reset(threadId: string, userId: string): Promise<void>;
@@ -49,22 +52,35 @@ function safeContext(value: unknown): { lastRagUsed: boolean; sourceReferences: 
 }
 
 export class PostgresThreadStateStore implements ThreadStateStore {
-  constructor(private readonly db: Pool) {}
+  constructor(private readonly db: Pick<Pool,'query'>,private readonly principal?:RequestPrincipal) {}
+  forPrincipal(principal:RequestPrincipal){return new PostgresThreadStateStore(this.db,principal);}
 
   async load(threadId: string, userId = '00000000-0000-4000-8000-000000000000'): Promise<PersistedThreadState | null> {
+    if(this.principal && userId!==this.principal.userId)denyAccess(this.principal,'RESOURCE_OWNERSHIP_DENIED','thread','read');
     const result = await this.db.query(
       `SELECT thread_id::text, user_id::text, messages, context, version, updated_at
        FROM agent_thread_state WHERE thread_id = $1 AND user_id = $2`, [threadId, userId]
     );
-    if (!result.rowCount) return null;
+    if (!result.rowCount) {
+      if(this.principal){
+        const existing=await this.db.query('SELECT 1 FROM agent_thread_state WHERE thread_id=$1',[threadId]);
+        if(existing.rowCount)denyAccess(this.principal,'RESOURCE_OWNERSHIP_DENIED','thread','read');
+      }
+      return null;
+    }
     const row = result.rows[0];
+    if(this.principal){
+      const p=this.principal,scope=row.context?.authorizationScope;
+      if(userId!==p.userId)denyAccess(p,'RESOURCE_OWNERSHIP_DENIED','thread','read');
+      if(!scope||!Array.isArray(scope.projects)||(!hasPermission(p,'ADMIN_ACCESS')&&(scope.global||scope.projects.some((code:string)=>!p.allowedProjectIds.includes(code)))))denyAccess(p,'PROJECT_SCOPE_DENIED','thread','read');
+    }
     const context = safeContext(row.context);
     return { threadId: row.thread_id, userId: row.user_id, messages: minimizeThreadMessages(row.messages ?? []), ...context, version: row.version, updatedAt: row.updated_at?.toISOString?.() ?? String(row.updated_at) };
   }
 
   async save(state: Omit<PersistedThreadState, 'version' | 'updatedAt'>): Promise<void> {
     const messages = minimizeThreadMessages(state.messages);
-    const context = { lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences };
+    const context = { lastRagUsed: state.lastRagUsed, sourceReferences: state.sourceReferences, ...(this.principal?{authorizationScope:{global:hasPermission(this.principal,'ADMIN_ACCESS'),projects:this.principal.allowedProjectIds}}:{}) };
     await this.db.query(
       `INSERT INTO agent_thread_state (thread_id, user_id, messages, context)
        VALUES ($1, $2, $3::jsonb, $4::jsonb)

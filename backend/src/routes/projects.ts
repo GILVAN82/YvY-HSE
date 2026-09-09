@@ -12,7 +12,7 @@ projectsRouter.get('/projects', async (req: Request, res: Response) => {
   res.json(r.rows);
 });
 
-projectsRouter.post('/projects', async (req: Request, res: Response) => {
+projectsRouter.post('/projects', requirePermission('HSE_DATA_WRITE'), requirePermission('ADMIN_ACCESS'), async (req: Request, res: Response) => {
   const b = req.body || {};
   const r = await pool.query(
     `INSERT INTO projects (code,name,client,location,country_region,project_manager,hse_manager,project_type,status,start_date,planned_end_date,actual_end_date,notes)
@@ -24,7 +24,7 @@ projectsRouter.post('/projects', async (req: Request, res: Response) => {
   res.status(201).json(r.rows[0]);
 });
 
-projectsRouter.put('/projects/:code', async (req: Request, res: Response) => {
+projectsRouter.put('/projects/:code', requirePermission('HSE_DATA_WRITE'), requirePermission('ADMIN_ACCESS'), async (req: Request, res: Response) => {
   const b = req.body || {};
   const r = await pool.query(
     `UPDATE projects SET name=$2,client=$3,location=$4,country_region=$5,project_manager=$6,

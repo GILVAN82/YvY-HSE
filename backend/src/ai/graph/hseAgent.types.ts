@@ -25,6 +25,11 @@ export type AgentStatus = (typeof AgentStatus)[keyof typeof AgentStatus];
 
 /** Stable error codes returned to the client. Never leak provider internals. */
 export const AgentErrorCode = {
+  AUTHORIZATION_DENIED: 'AUTHORIZATION_DENIED',
+  PROJECT_SCOPE_DENIED: 'PROJECT_SCOPE_DENIED',
+  RESOURCE_OWNERSHIP_DENIED: 'RESOURCE_OWNERSHIP_DENIED',
+  RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+
   PROVIDER_UNAVAILABLE: 'AI_PROVIDER_UNAVAILABLE',
   EMPTY_ANSWER: 'AI_EMPTY_ANSWER',
   STEP_LIMIT: 'AI_STEP_LIMIT_REACHED',

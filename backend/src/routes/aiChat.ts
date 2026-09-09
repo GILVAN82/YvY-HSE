@@ -1,3 +1,4 @@
+import { AuthorizationError } from '../auth/authorization';
 import { Router, Request, Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
@@ -100,7 +101,7 @@ router.get('/ai/providers', (_req: Request, res: Response) => {
 
 const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').RequestHandler => async (req, res) => {
   const principal=(req as AuthenticatedRequest).principal;
-  if(!hasPermission(principal,'HITL_APPROVE')){res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});return;}
+  if(!hasPermission(principal,'HITL_APPROVE')){res.status(403).json({error:'Access denied.',code:'AUTHORIZATION_DENIED'});return;}
   const approvalId = z.string().uuid().safeParse(req.params.approvalId);
   const body = approvalDecisionSchema.safeParse(req.body);
   if (!approvalId.success || !body.success) {
@@ -112,10 +113,11 @@ const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').Requ
       approvalId: approvalId.data, threadId: body.data.threadId, decision,
       userId: principal.userId,
       resolutionNote: body.data.resolutionNote, locale: body.data.locale,
-      approvalService: dependencies.humanApprovalService, threadStore: dependencies.threadStateStore,
+      approvalService: dependencies.humanApprovalService.forPrincipal?.(principal)??dependencies.humanApprovalService, threadStore: dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore,
     });
     res.json({ approval: result.approval, text: result.text, responseStatus: result.responseStatus });
   } catch (error) {
+    if(error instanceof AuthorizationError){res.status(error.code==='RESOURCE_NOT_FOUND'?404:403).json({code:error.code,error:'The approval is not available to this user.'});return;}
     if (error instanceof ApprovalResolutionError) {
       res.status(409).json({ error: 'Approval is unavailable or no longer pending for this thread.', code: 'AI_APPROVAL_NOT_PENDING' });
       return;
@@ -151,7 +153,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
 
   let attachments = [] as Awaited<ReturnType<TemporaryAttachmentService['resolve']>>;
   const principal = (req as AuthenticatedRequest).principal;
-  if(!hasPermission(principal,'AI_USE')){res.status(403).json({error:'Access denied.',code:'AUTH_FORBIDDEN'});return;}
+  if(!hasPermission(principal,'AI_USE')){res.status(403).json({error:'Access denied.',code:'AUTHORIZATION_DENIED'});return;}
   const memoryAllowed=hasPermission(principal,'MEMORY_USE');
   const memoryService=memoryAllowed ? (dependencies.memoryServiceFactory?.(principal.userId)??dependencies.longTermMemoryService) : undefined;
   const scopedToolFactory=dependencies.toolFactory ? (allow:boolean)=>dependencies.toolFactory!(allow&&memoryAllowed,principal) : undefined;
@@ -173,6 +175,10 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     return;
   }
 
+  if(dependencies.threadStateStore.forPrincipal && (threadId||conversationId)){
+    try{await dependencies.threadStateStore.forPrincipal(principal).load((threadId||conversationId)!,principal.userId);}
+    catch(error){res.status(error instanceof AuthorizationError?403:503).json({code:error instanceof AuthorizationError?error.code:'THREAD_UNAVAILABLE',error:'Conversation context is unavailable. Start a new conversation.'});return;}
+  }
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -184,7 +190,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   const orchestrator = dependencies.readOrchestrator();
   const run =
     orchestrator === 'langgraph'
-      ? dependencies.runHseAgent({message,userId:principal.userId,authenticatedFirstName:safeFirstName(principal.displayName),history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
+      ? dependencies.runHseAgent({message,userId:principal.userId,authenticatedFirstName:safeFirstName(principal.displayName),history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService.forPrincipal?.(principal,message)??dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
       : dependencies.runLegacyAgent({message,history,conversationId,model:languageModel,emit,tools:dependencies.tools??scopedToolFactory?.(false)});
 
   const result = await run;

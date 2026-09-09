@@ -1,3 +1,4 @@
+import { createAppDataTools } from './appDataTools';
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { RagRetriever } from './rag/retrieval.types';
@@ -26,7 +27,7 @@ async function safely<T>(toolName: string, run: () => Promise<T>) {
     return {
       error: true,
       tool: toolName,
-      ...(error instanceof AuthorizationError?{code:'AUTH_FORBIDDEN'}:{}),
+      ...(error instanceof AuthorizationError?{code:error.code}:{}),
       message:error instanceof AuthorizationError?'The requested resource is not available.':'The system data query could not be completed.',
     };
   }
@@ -60,6 +61,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
   const scoped=principal && !hasPermission(principal,'ADMIN_ACCESS') ? principal.allowedProjectIds : null;
   const check=(project?:string)=>{if(principal&&project&&project!=='*')assertProjectAccess(principal,project);};
   return {
+    ...createAppDataTools(database,principal),
   get_kpi: tool({
     description:
       'Returns calculated HSE KPIs (TRIR, LTIFR, man-hours, open or overdue actions, training compliance, average audit score and active work permits) for a specific project or the entire portfolio, for a specific month or the full year. Use this tool whenever the user asks for KPI values.',
