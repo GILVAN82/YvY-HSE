@@ -1,1 +1,4 @@
 *.pdf binary
+
+# Retained reproduction patches contain required diff context spaces.
+artifacts/evaluation/*.patch -whitespace

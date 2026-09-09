@@ -1,3 +1,4 @@
+import { isJurisdictionClaim, jurisdictionSupportsClaim } from './jurisdiction.contract';
 import {
   EvidenceSourceType,
   VerificationStatus,
@@ -23,7 +24,7 @@ function sentences(text: string): string[] {
 function claimsRequiringEvidence(text: string, hasRagEvidence: boolean): Claim[] {
   const claims: Claim[] = [];
   for (const sentence of sentences(text)) {
-    const safety = (SAFETY_TERMS.test(sentence) && (SOURCE_ASSERTION.test(sentence) || /\[[^\]]+\]/.test(sentence)))
+    const safety = isJurisdictionClaim(sentence) || (SAFETY_TERMS.test(sentence) && (SOURCE_ASSERTION.test(sentence) || /\[[^\]]+\]/.test(sentence)))
       || (hasRagEvidence && sentence.split(/\s+/).length >= 2);
     const operational = OPERATIONAL_TERMS.test(sentence) && (/\d/.test(sentence) || NO_DATA_LANGUAGE.test(sentence) || POSITIVE_DATA_LANGUAGE.test(sentence));
     if (safety) claims.push({ text: sentence, kind: 'RAG_SAFETY' });
@@ -132,7 +133,8 @@ function ragCheck(claim: string, evidence: AgentEvidence[]): { supported: boolea
   if (!citations.length) return { supported: false, contradicted: false, reason: 'Safety or procedural claim is missing a citation to retrieved evidence.' };
   const cited = rag.filter((item) => citations.includes(item.rag!.citationLabel));
   if (!cited.length) return { supported: false, contradicted: true, reason: 'Citation does not correspond to a source retrieved in this run.' };
-  return cited.some((item) => ragSupportsClaim(claim, item))
+  if(isJurisdictionClaim(claim)&&!cited.some(item=>jurisdictionSupportsClaim(claim,item)))return {supported:false,contradicted:true,reason:'Jurisdiction claim is not supported by the cited source jurisdiction and content.'};
+  return cited.some((item) => jurisdictionSupportsClaim(claim,item) && ragSupportsClaim(claim, item))
     ? { supported: true, contradicted: false }
     : { supported: false, contradicted: false, reason: 'Retrieved source does not contain sufficient lexical support for the safety claim.' };
 }

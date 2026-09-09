@@ -1,0 +1,59 @@
+import type { LanguageModel } from 'ai';
+export interface ScriptedStep {toolCall?:{name:string;input:string};text?:string;error?:string;}
+export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCount: () => number; callInputs: () => unknown[] } {
+  let call = 0;
+  const inputs: unknown[] = [];
+
+  const model = {
+    specificationVersion: 'v3',
+    provider: 'mock',
+    modelId: 'mock-model',
+    supportedUrls: {},
+    async doStream(options: unknown) {
+      inputs.push(options);
+      const step = steps[Math.min(call, steps.length - 1)];
+      call++;
+
+      if (step.error) throw new Error(step.error);
+
+      const chunks: any[] = [{ type: 'stream-start', warnings: [] }];
+
+      if (step.toolCall) {
+        chunks.push({
+          type: 'tool-call',
+          toolCallId: `call-${call}`,
+          toolName: step.toolCall.name,
+          input: step.toolCall.input,
+        });
+        chunks.push({
+          type: 'finish',
+          finishReason: 'tool-calls',
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        });
+      } else {
+        chunks.push({ type: 'text-start', id: '1' });
+        chunks.push({ type: 'text-delta', id: '1', delta: step.text ?? '' });
+        chunks.push({ type: 'text-end', id: '1' });
+        chunks.push({
+          type: 'finish',
+          finishReason: 'stop',
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        });
+      }
+
+      return {
+        stream: new ReadableStream({
+          start(controller) {
+            chunks.forEach((c) => controller.enqueue(c));
+            controller.close();
+          },
+        }),
+      };
+    },
+  };
+
+  return Object.assign(model, { callCount: () => call, callInputs: () => inputs }) as unknown as LanguageModel & {
+    callCount: () => number;
+    callInputs: () => unknown[];
+  };
+}

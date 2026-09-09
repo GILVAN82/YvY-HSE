@@ -1,5 +1,7 @@
 # YvY HSE AI Evaluation Report
 
+> Historical report. The current measured baseline, retained failures and reproduction instructions are in [Sprint E — EVALUATION](./EVALUATION.md). Earlier 37-case figures below are not current evidence.
+
 ## Objective
 
 This evaluation answers: **How was the YvY HSE AI Agent measured?** It provides a versioned synthetic dataset, an offline runner, named metrics and regression evidence for tool use, operational answers, RAG, HITL, guardrails, authorization, memory and failure semantics.

@@ -47,13 +47,13 @@ describe('formal evaluation harness', () => {
     assert.doesNotMatch(JSON.stringify(report), /Use isolation and verify zero energy|system prompt contents/i);
     assertSafeEvaluationReport(report);
     assert.match(renderEvaluationMarkdown(report), /Scenario pass rate: 100.0%/);
-    assert.equal(report.metrics['Tool Selection Accuracy'].percentage,100);
+    assert.equal(report.metrics['Required Tool Presence'].percentage,100);
   });
 
   test('metric calculation counts failures and handles zero denominators',()=>{
     const metrics=calculateEvaluationMetrics([{caseId:'x',category:'HITL',passed:false,durationMs:0,checks:[{name:'approval_status',passed:false,evidence:'PENDING'}]}]);
-    assert.deepEqual(metrics['HITL Trigger Accuracy'],{passed:0,total:1,percentage:0});
-    assert.deepEqual(metrics['Operational Answer Accuracy'],{passed:0,total:0,percentage:0});
+    assert.deepEqual(metrics['HITL State and Bypass Checks'],{passed:0,total:1,percentage:0});
+    assert.deepEqual(metrics['Expected Operational Fact Match'],{passed:0,total:0,percentage:null});
   });
 
   test('a policy regression produces named failed checks', () => {

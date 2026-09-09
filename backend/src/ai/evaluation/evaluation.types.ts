@@ -4,7 +4,7 @@ export const EVALUATION_CATEGORIES = [
   'RAG_GROUNDING', 'OPERATIONAL_ROUTING', 'DATA_MINIMIZATION', 'CITATION', 'SAFETY',
   'JURISDICTION', 'THREAD_STATE', 'THREAD_ISOLATION', 'MEMORY_POLICY', 'HITL',
   'REFUSAL', 'SECRET_PROTECTION', 'FAILURE_RECOVERY', 'DOMAIN_SCOPE',
-  'EVIDENCE_GROUNDING',
+  'EVIDENCE_GROUNDING', 'ZERO_RESULT', 'AUTHORIZATION',
 ] as const;
 export type EvaluationCategory = typeof EVALUATION_CATEGORIES[number];
 
@@ -15,6 +15,8 @@ export interface EvaluationExpectation {
   ragUsed?: boolean;
   citationRequired?: boolean;
   sourceIdIncludes?: string;
+  requiredSources?: string[];
+  relevantSources?: string[];
   refusalReason?: RefusalCode;
   errorCode?: AgentErrorCode;
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -50,6 +52,7 @@ export interface EvaluationCase {
   input: string;
   expectation: EvaluationExpectation;
   evidenceNote: string;
+  language?: string;
   setup?: { sameThread?: boolean; separateThreads?: boolean; explicitMemory?: boolean; failureMode?: string };
 }
 
@@ -87,9 +90,10 @@ export interface AgentObservation {
 }
 
 export interface EvaluationCheck { name: string; passed: boolean; evidence: string; }
-export interface EvaluationCaseResult { caseId: string; category: EvaluationCategory; passed: boolean; checks: EvaluationCheck[]; durationMs: number; }
+export interface EvaluationCaseResult { caseId: string; category: EvaluationCategory; passed: boolean; checks: EvaluationCheck[]; durationMs: number; observation?: AgentObservation; }
 export interface EvaluationReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  provenance?: import('./evaluation.provenance').EvaluationProvenance;
   datasetVersion: number;
   startedAt: string;
   completedAt: string;
@@ -100,7 +104,7 @@ export interface EvaluationReport {
   metricName: 'scenario pass rate';
   executionMode: 'CONTROLLED_OFFLINE' | 'LIVE_SAFE_SUBSET';
   categoryResults: Record<string, { passed: number; total: number }>;
-  metrics: Record<string, { passed: number; total: number; percentage: number }>;
+  metrics: Record<string, { passed: number; total: number; percentage: number | null }>;
   results: EvaluationCaseResult[];
 }
 

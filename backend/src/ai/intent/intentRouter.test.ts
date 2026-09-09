@@ -20,6 +20,7 @@ test('intent evaluation dataset routes conversational inputs',()=>{
   const actual=classifyIntent(item.input);
   if(item.expectedScope==='LIKELY_IN_SCOPE') assert.notEqual(actual.scope,'OUT_OF_SCOPE',item.input);
   else assert.equal(actual.scope,item.expectedScope,item.input);
+  if(item.expectedIntent)assert.equal(actual.intent,item.expectedIntent,item.input);
   if(item.expectedTool)assert.ok(actual.candidateTools.includes(item.expectedTool),item.input);
   if(item.expectedClarification)assert.equal(actual.clarificationRequired,true,item.input);
  }
