@@ -1,5 +1,19 @@
 # Review compliance matrix
 
+## Current Sprint I presentation status
+
+| Item | Status | Evidence | Remaining |
+|---|---|---|---|
+| Interactive prototype / deterministic presentation | ✅ | Real service/controller; 32 new frontend tests | Safe-data six-step manual acceptance |
+| Agent design / tool integration / advanced execution | ✅ | Unchanged graph, actual chat path, manual HITL tests | Live rehearsal; no autonomous approval |
+| Evaluation explanation / ethics | ✅ | Presenter cues and explicit boundaries | Gilvan oral defence |
+| Presentation readiness | 🟡 | Entry observed; full manual flow not completed | Final timed rehearsal and human decision |
+| Jochen focused tools / RAG / memory / HITL demo | 🟡 | Implemented six-step sequence | Manual acceptance |
+| Andrius code ownership | 🟡 | Defence note and code map | Presenter explanation |
+| Showcase / README URL | ⬜ | Pending marker retained | USER ACTION REQUIRED |
+
+> **Sprint I update:** The [Turing Demo Mode](TURING_DEMO_MODE.md) presentation sequence is implemented behind a server flag, reusing the real agent and a manual HITL gate. Full safe-context manual acceptance and timed rehearsal remain pending. Showcase is still MISSING. The H plan/status below is retained as its versioned baseline; I supersedes only the implementation-pending item.
+
 Runtime `a0edf23`. This is a project mapping of feedback recorded in repository sprint reports, not direct quotations or reviewer sign-off. The original external feedback transcripts are not present; do not attribute new requirements to reviewers. All pending work is repeated in the H remaining-items register.
 
 ## Jochen Zuegge

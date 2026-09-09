@@ -1,3 +1,5 @@
+> **Sprint I update:** The [Turing Demo Mode](TURING_DEMO_MODE.md) presentation sequence is implemented behind a server flag, reusing the real agent and a manual HITL gate. Full safe-context manual acceptance and timed rehearsal remain pending. Showcase is still MISSING. The H plan/status below is retained as its versioned baseline; I supersedes only the implementation-pending item.
+
 # Turing demo content plan
 
 FUTURE / PLANNED ONLY. H does not implement Demo Mode or execute approval/operational changes. These steps use committed runtime `a0edf23`; confirm access and suitable non-sensitive records before rehearsal. Do not promise a fixed record count.

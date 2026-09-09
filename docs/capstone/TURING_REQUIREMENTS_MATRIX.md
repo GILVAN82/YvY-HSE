@@ -1,5 +1,19 @@
 # Turing requirements matrix
 
+## Current Sprint I presentation status
+
+| Item | Status | Evidence | Remaining |
+|---|---|---|---|
+| Interactive prototype / deterministic presentation | ✅ | Real service/controller; 32 new frontend tests | Safe-data six-step manual acceptance |
+| Agent design / tool integration / advanced execution | ✅ | Unchanged graph, actual chat path, manual HITL tests | Live rehearsal; no autonomous approval |
+| Evaluation explanation / ethics | ✅ | Presenter cues and explicit boundaries | Gilvan oral defence |
+| Presentation readiness | 🟡 | Entry observed; full manual flow not completed | Final timed rehearsal and human decision |
+| Jochen focused tools / RAG / memory / HITL demo | 🟡 | Implemented six-step sequence | Manual acceptance |
+| Andrius code ownership | 🟡 | Defence note and code map | Presenter explanation |
+| Showcase / README URL | ⬜ | Pending marker retained | USER ACTION REQUIRED |
+
+> **Sprint I update:** The [Turing Demo Mode](TURING_DEMO_MODE.md) presentation sequence is implemented behind a server flag, reusing the real agent and a manual HITL gate. Full safe-context manual acceptance and timed rehearsal remain pending. Showcase is still MISSING. The H plan/status below is retained as its versioned baseline; I supersedes only the implementation-pending item.
+
 Canonical project source: **Case 2 - AI agent for task automation**, with RAG as a complementary capability, using the criteria explicitly supplied by Gilvan in the Sprint H request. The repository does not contain the complete original institutional grading rubric. This matrix maps the user-supplied official project scope; it does not invent rubric wording, certify a grade or assert reviewer acceptance.
 
 Runtime baseline `a0edf23`, branch `capstone/yvy-hse`; H is the documentation commit containing this file. COMMITTED runtime evidence is distinct from preserved LOCAL / UNCOMMITTED features; Demo Mode is FUTURE.

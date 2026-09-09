@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-09",
+  "normalEntryHidden": "PASS",
+  "enabledEntryVisible": "PASS",
+  "currentDatabase": "hse_app",
+  "dedicatedDemoDatabaseExists": true,
+  "safeDataDeclared": false,
+  "steps": {
+    "Introduction": "SKIPPED",
+    "Tool Calling": "SKIPPED",
+    "RAG": "SKIPPED",
+    "Memory": "SKIPPED",
+    "HITL": "SKIPPED",
+    "Closing": "SKIPPED"
+  },
+  "voice": "WARNING_NOT_LIVE_ACCEPTED",
+  "totalDuration": "NOT_MEASURED",
+  "blockingObservations": [
+    "Desktop app approval timed out",
+    "Browser direct API navigation ERR_BLOCKED_BY_CLIENT",
+    "Safe operational context was not declared; no live factual steps or human decision were executed"
+  ],
+  "fullDemoReady": false
+}

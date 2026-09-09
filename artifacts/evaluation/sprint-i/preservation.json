@@ -1,0 +1,387 @@
+{
+  "baseCommit": "4e8f52b",
+  "backupDirectory": "C:\\Users\\Gil\\AppData\\Local\\Temp\\yvy-sprint-i-baseline-aqo2xidt",
+  "files": [
+    {
+      "path": "backend/.env.example",
+      "status": " M",
+      "sha256": "e4461480ce83a4d72d3d3b19a638bfdcd21641628259571a8b6ed992a37fd9e7",
+      "currentSha256": "e4461480ce83a4d72d3d3b19a638bfdcd21641628259571a8b6ed992a37fd9e7",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/__tests__/agent.test.ts",
+      "status": " M",
+      "sha256": "25d612b7d39e4414c7841f33e52810f898104807e418680be0e0cef1e5d67eda",
+      "currentSha256": "25d612b7d39e4414c7841f33e52810f898104807e418680be0e0cef1e5d67eda",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/__tests__/semantic-verification.test.ts",
+      "status": " M",
+      "sha256": "ae1aa2dbffbb8d96c3e1076dd31324d916ba5113c1ad2198e648de2076b03cdf",
+      "currentSha256": "ae1aa2dbffbb8d96c3e1076dd31324d916ba5113c1ad2198e648de2076b03cdf",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/evidence.contract.ts",
+      "status": " M",
+      "sha256": "894c8ac8e419a59268d335997c585106eaeacdb5bf45b1e8ff8ac28556abfb59",
+      "currentSha256": "894c8ac8e419a59268d335997c585106eaeacdb5bf45b1e8ff8ac28556abfb59",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/hseAgent.state.ts",
+      "status": " M",
+      "sha256": "3cd7d37edfd1d0c9266842c1a965b14243636dfa36383347e5d9ef8529d3cb05",
+      "currentSha256": "3cd7d37edfd1d0c9266842c1a965b14243636dfa36383347e5d9ef8529d3cb05",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/nodes/agent.node.ts",
+      "status": " M",
+      "sha256": "d091a6222d98f70419e87fa4e35468c0bdf6d9c80a2e79950ebc2970938a07e6",
+      "currentSha256": "d091a6222d98f70419e87fa4e35468c0bdf6d9c80a2e79950ebc2970938a07e6",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/nodes/verify.node.ts",
+      "status": " M",
+      "sha256": "e9266c843cd5be59b0158f4792f630b8fb0587c7d0d3c97302c3605be654f3fe",
+      "currentSha256": "e9266c843cd5be59b0158f4792f630b8fb0587c7d0d3c97302c3605be654f3fe",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/operationalOverview.ts",
+      "status": " M",
+      "sha256": "9872debb2bc77e63c5446902efb595ae2ea0489da44e8bca90546c4a4f92a850",
+      "currentSha256": "9872debb2bc77e63c5446902efb595ae2ea0489da44e8bca90546c4a4f92a850",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/graph/semanticVerifier.ts",
+      "status": " M",
+      "sha256": "bc4ec4aa582e38cec1666a3fd39f657b76aef1f2a077d74710d4291bdb2c851f",
+      "currentSha256": "bc4ec4aa582e38cec1666a3fd39f657b76aef1f2a077d74710d4291bdb2c851f",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/intent/intentRouter.ts",
+      "status": " M",
+      "sha256": "3fde834a1359c37103cb94d233c4d18336a784a0b5d126d25b0ca3e8737578ef",
+      "currentSha256": "3fde834a1359c37103cb94d233c4d18336a784a0b5d126d25b0ca3e8737578ef",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/productionDependencies.ts",
+      "status": " M",
+      "sha256": "df1eb25c0d31b2fdc97665dae2ce5b458befb63f43f1dd484d6e54aa4a1ae62e",
+      "currentSha256": "df1eb25c0d31b2fdc97665dae2ce5b458befb63f43f1dd484d6e54aa4a1ae62e",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/prompts/policies.ts",
+      "status": " M",
+      "sha256": "b21a4da52d8f7386044d374fe130492194c65bc1daf76e33ada65f02b5c5ce07",
+      "currentSha256": "b21a4da52d8f7386044d374fe130492194c65bc1daf76e33ada65f02b5c5ce07",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/tools.ts",
+      "status": " M",
+      "sha256": "8b6637090caa5f1a93d88797093531aaac00df9f326c2389223c738d5937dfaa",
+      "currentSha256": "8b6637090caa5f1a93d88797093531aaac00df9f326c2389223c738d5937dfaa",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/routes/__tests__/aiChat.http.test.ts",
+      "status": " M",
+      "sha256": "e33cc880edadaf1a8a6fa99fa7ad8c2dc9bc0a34f0bce13e1d3371181c18417f",
+      "currentSha256": "e33cc880edadaf1a8a6fa99fa7ad8c2dc9bc0a34f0bce13e1d3371181c18417f",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/routes/aiChat.ts",
+      "status": " M",
+      "sha256": "f7324a89616a4bf34d6314e85b325ce7e3c6a81b901b46b7161ec859b5c27dd0",
+      "currentSha256": "f7324a89616a4bf34d6314e85b325ce7e3c6a81b901b46b7161ec859b5c27dd0",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/angular.json",
+      "status": " M",
+      "sha256": "0f2d448384f2a6f9856addce4827283ace359f8f1104c4ab9d9e0313d381a0ff",
+      "currentSha256": "0f2d448384f2a6f9856addce4827283ace359f8f1104c4ab9d9e0313d381a0ff",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/app.component.html",
+      "status": " M",
+      "sha256": "8307069c2bce3bdae75c04627914279c6f5d865ee43a3542fe4c280870befec1",
+      "currentSha256": "8307069c2bce3bdae75c04627914279c6f5d865ee43a3542fe4c280870befec1",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/app.component.scss",
+      "status": " M",
+      "sha256": "ca4986cb0000124fa65649df2398014a57d195dc2e0bcd5ee37275487dd156d5",
+      "currentSha256": "ca4986cb0000124fa65649df2398014a57d195dc2e0bcd5ee37275487dd156d5",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/app.routes.ts",
+      "status": " M",
+      "sha256": "35a475cb9a24012b6832472e5f1b7c3da0d6c65d9f533e54b8431194003b703d",
+      "currentSha256": "35a475cb9a24012b6832472e5f1b7c3da0d6c65d9f533e54b8431194003b703d",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-ai-command-center.component.html",
+      "status": " M",
+      "sha256": "36fc4b45960674e83ee7bbf1cef49e879d44e9ebdafa8b35156463fe1dfce0b1",
+      "currentSha256": "7bb412ed07f692bf4cebabe80cc40f13e0463ca10de1a31f2677e356176f16b8",
+      "method": "EXACT_PREEXISTING_SOURCE_AFTER_REVERSING_SPRINT_I_ONLY_ADAPTER_EDITS",
+      "proof": "Removing only the enumerated presentation adapter additions recovers the backed-up source (line endings and blank method separator normalized)."
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-ai-command-center.component.scss",
+      "status": " M",
+      "sha256": "2aac573f091d8f7ea1cf290ee01603d48b602964d782834b4c99db5861fe6d57",
+      "currentSha256": "2aac573f091d8f7ea1cf290ee01603d48b602964d782834b4c99db5861fe6d57",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-ai-command-center.component.spec.ts",
+      "status": " M",
+      "sha256": "180b2c398655faf809f20cd13bf49222b81edb4caf21bcb90dcd9e9d28189937",
+      "currentSha256": "180b2c398655faf809f20cd13bf49222b81edb4caf21bcb90dcd9e9d28189937",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-ai-command-center.component.ts",
+      "status": " M",
+      "sha256": "3553077419ed1891a49253d35872d8ca8ef7befc476c07abdb89ed3e1b23bcbf",
+      "currentSha256": "3c9bc716a09a4a3166c1910fdbebcd82861568795ea35f72a568b38fd0b99145",
+      "method": "EXACT_PREEXISTING_SOURCE_AFTER_REVERSING_SPRINT_I_ONLY_ADAPTER_EDITS",
+      "proof": "Removing only the enumerated presentation adapter additions recovers the backed-up source (line endings and blank method separator normalized)."
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-approved-layout.scss",
+      "status": " M",
+      "sha256": "369c62d17698692b0876b3696add67a01fa4ac134f6375d4e8bdbcec4af60976",
+      "currentSha256": "369c62d17698692b0876b3696add67a01fa4ac134f6375d4e8bdbcec4af60976",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-command-center-agent.service.spec.ts",
+      "status": " M",
+      "sha256": "ad8081d06c7d5be1c07e470f7a1237a707bf2b4117af6bd41a0c9d4cb46d08f3",
+      "currentSha256": "ad8081d06c7d5be1c07e470f7a1237a707bf2b4117af6bd41a0c9d4cb46d08f3",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-command-center-agent.service.ts",
+      "status": " M",
+      "sha256": "704035b2824f4451107e501c25d4c7ec6ff1a5750ccb4a0c4abb46ec4ecdd11d",
+      "currentSha256": "1e0fb1626302c74dfde6a33d9f479dcbb459b7c7e9381c8df5396457a893c862",
+      "method": "EXACT_PREEXISTING_SOURCE_AFTER_REVERSING_SPRINT_I_ONLY_ADAPTER_EDITS",
+      "proof": "Removing only the enumerated presentation adapter additions recovers the backed-up source (line endings and blank method separator normalized)."
+    },
+    {
+      "path": "frontend/src/app/pages/project/project.component.ts",
+      "status": " M",
+      "sha256": "0205f38469289a7195a84bad33c280dc6a2dd1a3ff7b809a6dcf714a6dcd8a7a",
+      "currentSha256": "0205f38469289a7195a84bad33c280dc6a2dd1a3ff7b809a6dcf714a6dcd8a7a",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/sheet/sheet.component.ts",
+      "status": " M",
+      "sha256": "317a9b576a5daa1a6fab4caf60bb2810bc2923fbfb08589c20a7bcea77fc3bf9",
+      "currentSha256": "317a9b576a5daa1a6fab4caf60bb2810bc2923fbfb08589c20a7bcea77fc3bf9",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.html",
+      "status": " M",
+      "sha256": "502f845ae87fa604e38e9f69e4baaef1be38096927bc27eb3f009180cf4e3cf3",
+      "currentSha256": "502f845ae87fa604e38e9f69e4baaef1be38096927bc27eb3f009180cf4e3cf3",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.scss",
+      "status": " M",
+      "sha256": "289f2ad75a93a957e01241627d88fd85a510136ed95332fce65425b14f8a00e7",
+      "currentSha256": "289f2ad75a93a957e01241627d88fd85a510136ed95332fce65425b14f8a00e7",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.spec.ts",
+      "status": " M",
+      "sha256": "6dd73c6871bd08b7b9f59ca293f9602031a22e511473fe7aefce633e196c110b",
+      "currentSha256": "6dd73c6871bd08b7b9f59ca293f9602031a22e511473fe7aefce633e196c110b",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.ts",
+      "status": " M",
+      "sha256": "8ef35b59ea217648431794f44086dace103a159059a7665550bd79671436bf52",
+      "currentSha256": "8ef35b59ea217648431794f44086dace103a159059a7665550bd79671436bf52",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/safe-markdown.pipe.spec.ts",
+      "status": " M",
+      "sha256": "263f33cfaba97aa6afa2292ea603aed781851c2d93d4e68a78b236dae002c1b1",
+      "currentSha256": "263f33cfaba97aa6afa2292ea603aed781851c2d93d4e68a78b236dae002c1b1",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/safe-markdown.pipe.ts",
+      "status": " M",
+      "sha256": "21c4b02e19116fe4f18ed4f1130dc081f64ead2d4b847f75c062427540155044",
+      "currentSha256": "21c4b02e19116fe4f18ed4f1130dc081f64ead2d4b847f75c062427540155044",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/__tests__/app-data-access.test.ts",
+      "status": "??",
+      "sha256": "d998b12a399bb8e99ba90dc5dc0b04bb1a63bb308ed784b9f56c96d96e615bea",
+      "currentSha256": "d998b12a399bb8e99ba90dc5dc0b04bb1a63bb308ed784b9f56c96d96e615bea",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/__tests__/record-drafts.test.ts",
+      "status": "??",
+      "sha256": "af72f5e85c6bee6e2da13db450d8d7adbd6244fe74911c448c09d2db4e70f243",
+      "currentSha256": "af72f5e85c6bee6e2da13db450d8d7adbd6244fe74911c448c09d2db4e70f243",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/recordDrafts.smoke.cli.ts",
+      "status": "??",
+      "sha256": "a9780d31eb64369b959429ae076e2d1dad3f0740c93fb03cae71fc9f8b444c99",
+      "currentSha256": "a9780d31eb64369b959429ae076e2d1dad3f0740c93fb03cae71fc9f8b444c99",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "backend/src/ai/recordDrafts.ts",
+      "status": "??",
+      "sha256": "af46897831cfcf9baa4929114e32d03c63519439058882d6091a4340aad29d1b",
+      "currentSha256": "af46897831cfcf9baa4929114e32d03c63519439058882d6091a4340aad29d1b",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "database/migrations/012_create_ai_record_draft.sql",
+      "status": "??",
+      "sha256": "5c3c47d95ecc2d167aae8b5f4ef9459ce5b601c5304f48593fa79e7355c483cc",
+      "currentSha256": "5c3c47d95ecc2d167aae8b5f4ef9459ce5b601c5304f48593fa79e7355c483cc",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "docs/ai-record-review.md",
+      "status": "??",
+      "sha256": "f17468b0a145ff664f65451f9bcfd01c8fc7e48874c1228a1da37bb31440746b",
+      "currentSha256": "f17468b0a145ff664f65451f9bcfd01c8fc7e48874c1228a1da37bb31440746b",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/core/assistant-page-context.service.spec.ts",
+      "status": "??",
+      "sha256": "53c0b94840c93cc2c5596bb29bd90b06bd4cf3ac741bbcf51541ec8746a8622e",
+      "currentSha256": "53c0b94840c93cc2c5596bb29bd90b06bd4cf3ac741bbcf51541ec8746a8622e",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/core/assistant-page-context.service.ts",
+      "status": "??",
+      "sha256": "98e2c0473a8005fb0d9e84c242ca99d243c551a1e208129c48a48f36ba343a46",
+      "currentSha256": "98e2c0473a8005fb0d9e84c242ca99d243c551a1e208129c48a48f36ba343a46",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-approved-layout.part2.scss",
+      "status": "??",
+      "sha256": "c19613e814f8e08a2350f2940aca2fbdb565cc19fbe6a0ffb8eaaa53a23fd39e",
+      "currentSha256": "c19613e814f8e08a2350f2940aca2fbdb565cc19fbe6a0ffb8eaaa53a23fd39e",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-approved-layout.part3.scss",
+      "status": "??",
+      "sha256": "0b8dbf0df6b6217ba0e000bd8ec9a66f968bae94c0f91feec016ca7e56d1c5b3",
+      "currentSha256": "0b8dbf0df6b6217ba0e000bd8ec9a66f968bae94c0f91feec016ca7e56d1c5b3",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-approved-layout.part4.scss",
+      "status": "??",
+      "sha256": "9603f7c03bcf8765536245c52f5e552975973df74b9c8dcfb149c1ae9afae93a",
+      "currentSha256": "9603f7c03bcf8765536245c52f5e552975973df74b9c8dcfb149c1ae9afae93a",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/pages/ai-command-center/yvy-approved-layout.part5.scss",
+      "status": "??",
+      "sha256": "11470ba48811fead121e3403e6438ab8146d743503e313f5c1963f02561c1b8a",
+      "currentSha256": "11470ba48811fead121e3403e6438ab8146d743503e313f5c1963f02561c1b8a",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/_markdown-layout.scss",
+      "status": "??",
+      "sha256": "1561bc3558afce93b7f26928ab675afaf7b0eb250394cce30373e6006fe08bbd",
+      "currentSha256": "1561bc3558afce93b7f26928ab675afaf7b0eb250394cce30373e6006fe08bbd",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.part2.scss",
+      "status": "??",
+      "sha256": "d1a1ab8889eafab9be679305af009a8fea7bbe1efcb792d7639c4c49b485d36d",
+      "currentSha256": "d1a1ab8889eafab9be679305af009a8fea7bbe1efcb792d7639c4c49b485d36d",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.part3.scss",
+      "status": "??",
+      "sha256": "1b219357b27cd5f828b831eb77fdb841ec79cbe1f529cf8235ee942ca7378915",
+      "currentSha256": "1b219357b27cd5f828b831eb77fdb841ec79cbe1f529cf8235ee942ca7378915",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/ai-chat-widget/ai-chat-widget.component.part4.scss",
+      "status": "??",
+      "sha256": "fb8cfaf0d3a9bf230e07df78241a9ee8a9e3758f02dfdf6970e87cac7c3853fc",
+      "currentSha256": "fb8cfaf0d3a9bf230e07df78241a9ee8a9e3758f02dfdf6970e87cac7c3853fc",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/record-review/record-review.component.html",
+      "status": "??",
+      "sha256": "d597ea59ceb028088be6a2b7c08174161b9b9967c95d269da11681bd5886ed0d",
+      "currentSha256": "d597ea59ceb028088be6a2b7c08174161b9b9967c95d269da11681bd5886ed0d",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/record-review/record-review.component.scss",
+      "status": "??",
+      "sha256": "f032b846a6ff9cf10d7c842fef1c821232fd9fc7305ce65c97249d6ac8a2946e",
+      "currentSha256": "f032b846a6ff9cf10d7c842fef1c821232fd9fc7305ce65c97249d6ac8a2946e",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/record-review/record-review.component.spec.ts",
+      "status": "??",
+      "sha256": "27f84d53f3bd6bc40d0b78b2986632647f3f7b9575624309c83a62a6a4ab0a02",
+      "currentSha256": "27f84d53f3bd6bc40d0b78b2986632647f3f7b9575624309c83a62a6a4ab0a02",
+      "method": "BYTE_IDENTICAL"
+    },
+    {
+      "path": "frontend/src/app/shared/record-review/record-review.component.ts",
+      "status": "??",
+      "sha256": "b6a7eb1bb3568c7e93a2fb8c6da8a9354bf8db81fa08414024507125e4c5d32c",
+      "currentSha256": "b6a7eb1bb3568c7e93a2fb8c6da8a9354bf8db81fa08414024507125e4c5d32c",
+      "method": "BYTE_IDENTICAL"
+    }
+  ]
+}

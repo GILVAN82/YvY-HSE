@@ -6,13 +6,14 @@ YvY is an AI-powered HSE work companion for HSE professionals and project teams.
 
 ## Capstone baseline
 
-**Case 2 - AI agent for task automation**, with RAG as a complementary capability. Branch `capstone/yvy-hse`; runtime baseline `a0edf23` (Sprint G), audited by Sprint H on 9 September 2026. H changes documentation only. This is a project evidence mapping, not a claim of institutional approval.
+**Case 2 - AI agent for task automation**, with RAG as a complementary capability. Branch `capstone/yvy-hse`; runtime based on `4e8f52b` (Sprint H), extended by Sprint I presentation mode. The primary agent graph and policies are unchanged. This is a project evidence mapping, not a claim of institutional approval.
 
 - **COMMITTED:** authenticated and project-scoped workflow, read-only operational tools, hybrid RAG, explicit memory, digital HITL, voice, attention, verification and observability.
 - **LOCAL / UNCOMMITTED:** record-draft creation/review, broader automatic app-data intent routing, incident-count fallback and chat layout/history refinements. These are preserved separately and are not demonstrated as released Capstone capabilities.
-- **FUTURE:** Turing Demo Mode, wider evaluation and deployment hardening. No Demo Mode implementation is included in H.
+- **COMMITTED IN SPRINT I:** server-gated Turing Demo presentation sequence using the existing agent, voice and Inspector. Full safe-data manual acceptance remains pending.
+- **FUTURE:** timed rehearsal, wider evaluation and deployment hardening.
 
-[Final compliance](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) | [Requirements](docs/capstone/TURING_REQUIREMENTS_MATRIX.md) | [Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence notes](docs/capstone/DEFENCE_NOTES.md) | [Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md)
+[Demo Mode and acceptance limits](docs/capstone/TURING_DEMO_MODE.md) | [H compliance baseline](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) | [Requirements](docs/capstone/TURING_REQUIREMENTS_MATRIX.md) | [Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence notes](docs/capstone/DEFENCE_NOTES.md) | [Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md)
 
 ## Local Authentication
 
@@ -244,6 +245,8 @@ Copy `backend/.env.example` to `backend/.env` and provide values appropriate to 
 | `DATABASE_URL` | Required PostgreSQL connection URL. |
 | `OPENAI_API_KEY` | Required for OpenAI chat and OpenAI embeddings. |
 | `PORT` | Optional; defaults to `3000`. |
+| `TURING_DEMO_MODE` | Explicit server presentation flag; disabled by default. |
+| `TURING_DEMO_SAFE_DATA`, `TURING_DEMO_PROJECT` | Reviewed safe-data declaration and exact authorized project in the dedicated demo database; see Demo Mode preflight. |
 | `AI_ORCHESTRATOR` | Optional; `langgraph` (default) or `legacy`. |
 | `CORS_ORIGINS` | Optional comma-separated browser-origin allowlist. |
 | `ALLOW_UNAUTHENTICATED_WRITES` | Historical write-toggle name retained for compatibility; it does not bypass server authentication or authorization. |
@@ -343,7 +346,7 @@ The visual capability ring groups HSE topics; it does not represent independent 
 
 ## Testing and evaluation
 
-Final gate evidence and exact commands are in [Sprint H](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [test strategy](docs/capstone/TEST_STRATEGY.md). Runtime `a0edf23`: backend 371 tests and frontend 112 tests; integrated local tree: backend 389 and frontend 118. Counts must retain their baseline labels.
+Current Sprint I evidence: [Demo Mode](docs/capstone/TURING_DEMO_MODE.md), [gate summary](artifacts/evaluation/sprint-i/summary.json) and [test strategy](docs/capstone/TEST_STRATEGY.md). Isolated commit candidate: **380 backend / 144 frontend**; integrated local tree: **398 backend / 150 frontend**. Counts retain their baseline labels. Full manual presentation acceptance is still pending.
 
 Agent baseline: **44/44**, supplementary **3/3**, intent **134/134**. Offline evaluation executes production graph/components with simulated model and injected dependencies, blocking network. The real retrieval replay uses PostgreSQL and retained real embeddings with HTTP blocked; it is not a hermetic database-free test. No new live-provider quality benchmark was run in H. Historical live 11/12 results do not validate today's prompts/models.
 
@@ -396,7 +399,7 @@ See [security evaluation](docs/capstone/SECURITY_AND_ETHICAL_AI_EVALUATION.md), 
 
 ## Future work
 
-Wider independent and live-provider evaluation, equipment-bound approvals, transactional write hardening, deployment governance and a separately scoped Demo Mode. These remain future work, not current capabilities.
+Wider independent and live-provider evaluation, equipment-bound approvals, transactional write hardening, deployment governance and timed Demo Mode rehearsal. The presentation sequence is implemented; its full live acceptance remains pending.
 
 ## Documentation
 

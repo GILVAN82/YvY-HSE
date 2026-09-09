@@ -1,7 +1,7 @@
-<main class="workspace">
+<main class="workspace" [class.demo-active]="demo.active()" [class.demo-running]="demo.active() && agent.presentationActive()">
   <header class="workspace-header">
     <div class="identity"><div class="mark">Y</div><div><span>AI COMMAND CENTER</span><p>Your HSE work companion</p></div></div>
-    <div class="header-actions"><span class="online"><i></i>{{agent.error()?'Unavailable':'Online'}}</span><button type="button" class="icon-action" (click)="toggleMute()" [attr.aria-label]="muted()?'Unmute YvY':'Mute YvY'"><lucide-icon [img]="muted()?mutedIcon:volumeIcon" [size]="18"></lucide-icon></button><app-yvy-voice-settings [busy]="agent.loading() || voiceStatus()==='speaking' || voiceStatus()==='listening'"></app-yvy-voice-settings></div>
+    <div class="header-actions"><app-turing-demo-controller></app-turing-demo-controller><span class="online"><i></i>{{agent.error()?'Unavailable':'Online'}}</span><button type="button" class="icon-action" (click)="toggleMute()" [attr.aria-label]="muted()?'Unmute YvY':'Mute YvY'"><lucide-icon [img]="muted()?mutedIcon:volumeIcon" [size]="18"></lucide-icon></button><app-yvy-voice-settings [busy]="agent.loading() || voiceStatus()==='speaking' || voiceStatus()==='listening'"></app-yvy-voice-settings></div>
   </header>
   <section class="hero" aria-label="YvY HSE intelligence capabilities">
     <div class="greeting"><span>GOOD {{currentHour<12?'MORNING':currentHour<18?'AFTERNOON':'EVENING'}},</span><h2>{{firstName()}}.</h2><i></i><p>What can I help you with today?</p></div>

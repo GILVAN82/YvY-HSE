@@ -1,3 +1,19 @@
+<section *ngIf="inspector.demoPreset()" class="inspector-page demo-preset" aria-label="Compact real execution evidence">
+  <header class="page-head"><h2>Technical evidence</h2><button type="button" (click)="inspector.demoPreset.set(false)">Full Inspector</button></header>
+  <dl *ngIf="snapshot() as run">
+    <dt>Run</dt><dd><code>{{run.runId}}</code></dd>
+    <dt>Intent</dt><dd>{{trace()?.intent?.intent || 'Not observed'}}</dd>
+    <dt>Route</dt><dd>{{trace()?.route?.join(' / ') || 'Not observed'}}</dd>
+    <dt>Tools used</dt><dd>{{run.toolsUsed.join(', ') || 'None observed'}}</dd>
+    <dt>Retrieval / evidence</dt><dd>{{trace()?.rag?.diagnostics?.retrievalMode || trace()?.rag?.status || 'Not observed'}} / {{trace()?.verification?.evidenceItemsConsidered ?? 0}} evidence items</dd>
+    <dd *ngFor="let citation of run.citations">{{citation.citationLabel}} / {{citation.jurisdiction}}</dd>
+    <dt>Verification</dt><dd>{{trace()?.verification?.status || 'Not observed'}}</dd>
+    <dt>HITL</dt><dd>{{(inspector.demoApproval() || run.approvalRequest)?.status || 'Not required / not observed'}}</dd>
+    <dt>Prompt version</dt><dd>{{trace()?.observability?.prompt?.version || 'Not observed'}}</dd>
+  </dl>
+  <p *ngIf="!snapshot()">No execution snapshot available.</p><p *ngIf="inspector.demoApproval() as approval">Persisted human decision: {{approval.status}}. Authenticated server resolution; no identity is projected.</p>
+</section>
+<ng-container *ngIf="!inspector.demoPreset()">
 <main class="inspector-page">
   <section *ngIf="inspector.voiceEngine() as voice"><h2>Voice Engine</h2><p>Requested: {{voice.requestedEngine}} · Effective: {{voice.effectiveEngine}}</p><p *ngIf="voice.voiceName">Voice: {{voice.voiceName}}</p><p *ngIf="voice.fallbackReason">Fallback: {{voice.fallbackReason}}</p></section>
   <header class="page-head">
@@ -145,3 +161,5 @@
     <div class="card-head"><div><span class="section-number">11</span><h2>Operational Attention</h2></div><span>{{scheduler.status}}</span></div><div class="kv"><span>Scheduler</span><strong>{{scheduler.enabled?'ACTIVE':'DISABLED'}}</strong></div><div class="kv"><span>Last run</span><strong>{{scheduler.lastRunAt?(scheduler.lastRunAt|date:'medium'):'NOT CURRENTLY OBSERVABLE'}}</strong></div><div class="kv"><span>Last success</span><strong>{{scheduler.lastSuccessfulRunAt?(scheduler.lastSuccessfulRunAt|date:'medium'):'NOT CURRENTLY OBSERVABLE'}}</strong></div><ng-container *ngIf="scheduler.lastRun as run"><div class="kv"><span>Run status</span><strong>{{run.status}}</strong></div><div class="kv"><span>Scopes</span><strong>{{run.scopesEvaluated}}</strong></div><div class="kv"><span>Created / updated / resolved</span><strong>{{run.alertsCreated}} / {{run.alertsUpdated}} / {{run.alertsResolved}}</strong></div></ng-container>
   </section>
 </main>
+
+</ng-container>

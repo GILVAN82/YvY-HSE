@@ -1,0 +1,130 @@
+[
+  {
+    "profile": "isolated",
+    "check": "backend-tests",
+    "command": "npm.cmd test",
+    "exitCode": 0,
+    "seconds": 10.18,
+    "log": "isolated-backend-tests.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "backend-typecheck",
+    "command": "npm.cmd run typecheck",
+    "exitCode": 0,
+    "seconds": 4.16,
+    "log": "isolated-backend-typecheck.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "backend-build",
+    "command": "npm.cmd run build",
+    "exitCode": 0,
+    "seconds": 3.77,
+    "log": "isolated-backend-build.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "frontend-tests",
+    "command": "npm.cmd run test:ci",
+    "exitCode": 0,
+    "seconds": 11.79,
+    "log": "isolated-frontend-tests.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "frontend-app-typecheck",
+    "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+    "exitCode": 0,
+    "seconds": 3.92,
+    "log": "isolated-frontend-app-typecheck.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "frontend-spec-typecheck",
+    "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+    "exitCode": 0,
+    "seconds": 3.85,
+    "log": "isolated-frontend-spec-typecheck.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "frontend-build",
+    "command": "npm.cmd run build",
+    "exitCode": 0,
+    "seconds": 8.46,
+    "log": "isolated-frontend-build.log"
+  },
+  {
+    "profile": "isolated",
+    "check": "agent-evaluation",
+    "command": "npm.cmd run eval:offline",
+    "exitCode": 0,
+    "seconds": 2.32,
+    "log": "isolated-agent-evaluation.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "backend-tests",
+    "command": "npm.cmd test",
+    "exitCode": 0,
+    "seconds": 9.49,
+    "log": "integrated-backend-tests.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "backend-typecheck",
+    "command": "npm.cmd run typecheck",
+    "exitCode": 0,
+    "seconds": 4.06,
+    "log": "integrated-backend-typecheck.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "backend-build",
+    "command": "npm.cmd run build",
+    "exitCode": 0,
+    "seconds": 4.04,
+    "log": "integrated-backend-build.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "frontend-tests",
+    "command": "npm.cmd run test:ci",
+    "exitCode": 0,
+    "seconds": 11.09,
+    "log": "integrated-frontend-tests.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "frontend-app-typecheck",
+    "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+    "exitCode": 0,
+    "seconds": 3.91,
+    "log": "integrated-frontend-app-typecheck.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "frontend-spec-typecheck",
+    "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+    "exitCode": 0,
+    "seconds": 3.95,
+    "log": "integrated-frontend-spec-typecheck.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "frontend-build",
+    "command": "npm.cmd run build",
+    "exitCode": 0,
+    "seconds": 9.25,
+    "log": "integrated-frontend-build.log"
+  },
+  {
+    "profile": "integrated",
+    "check": "agent-evaluation",
+    "command": "npm.cmd run eval:offline",
+    "exitCode": 0,
+    "seconds": 2.3,
+    "log": "integrated-agent-evaluation.log"
+  }
+]

@@ -40,3 +40,15 @@ Open graph, runner, guard and agent node first; then tool registry and productio
 ## Local-only navigation
 
 `backend/src/ai/recordDrafts.ts` and `frontend/src/app/shared/record-review/` implement unfinished local draft/review work. They are not part of the runtime commit above. The unchanged local delta is inventoried in the [H preservation manifest](../../artifacts/evaluation/sprint-h/preservation.json).
+
+## Sprint I presentation layer
+
+Based on H `4e8f52b`; source map above remains the primary agent baseline.
+
+| File | Symbol | Purpose |
+|---|---|---|
+| `backend/src/routes/turingDemo.ts` | `readDemoConfiguration`, `productionDemoProbe`, `createTuringDemoRouter` | Server flag and read-only authenticated preflight |
+| `frontend/src/app/pages/ai-command-center/demo/demo-script.ts` | `DEMO_STEPS` | Six deterministic presentation definitions |
+| `frontend/src/app/pages/ai-command-center/demo/turing-demo.service.ts` | `TuringDemoService` | Sequence, real sends, owner/cancellation fences, manual-decision observation |
+| `frontend/src/app/pages/ai-command-center/yvy-command-center-agent.service.ts` | `beginPresentation`, `endPresentation` | Isolate and restore presentation conversation without deleting persisted state |
+| `frontend/src/app/pages/agent-inspector/agent-inspector.component.html` | `demo-preset` | Filter existing execution metadata; no fake snapshots |

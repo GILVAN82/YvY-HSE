@@ -1,3 +1,5 @@
+> **Sprint I current gates:** isolated backend 380/380, frontend 144/144; integrated backend 398/398, frontend 150/150. Added 9 backend and 32 frontend checks for presentation configuration, state/failure/manual-approval control and real transport isolation. [I evidence](../../artifacts/evaluation/sprint-i/summary.json). H counts below remain the prior baseline. Full manual acceptance is pending.
+
 # Test strategy and interpretation
 
 Baseline: `a0edf23`; current executions: [H gate manifest](../../artifacts/evaluation/sprint-h/gates.json). Historical counts are not current gates.

@@ -1,3 +1,4 @@
+import { createTuringDemoRouter, productionDemoProbe } from './routes/turingDemo';
 import { accessLogContext } from './auth/access-log';
 import './config/env.bootstrap';
 import express, { Request, Response, NextFunction } from 'express';
@@ -69,6 +70,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   });
 });
 
+app.use('/api', createTuringDemoRouter(productionDemoProbe(pool)));
 app.use('/api', createVoiceRouter(new PostgresVoicePreferences(pool)));
 app.use('/api', createGenericRouter(pool));
 app.use('/api', projectsRouter);

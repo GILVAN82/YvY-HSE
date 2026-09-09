@@ -1,0 +1,57 @@
+import { TestBed, fakeAsync, tick, flushMicrotasks } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { TuringDemoService, DemoPreflight } from './turing-demo.service';
+import { AuthService } from '../../../core/auth.service';
+import { AgentInspectorService } from '../../../core/agent-inspector.service';
+import { YvyCommandCenterAgentService } from '../yvy-command-center-agent.service';
+import { VoiceEngineService } from '../voice/voice-engine.service';
+import { TuringDemoControllerComponent } from './turing-demo-controller.component';
+
+// Test fixtures only. Production demo never manufactures agent/tool/evidence outcomes.
+const user={userId:'demo-owner',permissions:['AI_USE','HITL_APPROVE']};
+const ready:DemoPreflight={status:'READY',authenticated:true,agent:true,rag:true,operational:true,routes:true,inspector:true,voice:'CONFIGURED',project:'PRJ-001',canApprove:true,approval:null};
+const pending:any={approvalId:'approval-one',threadId:'11111111-1111-4111-8111-111111111111',actionType:'LOTO_SAFETY_EXECUTION',riskLevel:'CRITICAL',status:'PENDING'};
+describe('Turing presentation sequence, not an agent',()=>{
+  let demo:TuringDemoService,agent:any,voice:any,auth:any,fetcher:jasmine.Spy,inspector:AgentInspectorService;let preflight:DemoPreflight;let count:number;
+  beforeEach(()=>{
+    sessionStorage.clear();preflight={...ready};count=0;auth={user:signal<any>(user)};
+    agent={loading:signal(false),latest:signal<any>(null),approval:signal<any>(null),answer:signal('Verified details on screen.'),presentationThreadId:pending.threadId,
+      beginPresentation:jasmine.createSpy().and.returnValue(true),endPresentation:jasmine.createSpy(),stopPresentationRequest:jasmine.createSpy(),presentationNarration:jasmine.createSpy(),showPresentationApproval:jasmine.createSpy().and.callFake((a:any)=>agent.approval.set(a)),
+      resolveApproval:jasmine.createSpy().and.callFake(async(decision:string)=>{agent.approval.set({...pending,status:decision==='approve'?'APPROVED':'REJECTED'});return true;}),
+      send:jasmine.createSpy().and.callFake(async(prompt:string)=>{count++;if(prompt.startsWith('Approve LOTO'))agent.approval.set(pending);agent.latest.set({runId:`run-${count}`,threadId:pending.threadId,status:'COMPLETED',toolsUsed:[prompt.includes('LOTO guidance')?'search_hse_knowledge':'list_actions'],citations:prompt.includes('LOTO guidance')?[{citationLabel:'Approved reference'}]:[],executionTrace:{intent:{intent:'OPERATIONAL_OVERVIEW'},tools:[{name:'list_actions',status:'COMPLETED'}],rag:{used:true,chunksRetrieved:1},conversation:{stateActive:true,messageCount:count*2},verification:{status:'VERIFIED'}}});return true;})};
+    voice={stop:jasmine.createSpy(),speak:jasmine.createSpy().and.returnValue(true),playback:signal(null)};
+    fetcher=spyOn(window,'fetch').and.callFake(async(input:any)=>new Response(JSON.stringify(String(input).includes('/config')?{enabled:true}:preflight),{status:200,headers:{'Content-Type':'application/json'}}));
+    TestBed.configureTestingModule({providers:[{provide:AuthService,useValue:auth},{provide:YvyCommandCenterAgentService,useValue:agent},{provide:VoiceEngineService,useValue:voice}]});
+    demo=TestBed.inject(TuringDemoService);inspector=TestBed.inject(AgentInspectorService);TestBed.flushEffects();
+  });
+  afterEach(()=>{demo.exit();sessionStorage.clear();});
+  async function start(){await demo.loadFlag();await demo.open();await demo.continue();}
+  async function hitl(){await start();for(let i=0;i<4;i++)await demo.continue();}
+  it('does not open or create a presentation session when feature flag is disabled',async()=>{await demo.open();expect(demo.active()).toBeFalse();expect(agent.beginPresentation).not.toHaveBeenCalled();expect(fetcher).not.toHaveBeenCalled();});
+  it('hides the entry point while disabled',()=>{const f=TestBed.createComponent(TuringDemoControllerComponent);f.detectChanges();expect(f.nativeElement.querySelector('.demo-entry')).toBeNull();f.destroy();});
+  it('preflight ready does not dispatch any model call',async()=>{await demo.loadFlag();await demo.open();expect(demo.preflight()?.status).toBe('READY');expect(agent.send).not.toHaveBeenCalled();});
+  it('warns on unavailable safe data and blocks operational dispatch',async()=>{preflight={...ready,status:'READY_WITH_WARNINGS',operational:false,project:null};await start();await demo.continue();expect(demo.state()).toBe('FAILED_STEP');expect(demo.message()).toContain('operational data unavailable');expect(agent.send).not.toHaveBeenCalled();});
+  it('blocked preflight cannot start the session',async()=>{preflight={...ready,status:'BLOCKED',agent:false};await start();expect(agent.beginPresentation).not.toHaveBeenCalled();expect(demo.state()).toBe('PREFLIGHT');});
+  it('introduction and closing are labelled narration, not fabricated model runs',async()=>{await start();expect(agent.presentationNarration).toHaveBeenCalled();expect(agent.send).not.toHaveBeenCalled();demo.index.set(5);demo.completed.set(false);await (demo as any).execute();expect(agent.send).not.toHaveBeenCalled();});
+  it('progresses only when Continue is requested',async()=>{await start();expect(demo.index()).toBe(0);await demo.continue();expect(demo.index()).toBe(1);expect(agent.send).toHaveBeenCalledWith('Show the current operational overview.');});
+  it('pauses and resumes without replaying a completed request',async()=>{await start();demo.pause();expect(demo.state()).toBe('PAUSED');await demo.continue();expect(demo.state()).toBe('INTRODUCTION');expect(agent.send).not.toHaveBeenCalled();});
+  it('skip records a skipped step, not successful evidence',async()=>{await start();await demo.skip();expect(demo.outcomes()['INTRODUCTION']).toBe('SKIPPED');expect(demo.index()).toBe(1);});
+  it('agent failure is visible and Retry uses the actual agent service again',async()=>{await start();agent.send.and.resolveTo(false);await demo.continue();expect(demo.state()).toBe('FAILED_STEP');await demo.retry();expect(agent.send.calls.count()).toBe(2);});
+  it('a successful boolean without a new real snapshot cannot complete a step',async()=>{await start();agent.send.and.resolveTo(true);await demo.continue();expect(demo.state()).toBe('FAILED_STEP');expect(demo.outcomes()['TOOL_CALLING']).toBe('FAILED');});
+  it('RAG missing corpus never invents citations or a tool execution',async()=>{await start();demo.index.set(2);preflight={...ready,rag:false};await (demo as any).execute();expect(agent.send).not.toHaveBeenCalled();expect(demo.state()).toBe('FAILED_STEP');});
+  it('RAG requires actual citations and verified evidence',async()=>{await start();demo.index.set(2);await (demo as any).execute();expect(demo.completed()).toBeTrue();expect(agent.latest().citations.length).toBe(1);});
+  it('memory uses two actual requests in the same conversation',async()=>{await start();demo.index.set(3);await (demo as any).execute();expect(agent.send.calls.allArgs()).toEqual([['Show open actions.'],['Show evidence.']]);expect(agent.beginPresentation.calls.count()).toBe(1);});
+  it('HITL waits and never auto-approves; Continue cannot bypass it',async()=>{await hitl();expect(demo.state()).toBe('WAITING_FOR_HUMAN');await demo.continue();expect(agent.resolveApproval).not.toHaveBeenCalled();expect(demo.index()).toBe(4);});
+  for(const decision of ['approve','reject'] as const)it(`only manual ${decision} permits continuation`,async()=>{await hitl();await demo.decide(decision);expect(agent.resolveApproval).toHaveBeenCalledOnceWith(decision);expect(demo.state()).toBe('HITL');expect(demo.completed()).toBeTrue();await demo.continue();expect(demo.index()).toBe(5);});
+  it('does not resolve when the current preflight lacks approval permission',async()=>{preflight={...ready,canApprove:false};await hitl();await demo.decide('approve');expect(agent.resolveApproval).not.toHaveBeenCalled();});
+  it('restart retains pending approval and does not dispatch another critical request',async()=>{await hitl();const before=agent.send.calls.count();preflight={...ready,approval:pending};demo.restart();expect(demo.state()).toBe('PAUSED');await demo.continue();demo.index.set(4);await (demo as any).execute();expect(agent.send.calls.count()).toBe(before);expect(demo.state()).toBe('WAITING_FOR_HUMAN');});
+  it('unknown outcome marker prevents duplicate approval dispatch after exit/re-entry',async()=>{await hitl();demo.exit();preflight={...ready,approval:null};await start();demo.index.set(4);const before=agent.send.calls.count();await (demo as any).execute();expect(agent.send.calls.count()).toBe(before);expect(demo.message()).toContain('No duplicate');});
+  it('voice failure leaves text and Continue available',async()=>{voice.speak.and.returnValue(false);await start();expect(demo.voiceDegraded()).toBeTrue();expect(demo.completed()).toBeTrue();await demo.continue();expect(demo.index()).toBe(1);});
+  it('Inspector preset is only a filter over existing evidence',async()=>{await start();await demo.continue();const before=agent.latest();demo.showEvidence();expect(inspector.demoPreset()).toBeTrue();expect(agent.latest()).toBe(before);demo.exit();expect(inspector.demoPreset()).toBeFalse();});
+  it('exit stops voice and request, restores normal conversation without deleting records or memory',async()=>{await start();demo.exit();expect(voice.stop).toHaveBeenCalled();expect(agent.stopPresentationRequest).toHaveBeenCalled();expect(agent.endPresentation).toHaveBeenCalled();expect(demo.state()).toBe('IDLE');expect(agent.resolveApproval).not.toHaveBeenCalled();});
+  it('late response after exit cannot advance or speak',async()=>{await start();let done!:(value:boolean)=>void;agent.send.and.returnValue(new Promise<boolean>(r=>done=r));const execution=demo.continue();await Promise.resolve();await Promise.resolve();demo.exit();done?.(true);await execution;expect(demo.state()).toBe('IDLE');expect(demo.outcomes()).toEqual({});});
+  it('cross-user change resets demo and ignores old state',async()=>{await start();auth.user.set({...user,userId:'other'});TestBed.flushEffects();expect(demo.active()).toBeFalse();expect(agent.endPresentation).toHaveBeenCalled();});
+  it('pause during a request can resume while busy without dispatching a duplicate',async()=>{await start();let release!:(v:boolean)=>void;let began!:()=>void;const started=new Promise<void>(r=>began=r);agent.send.and.callFake(()=>{began();return new Promise<boolean>(r=>release=r);});const request=demo.continue();await started;demo.pause();expect(demo.busy()).toBeTrue();await demo.continue();expect(demo.state()).toBe('TOOL_CALLING');expect(agent.send.calls.count()).toBe(1);release(false);await request;});
+  it('technical identifiers never enter demo narration',async()=>{await start();(demo as any).speak('ACT-0001 PRJ-001 https://example.invalid [source 1] Full details on screen.');const text=voice.speak.calls.mostRecent().args[0];expect(text).not.toContain('ACT-0001');expect(text).not.toContain('PRJ-001');expect(text).not.toContain('https://');});
+  it('elapsed clock is local and cleaned up on exit',async()=>{let now=1000,callback!:()=>void;spyOn(Date,'now').and.callFake(()=>now);spyOn(window,'setInterval').and.callFake(((fn:()=>void)=>{callback=fn;return 7;}) as any);const clear=spyOn(window,'clearInterval');await start();now=3100;callback();expect(demo.elapsed()).toBe(2);demo.exit();expect(clear).toHaveBeenCalledWith(7);expect(demo.elapsed()).toBe(0);});
+});

@@ -63,3 +63,5 @@ h1 { margin: 8px 0 6px; font-size: clamp(30px, 4vw, 46px); line-height: 1; }
 }
 @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .content-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .page-head { flex-direction: column; } .head-actions { flex-wrap: wrap; } .summary-grid { grid-template-columns: 1fr; } }
+
+.demo-preset{padding:12px;font-size:13px}.demo-preset h2{font-size:16px}.demo-preset dt{color:#7fd4e1;font-size:12px;margin-top:12px}.demo-preset dd{margin:4px 0;overflow-wrap:anywhere;line-height:1.5}.demo-preset code{font-size:11px}

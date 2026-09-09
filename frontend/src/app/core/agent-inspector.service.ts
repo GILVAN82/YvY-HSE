@@ -60,6 +60,8 @@ const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 
 @Injectable({ providedIn: 'root' })
 export class AgentInspectorService {
+  readonly demoPreset=signal(false);
+  readonly demoApproval=signal<ApprovalSnapshot|null>(null);
   readonly voiceEngine=signal<{requestedEngine:string;effectiveEngine:string;fallbackReason:string|null;voiceName:string|null}|null>(null);
   readonly voiceSession=signal<{authenticatedUser:string|null;voiceResponseMode:string;inputMode:'TEXT'|'VOICE';autoVoice:boolean;spokenPolicy:'FACTUAL'|'EVIDENCE_LIMITED'|'TECHNICAL_ERROR'|'NONE';verificationStatus:string|null}|null>(null);
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
@@ -73,6 +75,9 @@ export class AgentInspectorService {
     this.latest.set(value);
     try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* Demo trace remains in memory. */ }
   }
+
+  /** Presentation isolation changes only the run snapshot, not normal attention/voice diagnostics. */
+  clearRun(){this.latest.set(null);try{sessionStorage.removeItem(STORAGE_KEY);}catch{}}
 
   /** Clears only the browser-side Inspector snapshot. It never calls the API. */
   clear() {

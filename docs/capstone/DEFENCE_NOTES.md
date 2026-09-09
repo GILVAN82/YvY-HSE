@@ -294,3 +294,7 @@ Code: [OperationalAttentionService](../../backend/src/ai/attention/operational-a
 **HSE VALUE:** Focus human review on operational signals.
 
 **TURING VALUE:** Controlled proactive assistance.
+
+## Turing presentation orchestrator (Sprint I)
+
+See [Demo Mode defence note](TURING_DEMO_MODE.md#defence-note): deterministic presentation order reuses actual graph execution; it is not another agent. Gilvan retains architecture explanation and manual approval. Full manual acceptance remains pending.
