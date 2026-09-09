@@ -1,0 +1,25 @@
+# Turing requirements matrix
+
+Canonical project source: **Case 2 - AI agent for task automation**, with RAG as a complementary capability, using the criteria explicitly supplied by Gilvan in the Sprint H request. The repository does not contain the complete original institutional grading rubric. This matrix maps the user-supplied official project scope; it does not invent rubric wording, certify a grade or assert reviewer acceptance.
+
+Runtime baseline `a0edf23`, branch `capstone/yvy-hse`; H is the documentation commit containing this file. COMMITTED runtime evidence is distinct from preserved LOCAL / UNCOMMITTED features; Demo Mode is FUTURE.
+
+Legend: 🏁 VALIDATED = tested within a stated boundary; ✅ IMPLEMENTED = implemented/documented; 🟡 REMAINING = real follow-up remains; ⬜ MISSING = absent. An implemented item can retain a limitation without implying certification.
+
+| Requirement | Status | Evidence | Tests | Commit | Remaining |
+|---|---|---|---|---|---|
+| Problem / purpose | ✅ IMPLEMENTED | README purpose; H story | Documentation review | H | No measured accident-reduction claim. |
+| Agent design | 🏁 VALIDATED | Graph/runner; DEFENCE_NOTES | Graph and 44-case evaluation | a0edf23 | None within declared controlled workflow. |
+| Tool integration | 🏁 VALIDATED | Scoped createHseTools/appDataTools | Tool, HTTP and authorization tests | 1d93165 + a0edf23 | Local record drafting excluded. |
+| Advanced execution | 🏁 VALIDATED | Memory, guard, verification, digital HITL | Memory/HITL/semantic suites and agent scenarios | 79f3f41 + a0edf23 | Physical execution and native durable graph resume not claimed. |
+| Interactive prototype | ✅ IMPLEMENTED | Angular chat, Inspector, voice, attention | 112 committed frontend tests and build | a0edf23 | Human rehearsal and browser/microphone preflight. |
+| Evaluation | 🏁 VALIDATED | 44/44 agent; 134/134 intent; 24 retrieval cases | H gates and retained JSON | 79f3f41 + 8b0e987 + a0edf23 | Live and larger independent quality evidence remain bounded limitations. |
+| Documentation | ✅ IMPLEMENTED | README, architecture, map, defence, QA and matrices | H link/symbol/claim checks | H | Human review of presentation wording. |
+| Ethical considerations | ✅ IMPLEMENTED | README consolidated ethics; security and limitations | Auth/isolation and prompt tests; documentation audit | 1d93165 + a0edf23 + H | Residual privacy/retention/deployment governance documented. |
+| Outcome quality | 🟡 REMAINING | Offline controls and small retrieval corpus pass | Separate simulated and real retrieval gates | 8b0e987 + a0edf23 | Current live-provider answer quality not fully benchmarked. |
+| Learning application | ✅ IMPLEMENTED | Controlled workflow, schemas, retrieval, evaluation and defence | Mapped symbols and tested contracts | D-G + H | Gilvan must demonstrate ownership in oral review. |
+| Presentation readiness | 🟡 REMAINING | Six-point matrix and planned demo | Documentation only; no rehearsal evidence | H | Rehearse, preflight, approve final timing; Demo Mode separate. |
+| Showcase | ⬜ MISSING | No real URL supplied | Not applicable | H | USER ACTION REQUIRED: submit real Showcase. |
+| README showcase link | ⬜ MISSING | Visible pending marker near top | Marker audit; no invented URL | H | USER ACTION REQUIRED: provide real URL, then replace marker. |
+
+[Final gates and all remaining items](SPRINT_H_FINAL_COMPLIANCE.md) | [Reviewer feedback register](REVIEW_COMPLIANCE_MATRIX.md). H commit can be resolved with `git log -1 --format=%H -- docs/capstone/TURING_REQUIREMENTS_MATRIX.md`; runtime source remains `a0edf23`.

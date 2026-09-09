@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
+
 # Sprint F — RAG production hardening
 
 Sprint F.2 update: see [multilingual retrieval and baseline consistency](SPRINT_F2_MULTILINGUAL.md) for the current PT/EN policy, same-corpus before/after metrics and patch replay. Earlier results below remain historical.

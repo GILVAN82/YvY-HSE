@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
+
 # Sprint F review and defence
 
 Sprint G update: [prompt architecture and observability](SPRINT_G_PROMPTS_OBSERVABILITY.md) documents the current role boundaries, versioned policies, provider validation and correlated Inspector diagnostics. Retrieval policy and corpus remain unchanged.

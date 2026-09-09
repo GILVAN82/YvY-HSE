@@ -1,6 +1,18 @@
 # YvY HSE System
 
-YvY HSE is an AI-assisted Health, Safety and Environment management system. It combines operational HSE data, an approved knowledge base and controlled AI-agent workflows to help HSE professionals retrieve information and support decisions. It is a consultative system, not an autonomous safety authority.
+YvY is an AI-powered HSE work companion for HSE professionals and project teams. It combines operational tools, approved knowledge retrieval, evidence verification, memory and human approval to support safer and more traceable HSE decisions. It helps navigate fragmented records and procedures; it does not replace professional judgement or claim a proven reduction in accidents.
+
+**SHOWCASE LINK: PENDING USER SUBMISSION** - MISSING / USER ACTION REQUIRED. No public showcase URL has been supplied.
+
+## Capstone baseline
+
+**Case 2 - AI agent for task automation**, with RAG as a complementary capability. Branch `capstone/yvy-hse`; runtime baseline `a0edf23` (Sprint G), audited by Sprint H on 9 September 2026. H changes documentation only. This is a project evidence mapping, not a claim of institutional approval.
+
+- **COMMITTED:** authenticated and project-scoped workflow, read-only operational tools, hybrid RAG, explicit memory, digital HITL, voice, attention, verification and observability.
+- **LOCAL / UNCOMMITTED:** record-draft creation/review, broader automatic app-data intent routing, incident-count fallback and chat layout/history refinements. These are preserved separately and are not demonstrated as released Capstone capabilities.
+- **FUTURE:** Turing Demo Mode, wider evaluation and deployment hardening. No Demo Mode implementation is included in H.
+
+[Final compliance](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) | [Requirements](docs/capstone/TURING_REQUIREMENTS_MATRIX.md) | [Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence notes](docs/capstone/DEFENCE_NOTES.md) | [Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md)
 
 ## Local Authentication
 
@@ -47,20 +59,15 @@ The AI Agent determines whether a request needs structured application data, app
 ## Architecture
 
 ```text
-User
-  |
-Angular AI Agent UI
-  |
-Node.js / Express API
-  |
-LangGraph Agent
-  |
-Guard -> Agent -> Tools / RAG / Memory -> Verify -> Approval Gate
-  |                                             |
-Refuse / Finalize Failure                 Finalize / Await Human Approval
+Authenticated request -> Intent routing -> Guard -> Agent / bounded tool loop
+  -> Retrieval / tools -> Verification -> HITL when required -> Finalization -> SSE / UI
 ```
 
-The Angular frontend calls the Express API. LangGraph owns workflow state and routing; the Vercel AI SDK performs provider streaming and function calling inside the agent node. PostgreSQL stores operational data, RAG records, conversation state, explicit long-term memories and HITL decisions.
+The pattern is a **Controlled State Graph / Workflow Agent**, with a deterministic router and a bounded tool-using loop. LangGraph owns explicit states and transitions; the AI SDK runs model/tool steps within the agent node. Refusals and failures take explicit terminal branches. Every valid graph result visits the approval gate, which either continues or pauses for a human decision.
+
+The inner loop is ReAct-like (tool action and observation), but the overall workflow is controlled by application code. Plan-and-Execute would add an explicit planner and plan executor; YvY does not implement that architecture. This design trades open-ended planning for inspectable safety boundaries and finite execution.
+
+PostgreSQL stores operational records, RAG evidence, user-owned conversation state, explicit memory and approval decisions. The UI consumes SSE events; a completed/verified result is distinct from intermediate streamed text. See [architecture and boundaries](docs/architecture.md).
 
 ## LangGraph Workflow
 
@@ -68,7 +75,7 @@ The Angular frontend calls the Express API. LangGraph owns workflow state and ro
 | --- | --- |
 | `guard` | Validates input length, HSE scope, memory safety and prompt-injection patterns before any model call. |
 | `agent` | Calls the selected language model and exposes only the tools permitted for the request. |
-| `verify` | Applies step limits, checks that an answer exists and validates RAG evidence/citations. |
+| `verify` | Applies bounded structural and deterministic semantic evidence checks, including operational facts, citations and jurisdiction-sensitive claims. |
 | `approval_gate` | Classifies critical LOTO execution-approval requests and persists a pending human decision. |
 | `finalize` | Completes a verified request that does not require pending approval. |
 | `refuse` | Returns controlled copy for out-of-scope, unsafe or injection-like requests. |
@@ -78,14 +85,15 @@ Not every request visits every node. A refused request stops before the model; a
 
 ## Function Calling and Tools
 
-The production LangGraph runner uses a shared tool registry. Operational tools are parameterized and read-only.
+The production LangGraph runner uses a shared tool registry. Operational tools are parameterized and read-only. The nine registry names are not nine independent agents; exposure varies with intent, permissions and explicit memory intent.
 
 | Tool | Purpose |
 | --- | --- |
 | `get_kpi` | Calculates portfolio or project KPIs for a month or full year. |
 | `list_incidents` | Lists recent incidents, optionally filtered by project. |
 | `list_actions` | Lists minimized CAPA/action records with optional project, status and overdue filters. |
-| `get_projects` | Lists portfolio projects and their current metadata. |
+| `get_projects` | Lists authorized projects and their current metadata. |
+| `list_app_modules`, `query_app_records` | Discover registered modules and query policy-allowlisted fields with project scope and paginated totals; automatic broad intent routing remains local work. |
 | `search_hse_knowledge` | Retrieves traceable evidence from the approved HSE corpus. |
 | `save_memory` | Writes durable memory only when the user explicitly asks the agent to remember something. |
 | `forget_memory` | Disables a durable memory only after an explicit forget/remove request. |
@@ -94,22 +102,25 @@ The two memory-write tools are exposed only when the request has explicit memory
 
 ## Agentic RAG
 
-The agent can select `search_hse_knowledge` when a question needs reusable HSE guidance rather than current operational data. The query is embedded with OpenAI `text-embedding-3-small` by default, matched against 1536-dimensional vectors in PostgreSQL/pgvector, and returned with minimized source metadata. The verifier requires traceable evidence and an answer citation when RAG evidence is used.
+The agent selects `search_hse_knowledge` for procedural knowledge; current operational facts use database tools.
 
-The approved corpus currently contains four curated reference summaries:
+```text
+Original query -> structured query policy -> controlled PT/EN technical expansion
+ -> semantic retrieval + lexical retrieval -> relevance/topic/exact/jurisdiction gates
+ -> RRF -> bounded required/relevant evidence -> citation -> verification -> abstention if needed
+```
 
-- OSHA hazardous-energy control / LOTO
-- UK HSE permit-to-work guidance
-- UK HSE risk-assessment guidance
-- UK HSE emergency-procedure guidance
+This is the actual ordering: candidate jurisdiction checks precede fusion and answer verification checks claims again. Semantic embedding uses the original query; controlled Portuguese expansion changes the lexical query only. It is not unrestricted LLM translation.
 
-Only explicitly registered Markdown/text sources under `knowledge/approved` can be ingested. Source onboarding rejects path traversal, unsupported extensions and suspected secrets or personal data; retrieved content is treated as untrusted evidence, not instructions.
+The approved corpus has **4 documents**, curated public summaries of OSHA LOTO and UK HSE permit-to-work, risk assessment and emergency procedures. Corpus fingerprint: `cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1`. Embeddings: `text-embedding-3-small`, 1536 dimensions, PostgreSQL/pgvector. Semantic threshold **0.45**; ANN indexing is deferred for this tiny corpus.
+
+Only registry-approved files under `knowledge/approved` can be ingested. The 24-query evaluation (EN16/PT8) measures this bounded corpus and dataset: hybrid required/relevant recall 100%, irrelevant rate 0%; semantic-only recall 66.67%. It is not universal retrieval or answer accuracy. [RAG details and reproducibility](docs/capstone/SPRINT_F2_MULTILINGUAL.md).
 
 ## Memory and State
 
 ### Short-Term Memory / Conversation State
 
-Each conversation uses a UUID thread ID. Bounded messages, recent RAG usage and source references are persisted in PostgreSQL `agent_thread_state`. The runner restores context only from the same thread, so one thread cannot authorize or supply context to another. Failed runs leave previously persisted state intact. The UI starts a fresh logical conversation after 15 minutes of inactivity.
+Each conversation uses a UUID thread ID. Bounded messages, recent RAG usage and source references are persisted in PostgreSQL `agent_thread_state`. The runner restores context only from the same thread, so one thread cannot authorize or supply context to another. Failed runs leave previously persisted state intact. Committed UI conversation lifecycle is distinct from the local shared-history refinements; see the baseline manifest and code map. State ownership is enforced by the server, not by a UUID alone.
 
 The graph also supports an in-memory LangGraph `MemorySaver` for development/tests, but durable application conversation state is provided by the explicit PostgreSQL repository. The application does not claim native PostgreSQL LangGraph checkpoint resumability.
 
@@ -140,7 +151,7 @@ The initial LangGraph invocation stops at the approval gate. Approval or rejecti
 
 Human approval is workflow authorization only. The AI does not physically verify LOTO, does not declare equipment safe and does not authorize physical work. Zero-energy verification and all field checks by competent personnel remain mandatory.
 
-## Guardrails and Security
+## Guardrails
 
 - HSE-domain scope enforcement before model execution
 - Narrow prompt-injection and system-prompt/secret-disclosure detection
@@ -235,7 +246,7 @@ Copy `backend/.env.example` to `backend/.env` and provide values appropriate to 
 | `PORT` | Optional; defaults to `3000`. |
 | `AI_ORCHESTRATOR` | Optional; `langgraph` (default) or `legacy`. |
 | `CORS_ORIGINS` | Optional comma-separated browser-origin allowlist. |
-| `ALLOW_UNAUTHENTICATED_WRITES` | Optional local-development flag; operational writes are disabled by default. |
+| `ALLOW_UNAUTHENTICATED_WRITES` | Historical write-toggle name retained for compatibility; it does not bypass server authentication or authorization. |
 | `RAG_TOP_K`, `RAG_MIN_SIMILARITY` | Optional retrieval tuning. |
 | `OPENAI_EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` | Optional embedding configuration. |
 | `ANTHROPIC_API_KEY` | Optional Anthropic provider key. |
@@ -247,7 +258,7 @@ Copy `backend/.env.example` to `backend/.env` and provide values appropriate to 
 
 ### Structured data / tool calling
 
-> How many open incidents are currently registered in the system?
+> List the recent open incidents in my authorized projects.
 
 Expected behavior: use the appropriate structured-data tool and answer from current PostgreSQL records rather than RAG.
 
@@ -316,55 +327,76 @@ This mapping describes the implementation and does not claim official approval b
 
 Agent Inspector is described as custom observability. This README does not claim that it satisfies a specific formal third-party observability optional task.
 
-## Testing
+## Capabilities by responsibility
 
-Validated on 12 August 2026:
+| Area | Real capability and boundary |
+|---|---|
+| OPERATIONAL TOOLS | Scoped read queries, KPIs, incidents, actions, projects and registered module access; no committed operational record-write agent. |
+| KNOWLEDGE/RAG | Four approved summaries, hybrid retrieval and traceable citations; not a general legal database. |
+| MEMORY | Bounded user-owned thread context and explicit save/forget of safe preferences; memory is untrusted context. |
+| HITL | Authenticated digital approval/rejection for classified critical LOTO requests; no physical execution. |
+| VOICE | Browser-dependent speech input and ElevenLabs spoken summaries with controlled failure behavior. |
+| ATTENTION | Server evaluation of operational signals, scoped alerts and acknowledge/snooze controls; not autonomous remediation. |
+| VERIFICATION | Deterministic structural and semantic evidence checks, abstention and controlled failure states. |
 
-| Check | Result |
-| --- | --- |
-| Backend tests | 209 passed, 0 failed |
-| Frontend tests | 21 passed, 0 failed |
-| Total | 230 passed, 0 failed |
-| Backend TypeScript check | Passed (`npm run typecheck`) |
-| Angular production build | Passed (`npm run build`) |
+The visual capability ring groups HSE topics; it does not represent independent agents.
 
-The Angular build currently reports non-blocking size-budget warnings for the initial bundle and AI chat widget stylesheet.
+## Testing and evaluation
 
-Run the same checks with:
+Final gate evidence and exact commands are in [Sprint H](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [test strategy](docs/capstone/TEST_STRATEGY.md). Runtime `a0edf23`: backend 371 tests and frontend 112 tests; integrated local tree: backend 389 and frontend 118. Counts must retain their baseline labels.
 
-```bash
+Agent baseline: **44/44**, supplementary **3/3**, intent **134/134**. Offline evaluation executes production graph/components with simulated model and injected dependencies, blocking network. The real retrieval replay uses PostgreSQL and retained real embeddings with HTTP blocked; it is not a hermetic database-free test. No new live-provider quality benchmark was run in H. Historical live 11/12 results do not validate today's prompts/models.
+
+```powershell
 cd backend
-npm test
-npm run typecheck
-
+npm.cmd test
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd run eval:offline
 cd ../frontend
-npm run test:ci
-npm run build
+npm.cmd run test:ci
+npx.cmd tsc -p tsconfig.app.json --noEmit
+npx.cmd tsc -p tsconfig.spec.json --noEmit
+npm.cmd run build
 ```
 
-## Known Limitations
+Angular size-budget warnings remain non-blocking. Test counts establish checks passed, not model answer quality or production reliability.
 
-- There is no complete production authentication, RBAC, verified approver identity or multi-tenant isolation.
-- The AI cannot inspect equipment, verify isolation or zero energy, authorize physical work or replace a competent person.
-- HITL decisions use a controlled application transition, not native LangGraph checkpoint resume.
-- The approved knowledge base is intentionally limited to four curated documents.
-- Live AI and embedding operations depend on configured, reachable external providers.
-- Operational AI tools are read-only; application write endpoints are outside the agent workflow and disabled by default without authentication.
-- The current baseline is a local demonstration/development project, not a production-certified HSE control system.
-- Production deployment still needs centralized secrets, security review, backup/recovery and production observability.
+## LIMITATIONS
 
-## Future Improvements
+- YvY supports decision-making; it does not replace the HSE professional.
+- HITL is digital approval, not physical verification or authorization to perform field work.
+- RAG evaluation uses a small approved corpus; the 24-query result is bounded, not universal accuracy.
+- Live model quality is not fully benchmarked for the current baseline.
+- Voice/STT depends partly on browser/provider behavior.
+- The legacy path is not equivalent to the primary LangGraph verification/HITL path.
+- Evidence verification is a control, not proof of physical or legal truth.
+- Project isolation exists; company-level tenancy and production certification are not claimed.
+- Field-level minimization cannot remove all personal data from operational free text.
 
-- Authentication, RBAC, tenant isolation and verified approver identity
-- Multi-company and contractor collaboration
-- Native checkpoint-based HITL resume
-- A broader reviewed HSE knowledge corpus and additional read-only tools
-- Expanded automated evaluation and production observability
-- Controlled integrations with external HSE systems
+[Classified residual risks and future hardening](docs/limitations.md).
 
-## Safety Disclaimer
+## Ethical, Safety & Privacy Considerations
 
-YvY HSE supports HSE information retrieval and decision-making. It does not replace competent HSE professionals, approved site procedures, field verification, legal or regulatory requirements. It does not authorize physical work, verify a zero-energy state or declare equipment or activities safe. Users remain responsible for applying applicable law, organizational controls and site-specific procedures.
+**Human oversight and HITL:** competent professionals retain safety authority. Digital approval records a permitted human decision; it cannot inspect equipment or verify zero energy. YvY cannot execute LOTO.
+
+**Authorization and project isolation:** server sessions establish identity; RBAC, project membership and object ownership govern access before evidence reaches the model. A prompt cannot grant permissions. Company-level tenancy is outside the current model.
+
+**Data minimization and privacy:** field allowlists, bounded context, attachment controls and sanitized diagnostics limit exposure. Free text can still contain personal information. Memory requires explicit intent, is user-owned and can be disabled through forget; forgetting is not a claim of immediate deletion from every backup. Browser Inspector clearing removes only its local snapshot. Retention, backup deletion and organization-wide consent policies need deployment-specific governance.
+
+**Prompt injection, grounding and abstention:** policies are separated from lower-priority memory, attachments and retrieved/tool data. Deterministic authorization, source gates and verification remain authoritative. Unknown or insufficient evidence should yield abstention/controlled failure, never invented records. These boundaries are tested but do not guarantee universal jailbreak resistance.
+
+**External providers and voice privacy:** model context, selected evidence and spoken summaries may be processed by configured providers; browser speech recognition may use browser-vendor services. Microphone access, provider terms, permitted data and organizational consent must be considered before real-data deployment. No claim is made that all voice processing is local.
+
+**Bias and capability honesty:** four English-source summaries and a small PT/EN evaluation can favor covered terminology and jurisdictions. Missing languages, unfamiliar hazards and site-specific rules require review. No measured accident reduction or autonomous safety authority is asserted.
+
+**Auditability:** run/thread IDs, route, evidence, verification, HITL and prompt identity support inspection. Sanitized logs and session-local Inspector data are not an immutable legal audit archive or a complete retention system.
+
+See [security evaluation](docs/capstone/SECURITY_AND_ETHICAL_AI_EVALUATION.md), [authorization](docs/security-authorization-sprint-d.md), [prompt boundaries](docs/capstone/SPRINT_G_PROMPTS_OBSERVABILITY.md) and [limitations](docs/limitations.md).
+
+## Future work
+
+Wider independent and live-provider evaluation, equipment-bound approvals, transactional write hardening, deployment governance and a separately scoped Demo Mode. These remain future work, not current capabilities.
 
 ## Documentation
 

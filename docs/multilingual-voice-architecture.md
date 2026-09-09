@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current ElevenLabs spoken output and browser STT have provider/browser-dependent availability. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results.
+
 # Multilingual Voice Architecture
 
 ## Purpose

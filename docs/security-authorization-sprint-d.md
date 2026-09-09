@@ -1,3 +1,5 @@
+> **VERSIONED SECURITY BASELINE: Sprint D (`1d93165`).** Its implemented authorization controls remain applicable; its test counts and scope exclusions are historical. See [H current gates and residual risks](capstone/SPRINT_H_FINAL_COMPLIANCE.md).
+
 # SPRINT D ? AUTHORIZATION & ATTENTION ISOLATION
 
 Date: 2026-09-09. This is a scoped engineering validation, not a security certification.

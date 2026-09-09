@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results.
+
 # YvY operational overview
 
 Broad workplace questions such as “What is pending?” and “O que temos em aberto?” route to `OPERATIONAL_OVERVIEW`. The route exposes only the existing read-only operational sources: overdue actions, incidents and portfolio KPIs. Project authorization remains inside each tool. A successful empty query is `SUCCESS_NO_DATA`; it is never presented as a retrieval failure. If one source is unavailable, the other successful sections remain usable.

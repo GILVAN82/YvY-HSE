@@ -1,0 +1,469 @@
+{
+  "patterns": "233|209|37/37|37.case|no auth|no rbac|authentication.*(?:not|missing)|verification.*structural|chroma|streamlit|submission/yvy|7e7ab177",
+  "versionedDocuments": [
+    "docs\\agent-purpose.md",
+    "docs\\conversational-voice-architecture.md",
+    "docs\\elevenlabs-voice-engine.md",
+    "docs\\langgraph-architecture.md",
+    "docs\\multilingual-voice-architecture.md",
+    "docs\\proactive-safety-intelligence-architecture.md",
+    "docs\\security-authorization-sprint-d.md",
+    "docs\\server-operational-attention-architecture.md",
+    "docs\\turing-sprint3-agent-harness.md",
+    "docs\\turing-sprint3-demo-script.md",
+    "docs\\turing-sprint3-final-presentation.md",
+    "docs\\turing-sprint3-final-validation.md",
+    "docs\\turing-sprint3-hitl.md",
+    "docs\\turing-sprint3-long-term-memory.md",
+    "docs\\turing-sprint3-operational-agent-integration.md",
+    "docs\\turing-sprint3-pgvector-setup.md",
+    "docs\\turing-sprint3-presentation-map.md",
+    "docs\\turing-sprint3-rag-ingestion.md",
+    "docs\\turing-sprint3-rag-retrieval.md",
+    "docs\\turing-sprint3-reviewer-qa.md",
+    "docs\\turing-sprint3-state-management.md",
+    "docs\\turing-sprint3-submission-checklist.md",
+    "docs\\voice-spoken-response.md",
+    "docs\\yvy-hse-ai-attachments.md",
+    "docs\\yvy-hse-demo-environment.md",
+    "docs\\yvy-operational-overview.md",
+    "docs\\capstone\\AGENT_ARCHITECTURE_AND_PATTERNS.md",
+    "docs\\capstone\\AI_EVALUATION_REPORT.md",
+    "docs\\capstone\\APPROVED_CORPUS_VALIDATION.md",
+    "docs\\capstone\\CAPSTONE_DEMO_CHEAT_SHEET.md",
+    "docs\\capstone\\CAPSTONE_PRESENTATION_AND_DEMO.md",
+    "docs\\capstone\\EVALUATION.md",
+    "docs\\capstone\\EVALUATION_FAILURE_CLOSURE.md",
+    "docs\\capstone\\FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+    "docs\\capstone\\HERMETIC_COMPOSITION_CORRECTION.md",
+    "docs\\capstone\\LIVE_MODEL_VALIDATION.md",
+    "docs\\capstone\\RAG_HARDENING.md",
+    "docs\\capstone\\RETRIEVAL_EVALUATION.md",
+    "docs\\capstone\\SECURITY_AND_ETHICAL_AI_EVALUATION.md",
+    "docs\\capstone\\SPRINT_F2_MULTILINGUAL.md",
+    "docs\\capstone\\SPRINT_F_REVIEW.md",
+    "docs\\capstone\\SPRINT_G_PROMPTS_OBSERVABILITY.md"
+  ],
+  "matches": [
+    {
+      "file": "docs/agent-purpose.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current purpose is a scoped HSE work companion; authentication and verified server identity are implemented. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/agent-purpose.md",
+      "line": 23,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Authentication and verified user identity are not implemented in the current"
+    },
+    {
+      "file": "docs/conversational-voice-architecture.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current output uses the ElevenLabs adapter and browser-dependent speech input; older engine descriptions below are historical. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/elevenlabs-voice-engine.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/langgraph-architecture.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current graph verifies structural and semantic evidence before its approval gate; prompt composition and safe diagnostics were added in G. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/limitations.md",
+      "line": 3,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Baseline: committed runtime `a0edf23`, branch `capstone/yvy-hse`; Sprint H documentation audit. Authentication, RBAC, authenticated approval and project isolation are implemented. This is not a production certification."
+    },
+    {
+      "file": "docs/multilingual-voice-architecture.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current ElevenLabs spoken output and browser STT have provider/browser-dependent availability. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/proactive-safety-intelligence-architecture.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/security-authorization-sprint-d.md",
+      "line": 33,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "AUTHENTICATION_REQUIRED = missing/invalid session (401)."
+    },
+    {
+      "file": "docs/server-operational-attention-architecture.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-agent-harness.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-agent-harness.md",
+      "line": 122,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Authentication, RBAC, tenant isolation, RLS and verified approver identity are not implemented. Harness results do not replace these production controls or prove production reliability, legal compliance, universal correctness or statistical accuracy."
+    },
+    {
+      "file": "docs/turing-sprint3-demo-script.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-final-presentation.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-final-presentation.md",
+      "line": 317,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "**Simple English talk track:** “These are not hidden gaps. The current prototype has no authentication, user ownership or verified approver identity. These controls are required before production deployment.”"
+    },
+    {
+      "file": "docs/turing-sprint3-final-validation.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-final-validation.md",
+      "line": 127,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- Limitation: no authenticated/verified approver identity and no public approval UI."
+    },
+    {
+      "file": "docs/turing-sprint3-final-validation.md",
+      "line": 151,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Secret persistence | Validators/redaction | Memory/thread secret tests | PASS | No authenticated ownership |"
+    },
+    {
+      "file": "docs/turing-sprint3-final-validation.md",
+      "line": 157,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Wrong-thread HITL | ID + thread atomic predicate | Wrong-thread test | PASS | No RBAC |"
+    },
+    {
+      "file": "docs/turing-sprint3-final-validation.md",
+      "line": 206,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "1. Authentication — NOT IMPLEMENTED."
+    },
+    {
+      "file": "docs/turing-sprint3-hitl.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current HITL has authenticated, permission/project/owner-checked human resolution and UI controls. It is a digital application transition, not physical LOTO execution. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-hitl.md",
+      "line": 72,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "There is no authentication, RBAC, ownership, tenant isolation, row-level security, or verified approver identity. The internal service/CLI demonstrates workflow semantics only. No public approval endpoint or frontend control was added. Production approval requires authenticated identity, authorization, expiry, and stronger audit controls."
+    },
+    {
+      "file": "docs/turing-sprint3-long-term-memory.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current memory is authenticated and user-owned with explicit save/forget intent. Original migration-only descriptions below predate ownership hardening. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-long-term-memory.md",
+      "line": 30,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Migration `003_create_agent_long_term_memory.sql` adds an isolated table with UUID ID, unique internal `memory_key`, allowlisted category, normalized content, SHA-256 content hash, enabled flag, timestamps, and last-used timestamp. It adds no user or tenant identity because the application has no authenticated ownership model."
+    },
+    {
+      "file": "docs/turing-sprint3-long-term-memory.md",
+      "line": 64,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The scope is application/project-level, not per-user. The system lacks authentication, ownership, RBAC, tenant isolation, and row-level security. UUIDs and memory keys are not authorization. Public memory listing/deletion APIs were deliberately not added."
+    },
+    {
+      "file": "docs/turing-sprint3-long-term-memory.md",
+      "line": 80,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- There is no authenticated consent/ownership UI."
+    },
+    {
+      "file": "docs/turing-sprint3-operational-agent-integration.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-pgvector-setup.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-presentation-map.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-rag-ingestion.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-rag-retrieval.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-reviewer-qa.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-reviewer-qa.md",
+      "line": 103,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "**Short answer:** The prototype has no authentication or RBAC."
+    },
+    {
+      "file": "docs/turing-sprint3-state-management.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current thread persistence is authenticated and user-owned. UUIDs alone are not authorization; native durable LangGraph resume is not implemented. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/turing-sprint3-state-management.md",
+      "line": 90,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The application still lacks authentication, RBAC, tenant isolation, and row-level security. UUIDs are not authorization. The existing chat endpoint can accept a conversation UUID, so persistent state must not contain sensitive operational records or personal/medical data. Production multi-user exposure requires authentication and ownership checks before thread persistence is considered secure."
+    },
+    {
+      "file": "docs/turing-sprint3-submission-checklist.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/voice-spoken-response.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/yvy-hse-ai-attachments.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current attachment access is authenticated and owner/thread scoped; permanent customer-document retention and company tenancy are not established. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/yvy-hse-ai-attachments.md",
+      "line": 66,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The current application has no authenticated user ownership or tenant isolation. Thread scoping is appropriate for local and controlled prototype use, but is not sufficient for multi-tenant SaaS. Authentication, ownership, tenant authorization, retention policy, audit controls, and appropriate RLS must precede permanent customer-document storage."
+    },
+    {
+      "file": "docs/yvy-hse-demo-environment.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/yvy-operational-overview.md",
+      "line": 1,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Earlier design, validation counts and capability descriptions below belong to their original sprint baseline. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results."
+    },
+    {
+      "file": "docs/capstone/AGENT_ARCHITECTURE_AND_PATTERNS.md",
+      "line": 131,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "In a 30–45 second explanation: authentication establishes **who the user is** through the server session. Authorization establishes **what that principal may access**, including permissions and projects. The agent chooses **which permitted capability is useful**. The tool layer enforces **what data can actually be queried and returned**. HITL checks **which authenticated human may continue a critical workflow**. The model cannot grant itself a role, project, tool, database query, or approval permission."
+    },
+    {
+      "file": "docs/capstone/AI_EVALUATION_REPORT.md",
+      "line": 5,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "> Historical report. The current measured baseline, retained failures and reproduction instructions are in [Sprint E — EVALUATION](./EVALUATION.md). Earlier 37-case figures below are not current evidence."
+    },
+    {
+      "file": "docs/capstone/AI_EVALUATION_REPORT.md",
+      "line": 84,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Overall scenario result: **37/37 (100.0%)**."
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_DEMO_CHEAT_SHEET.md",
+      "line": 65,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Evaluation? | 37/37 determinístico; 11/12 OpenAI ao vivo; resultados separados. | 37/37 deterministic; 11/12 live OpenAI; the results are separate. |"
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_DEMO_CHEAT_SHEET.md",
+      "line": 73,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "**Deterministic — keep separate:** 37/37; tools 11/11; RAG grounding 13/13; HITL 9/9; authorization 9/9; guardrails 5/5."
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_DEMO_CHEAT_SHEET.md",
+      "line": 115,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- **Evaluation:** 37/37 reproducible, separately 11/12 live OpenAI."
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_PRESENTATION_AND_DEMO.md",
+      "line": 13,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "**Evidence discipline:** deterministic evaluation (37/37) and live OpenAI validation (11/12) are separate. Do not claim measured productivity gains, universal jailbreak resistance, physical verification, or completed roadmap features."
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_PRESENTATION_AND_DEMO.md",
+      "line": 245,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- 37/37 scenarios"
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_PRESENTATION_AND_DEMO.md",
+      "line": 289,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Authentication identifies the user. RBAC and project scope define allowed access. The tool layer enforces the real data boundary. HITL defines who may continue a critical workflow. The model cannot choose its own permissions. These controls reduce risk, but they are not a universal security guarantee."
+    },
+    {
+      "file": "docs/capstone/CAPSTONE_PRESENTATION_AND_DEMO.md",
+      "line": 360,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- **15 seconds:** The reproducible suite passed 37/37; separate live OpenAI validation passed 11/12."
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 9,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The current AI Agent, security controls, evaluation evidence, frontend, builds, and presentation material are internally consistent and well supported. The ordinary local backend suite passes 231/231, the frontend passes 30/30, deterministic evaluation passes 37/37, and the committed live OpenAI evidence remains 11/12 (91.7%)."
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 21,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Reusable KPI computation now requires an explicit query executor, while production binds the real pool at `index.ts` and `productionDependencies.ts`. The complete clean-copy suite passes 233/233 without `.env`, `DATABASE_URL`, PostgreSQL, provider keys, or provider network. The only remaining uncertainty is the absent official Capstone rubric, not an application defect."
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 36,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| JF-A | Default `npm test` works without PostgreSQL | Known Jochen feedback | Complete suite uses injected fakes; reusable KPI import is configuration-free | `routes/kpi.service.ts`, `computeKpi`; `routes/kpi.ts`, `createKpiRouter` | Clean no-`.env` simulation: 233/233 | Normal local run: 233/233 | PASS | None. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 40,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| JF-E | Improve zero-result semantics | Known Jochen feedback | Structured success envelopes and `NO_DATA` status | `ai/tools.ts`, lines 44–57; `ai/responseStatus.ts`, lines 15–29 | Response-status and agent regression tests | 37/37 and live no-data scenario | PASS | None. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 53,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| TECH-EVAL | Deterministic and separate live evidence | Committed Capstone evidence | Offline 37-case harness and isolated real-provider validation | `evaluation.harness.ts`, 6–95; `live-evaluation.harness.ts`, 3–7 | Harness framework tests | 37/37; 11/12 live | PASS | Live variability and phrase-based scorer remain documented. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 63,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| A. Default tests without live PostgreSQL | **CLOSED** | Clean copy without `.env`, database configuration, PostgreSQL, or keys passes 233/233. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 83,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Authorization is outside the LLM: `RequestPrincipal` comes from authentication; `toolFactory` receives that principal; explicit project requests are checked before querying; non-admin portfolio queries use allowed project IDs. Prompt claims cannot alter the principal."
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 109,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The chain remains Authentication → RequestPrincipal → RBAC → Project Scope → Tool Authorization → Agent. Roles are `ADMIN`, `HSE_MANAGER`, `HSE_USER`, and `APPROVER`; permissions are centrally mapped. ADMIN has explicit all-project authority, while other roles use `allowedProjectIds`. Prompt or client claims cannot elevate role, permission, project scope, or resolver identity."
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 125,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The required run completed 37/37 with no failures. Strong metrics remain:"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 144,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Backend default, normal local environment | PASS — 233/233 | 46 suites, 0 failures. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 149,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Deterministic evaluation | PASS — 37/37 | Artifact restored to committed version after required run. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 150,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| Hermetic no-`.env` simulation | PASS — 233/233 | 23 test files; `.env`, database URL, provider keys, PostgreSQL, and provider network not required. |"
+    },
+    {
+      "file": "docs/capstone/FINAL_CAPSTONE_REQUIREMENTS_AUDIT.md",
+      "line": 199,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "No verified application or reviewer-feedback gap remains. The hermetic blocker is closed with 233/233 tests in both normal and isolated clean-copy runs. No broader feature development is justified."
+    },
+    {
+      "file": "docs/capstone/HERMETIC_COMPOSITION_CORRECTION.md",
+      "line": 65,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- Tests: 233"
+    },
+    {
+      "file": "docs/capstone/HERMETIC_COMPOSITION_CORRECTION.md",
+      "line": 67,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "- Passed: 233"
+    },
+    {
+      "file": "docs/capstone/LIVE_MODEL_VALIDATION.md",
+      "line": 11,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "Sprint 4.1 is deterministic, reproducible and hermetic: 37/37 scenarios pass without external services. Sprint 4.2 is a small real-provider behavioral validation whose results may vary. Neither replaces the other."
+    },
+    {
+      "file": "docs/capstone/LIVE_MODEL_VALIDATION.md",
+      "line": 121,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "The deterministic evaluation remains unchanged at 37/37. Live validation provides evidence about real model interaction and variability; it does not alter or merge into the hermetic score."
+    },
+    {
+      "file": "docs/capstone/SECURITY_AND_ETHICAL_AI_EVALUATION.md",
+      "line": 54,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| SEC-AUTH-001 | Authentication | Missing session accesses protected API | Authentication middleware | 401 | `auth.http.test.ts` — missing session fails closed | PASS |"
+    },
+    {
+      "file": "docs/capstone/SECURITY_AND_ETHICAL_AI_EVALUATION.md",
+      "line": 72,
+      "disposition": "CURRENT_CONTEXT_REVIEW",
+      "text": "| SEC-PROMPT-001 | Prompt injection | Reveal prompt/key, ignore controls, change role | Pre-model guard plus deterministic authorization | REFUSED/BLOCKED; no authority change | `agent.test.ts`, `authorization.test.ts` | PASS |"
+    }
+  ]
+}

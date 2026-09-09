@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current purpose is a scoped HSE work companion; authentication and verified server identity are implemented. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results.
+
 # YVY HSE AI Agent — Purpose and Scope
 
 ## Purpose

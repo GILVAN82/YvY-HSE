@@ -1,0 +1,341 @@
+{
+  "runtimeCommit": "a0edf2398be4ac4cc91947f8b614460e548b35ad",
+  "committedSourceFingerprint": "5f74f7e90367d8f215bfc21003b243a7054f26555d77f58a6b56f6588160bcf4",
+  "integratedSourceFingerprint": "efb9278c361a82bf32b19f7a9213eee65a68ee99e8ab4a820841b6543739df01",
+  "sourceUnchangedInIsolatedCheckout": true,
+  "dirtyFlagExplanation": "Isolated retrieval dirty=true follows offline-generated artifact/latest-pointer writes; backend/frontend tracked sources remain identical to a0edf23. Integrated includes preserved local work.",
+  "gates": [
+    {
+      "profile": "committed",
+      "check": "backend-tests",
+      "command": "npm.cmd test",
+      "exitCode": 0,
+      "seconds": 9.21,
+      "log": "committed-backend-tests.log"
+    },
+    {
+      "profile": "committed",
+      "check": "backend-typecheck",
+      "command": "npm.cmd run typecheck",
+      "exitCode": 0,
+      "seconds": 3.87,
+      "log": "committed-backend-typecheck.log"
+    },
+    {
+      "profile": "committed",
+      "check": "backend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 3.9,
+      "log": "committed-backend-build.log"
+    },
+    {
+      "profile": "committed",
+      "check": "frontend-tests",
+      "command": "npm.cmd run test:ci",
+      "exitCode": 0,
+      "seconds": 19.53,
+      "log": "committed-frontend-tests.log"
+    },
+    {
+      "profile": "committed",
+      "check": "frontend-app-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.91,
+      "log": "committed-frontend-app-typecheck.log"
+    },
+    {
+      "profile": "committed",
+      "check": "frontend-spec-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.73,
+      "log": "committed-frontend-spec-typecheck.log"
+    },
+    {
+      "profile": "committed",
+      "check": "frontend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 9.3,
+      "log": "committed-frontend-build.log"
+    },
+    {
+      "profile": "committed",
+      "check": "agent-evaluation",
+      "command": "npm.cmd run eval:offline",
+      "exitCode": 0,
+      "seconds": 2.2,
+      "log": "committed-agent-evaluation.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-tests",
+      "command": "npm.cmd test",
+      "exitCode": 0,
+      "seconds": 9.4,
+      "log": "integrated-backend-tests.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-typecheck",
+      "command": "npm.cmd run typecheck",
+      "exitCode": 0,
+      "seconds": 3.66,
+      "log": "integrated-backend-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 3.57,
+      "log": "integrated-backend-build.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-tests",
+      "command": "npm.cmd run test:ci",
+      "exitCode": 0,
+      "seconds": 9.18,
+      "log": "integrated-frontend-tests.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-app-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.5,
+      "log": "integrated-frontend-app-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-spec-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.44,
+      "log": "integrated-frontend-spec-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 7.46,
+      "log": "integrated-frontend-build.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "agent-evaluation",
+      "command": "npm.cmd run eval:offline",
+      "exitCode": 0,
+      "seconds": 2.12,
+      "log": "integrated-agent-evaluation.log"
+    }
+  ],
+  "backend": {
+    "committed": 371,
+    "integrated": 389
+  },
+  "frontend": {
+    "committed": 112,
+    "integrated": 118
+  },
+  "agent": {
+    "passed": 44,
+    "total": 44,
+    "supplementary": 3,
+    "intentPassed": 134,
+    "intentTotal": 134,
+    "hermetic": "SOCKETS_AND_FETCH_BLOCKED"
+  },
+  "retrieval": {
+    "sampleSize": 24,
+    "languages": {
+      "en": 16,
+      "pt": 8
+    },
+    "matchesSprintG": true,
+    "corpusFingerprint": "cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1",
+    "evaluations": [
+      {
+        "fusion": "SEMANTIC_ONLY",
+        "metrics": {
+          "requiredSourceRecall": 0.6666666666666666,
+          "relevantRecallAtK": 0.6666666666666666,
+          "irrelevantRetrievalRate": 0,
+          "mrr": 0.6363636363636364,
+          "top1SourceAccuracy": 0.6363636363636364,
+          "falseAbstentions": 8,
+          "falseRetrievalsOnNegativeQueries": 0
+        },
+        "byLanguage": [
+          {
+            "language": "en",
+            "sampleSize": 16,
+            "positiveQueries": 14,
+            "metrics": {
+              "requiredSourceRecall": 0.9375,
+              "relevantRecallAtK": 0.9375,
+              "irrelevantRetrievalRate": 0,
+              "mrr": 0.9285714285714286,
+              "top1SourceAccuracy": 0.9285714285714286,
+              "falseAbstentions": 1,
+              "falseRetrievalsOnNegativeQueries": 0
+            }
+          },
+          {
+            "language": "pt",
+            "sampleSize": 8,
+            "positiveQueries": 8,
+            "metrics": {
+              "requiredSourceRecall": 0.125,
+              "relevantRecallAtK": 0.125,
+              "irrelevantRetrievalRate": 0,
+              "mrr": 0.125,
+              "top1SourceAccuracy": 0.125,
+              "falseAbstentions": 7,
+              "falseRetrievalsOnNegativeQueries": 0
+            }
+          }
+        ]
+      },
+      {
+        "fusion": "RRF",
+        "metrics": {
+          "requiredSourceRecall": 1,
+          "relevantRecallAtK": 1,
+          "irrelevantRetrievalRate": 0,
+          "mrr": 1,
+          "top1SourceAccuracy": 1,
+          "falseAbstentions": 0,
+          "falseRetrievalsOnNegativeQueries": 0
+        },
+        "byLanguage": [
+          {
+            "language": "en",
+            "sampleSize": 16,
+            "positiveQueries": 14,
+            "metrics": {
+              "requiredSourceRecall": 1,
+              "relevantRecallAtK": 1,
+              "irrelevantRetrievalRate": 0,
+              "mrr": 1,
+              "top1SourceAccuracy": 1,
+              "falseAbstentions": 0,
+              "falseRetrievalsOnNegativeQueries": 0
+            }
+          },
+          {
+            "language": "pt",
+            "sampleSize": 8,
+            "positiveQueries": 8,
+            "metrics": {
+              "requiredSourceRecall": 1,
+              "relevantRecallAtK": 1,
+              "irrelevantRetrievalRate": 0,
+              "mrr": 1,
+              "top1SourceAccuracy": 1,
+              "falseAbstentions": 0,
+              "falseRetrievalsOnNegativeQueries": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "rawLogsDirectory": "C:\\Users\\Gil\\AppData\\Local\\Temp\\yvy-sprint-h-diagnostics-rx7860pv",
+  "rawLogs": [
+    {
+      "file": "committed-agent-evaluation.log",
+      "sha256": "02193c6938b57a459af2785958fc51ec9881fc7a37a5469d56b7441d41549495",
+      "bytes": 186274
+    },
+    {
+      "file": "committed-backend-build.log",
+      "sha256": "a0324e85980fa6f6a0cfa0359c9ed4169aac177da09f64f44c619232a8c657cf",
+      "bytes": 61
+    },
+    {
+      "file": "committed-backend-tests.log",
+      "sha256": "436ca3a6be3567e5aa60485f99c142bd201c4164f1d17d3be90731634354f663",
+      "bytes": 858519
+    },
+    {
+      "file": "committed-backend-typecheck.log",
+      "sha256": "1b2d551abf04bb054d74b66abb793af0042ffc718f20d8d643696bba8980296e",
+      "bytes": 56
+    },
+    {
+      "file": "committed-frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "committed-frontend-build.log",
+      "sha256": "f7cfa3cf17d38a3a7dd86ec2dbbd2282e8379b7af33752782372c53070795d48",
+      "bytes": 1064
+    },
+    {
+      "file": "committed-frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "committed-frontend-tests.log",
+      "sha256": "c78da6c87a965db2d881eae306e9b0aa385b293f8d573c7b270d17cd351b5337",
+      "bytes": 13160
+    },
+    {
+      "file": "committed-retrieval.log",
+      "sha256": "4e503780b637831ce548a99f8a5b0c5ba79add9e81a8ce578a027c7e65f8a03c",
+      "bytes": 61400
+    },
+    {
+      "file": "integrated-agent-evaluation.log",
+      "sha256": "f700fe56058ee448a547b615141b147b3da4c600ee2b1a1557c32c1c6e578371",
+      "bytes": 187070
+    },
+    {
+      "file": "integrated-backend-build.log",
+      "sha256": "a0324e85980fa6f6a0cfa0359c9ed4169aac177da09f64f44c619232a8c657cf",
+      "bytes": 61
+    },
+    {
+      "file": "integrated-backend-tests.log",
+      "sha256": "6fd90e367d42a9112db56577a12946a32254784f7d69e9ab8b84677c99567695",
+      "bytes": 875839
+    },
+    {
+      "file": "integrated-backend-typecheck.log",
+      "sha256": "1b2d551abf04bb054d74b66abb793af0042ffc718f20d8d643696bba8980296e",
+      "bytes": 56
+    },
+    {
+      "file": "integrated-frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integrated-frontend-build.log",
+      "sha256": "2c8c9da0637ede84569674680188b715c9213073bfc4de958a905d077d9cd349",
+      "bytes": 1053
+    },
+    {
+      "file": "integrated-frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integrated-frontend-tests.log",
+      "sha256": "c03a5f978ca516a2cabad34ed0d506878499b1f2e700943827c4d66b74d0e902",
+      "bytes": 13806
+    },
+    {
+      "file": "integrated-retrieval.log",
+      "sha256": "448093bbb9178c0b55488bf305f3519f3772f98b7b47092463aa456953a16269",
+      "bytes": 61416
+    }
+  ]
+}

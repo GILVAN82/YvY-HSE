@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
+
 # Sprint G — Prompt architecture and observability
 
 Baseline: `8b0e987` (F.2), following D `1d93165`, E/E.1 `79f3f41`, F `14e3c47`, F.1 `46971f1`.

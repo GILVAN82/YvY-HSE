@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
+
 # YvY HSE AI Evaluation Report
 
 > Historical report. The current measured baseline, retained failures and reproduction instructions are in [Sprint E — EVALUATION](./EVALUATION.md). Earlier 37-case figures below are not current evidence.

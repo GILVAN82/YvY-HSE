@@ -1,50 +1,22 @@
-# Known Limitations
+# Current limitations and residual risks
 
-This document describes the current product boundaries that should be stated
-clearly during review or demonstration.
+Baseline: committed runtime `a0edf23`, branch `capstone/yvy-hse`; Sprint H documentation audit. Authentication, RBAC, authenticated approval and project isolation are implemented. This is not a production certification.
 
-## Authentication and authorization
+| Classification | Residual risk / boundary | Response / ownership |
+|---|---|---|
+| CURRENT LIMITATION | Free-text personal data may survive field allowlists. | Minimize real data; organization defines consent and data handling. No universal DLP claim. |
+| CURRENT LIMITATION | Four English approved summaries; 24 PT/EN retrieval queries. | Bound all accuracy claims to corpus/dataset; unsupported evidence abstains. |
+| CURRENT LIMITATION | Current live generated-answer quality not fully benchmarked. | Keep simulated results separate; conduct a separately scoped live benchmark. |
+| CURRENT LIMITATION | Browser-dependent STT and external voice/model services. | Use typed input/visible answer on failure; review provider processing before real-data use. |
+| CURRENT LIMITATION | LOTO exact project-code binding, no equipment-level resource contract or delegated/team approval. | Unresolved scope blocks requests; digital approval never establishes safe equipment. |
+| CURRENT LIMITATION | Generic writes can race with parent/project reassignment. | Current request scope checks and refreshed subsequent authorization are not full transactional isolation. |
+| CURRENT LIMITATION | Inspector is session-local; delivered browser content cannot be remotely revoked. | Clear on identity change, enforce current scope on server access; do not claim retroactive deletion. |
+| CURRENT LIMITATION | Retention/backups and free-text deletion are not a complete governed lifecycle. | Forget disables memory; define deployment retention and deletion obligations. |
+| CURRENT LIMITATION | Ambiguous contractor relations remain unavailable; global reference classifications are explicit policy. | Normalize relations and review classifications before expanding access. |
+| CURRENT LIMITATION | Legacy execution does not provide primary graph verification/HITL parity. | Present the default LangGraph path. |
+| FUTURE HARDENING | Equipment linkage, transactional moves, load/outage tests, larger multilingual calibration. | Separate scoped engineering work with regression gates. |
+| FUTURE HARDENING | Central secrets, immutable audit retention, backup/recovery and external security assessment. | Deployment owner must design and validate these controls. |
+| OUT OF CAPSTONE SCOPE | Company-level SaaS tenancy and production/legal certification. | No claim that project scope implements company tenancy. |
+| OUT OF CAPSTONE SCOPE | Physical LOTO execution, inspection and legal truth verification. | Competent humans and approved site procedures retain authority. |
 
-The local application does not currently implement authentication, RBAC,
-multi-tenant isolation or verified human identity. Human approval records are
-valid workflow evidence, but they do not identify an authenticated approver and
-do not authorize physical work.
-
-## Operational writes
-
-The AI Agent is consultative. Its operational tools are read-only and cannot
-create, update or delete HSE records. Existing application write endpoints are
-outside the AI workflow.
-
-## Human approval boundary
-
-The HITL workflow can record an approve or reject decision and resume the
-software graph. It cannot change equipment state, issue a real LOTO permit or
-replace the competent person's field verification.
-
-## Knowledge coverage
-
-RAG is limited to the approved internal source set. If the collection contains
-no relevant evidence, the agent returns controlled no-relevant-evidence
-semantics. It must not fill gaps with general model knowledge.
-
-## Provider availability
-
-Live responses depend on a configured and reachable model provider. When no
-provider is available, the API returns a controlled failure rather than a
-fabricated response. Provider fallback is not treated as authorization to use
-an unapproved model.
-
-## Localization
-
-English is the source and default product language. Localized resource files
-are retained as functional translation data for the language selector. Agent
-responses follow the current application language when controlled copy is
-required and may answer user-authored text in supported languages.
-
-## Deployment
-
-The verified baseline is a local demonstration environment. Production use
-would require authentication, authorization, tenant isolation, centralized
-secret management, production observability, backup and recovery procedures,
-and an operational security review.
+The committed agent reads operational data and can persist controlled memory/HITL state. Record-draft write assistance and shared chat/history refinements remain LOCAL / UNCOMMITTED. The current system supports decisions; it does not replace the HSE professional or prove accident reduction.

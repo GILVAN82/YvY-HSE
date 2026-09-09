@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current output uses the ElevenLabs adapter and browser-dependent speech input; older engine descriptions below are historical. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results.
+
 # Human-like Conversational Voice
 
 Sprint 1.4D extends the existing YvY voice interface; it does not introduce another agent. Every voice turn still reaches the same `/api/ai/chat` endpoint and preserves its thread identifier, short-term conversation history, Guard, Tools, RAG, Memory, Semantic Verification, and HITL boundaries.

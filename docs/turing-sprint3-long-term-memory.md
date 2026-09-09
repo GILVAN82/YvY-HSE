@@ -1,3 +1,5 @@
+> **HISTORICAL / VERSIONED REFERENCE (Sprint H audit, 2026-09-09).** Current memory is authenticated and user-owned with explicit save/forget intent. Original migration-only descriptions below predate ownership hardening. Current authority: [architecture](architecture.md), [limitations](limitations.md), [H compliance](capstone/SPRINT_H_FINAL_COMPLIANCE.md) and [security baseline](security-authorization-sprint-d.md). Authentication/RBAC/project isolation and semantic verification are implemented; newer reports supersede conflicting statements below. This notice does not rewrite historical results.
+
 # Sprint 3.2 — Controlled long-term memory
 
 ## 1. Objective
