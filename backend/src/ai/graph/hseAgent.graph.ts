@@ -1,3 +1,6 @@
+import { timed } from '../observability/context';
+import type { HseAgentState } from './hseAgent.state';
+import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import { StateGraph, START, END, MemorySaver } from '@langchain/langgraph';
 import { hseAgentStateSchema } from './hseAgent.state';
 import { AgentStatus } from './hseAgent.types';
@@ -19,15 +22,17 @@ import { approvalGateNode, approvalOutcome } from './nodes/approval.node';
  * streaming and tool execution inside the `agent` node. The two are complementary,
  * not alternatives — see docs/langgraph-architecture.md.
  */
+const measuredNode = (name: string, node: (state: HseAgentState, config: LangGraphRunnableConfig) => Promise<Partial<HseAgentState>>) => (state: HseAgentState, config: LangGraphRunnableConfig) => timed(name, () => node(state, config), name === 'approval_gate' ? 'HITL' : 'INTERNAL');
+
 export function buildHseAgentGraph(options: { checkpointer?: MemorySaver } = {}) {
   const graph = new StateGraph(hseAgentStateSchema)
-    .addNode('guard', guardNode)
-    .addNode('agent', agentNode)
-    .addNode('verify', verifyNode)
-    .addNode('approval_gate', approvalGateNode)
-    .addNode('finalize', finalizeNode)
-    .addNode('finalize_failure', finalizeFailureNode)
-    .addNode('refuse', refuseNode)
+    .addNode('guard', measuredNode('guard', guardNode))
+    .addNode('agent', measuredNode('agent', agentNode))
+    .addNode('verify', measuredNode('verify', verifyNode))
+    .addNode('approval_gate', measuredNode('approval_gate', approvalGateNode))
+    .addNode('finalize', measuredNode('finalize', finalizeNode))
+    .addNode('finalize_failure', measuredNode('finalize_failure', finalizeFailureNode))
+    .addNode('refuse', measuredNode('refuse', refuseNode))
     .addEdge(START, 'guard')
     .addConditionalEdges(
       'guard',

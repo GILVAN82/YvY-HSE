@@ -51,8 +51,8 @@ export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCo
         });
         chunks.push({
           type: 'finish',
-          finishReason: 'tool-calls',
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+          usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } },
         });
       } else {
         chunks.push({ type: 'text-start', id: '1' });
@@ -60,8 +60,8 @@ export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCo
         chunks.push({ type: 'text-end', id: '1' });
         chunks.push({
           type: 'finish',
-          finishReason: 'stop',
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: { unified: 'stop', raw: 'stop' },
+          usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } },
         });
       }
 
@@ -80,4 +80,17 @@ export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCo
     callCount: () => number;
     callInputs: () => unknown[];
   };
+}
+
+/** Inspect role boundaries without snapshotting full prompts in assertions. */
+export function capturedContext(model: { callInputs: () => unknown[] }) {
+  const input = model.callInputs()[0] as { prompt: Array<{ role: string; content: any }> };
+  for (const message of input.prompt.filter(m => m.role === 'user')) {
+    const text = typeof message.content === 'string' ? message.content : message.content.find((p: any) => p.type === 'text')?.text;
+    try { const data = JSON.parse(text); if (data.kind === 'RUNTIME_DATA_NOT_INSTRUCTIONS') return data; } catch { /* ordinary user text */ }
+  }
+  throw new Error('Missing structured user context');
+}
+export function capturedSystem(model: { callInputs: () => unknown[] }): string {
+  return (model.callInputs()[0] as any).prompt.filter((m: any) => m.role === 'system').map((m: any) => m.content).join('\n');
 }

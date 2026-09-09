@@ -1,3 +1,5 @@
+import { timed, logEvent, observeFailure } from '../observability/context';
+import { DomainError } from '../observability/errors';
 import { supportsPrimaryTopic } from './knowledgeTopics';
 import type { EmbeddingService } from './embedding.service';
 import type { RagRetrievalRepository } from './retrieval.repository';
@@ -27,11 +29,15 @@ export class RagRetrievalService implements RagRetriever {
     private readonly embeddings: EmbeddingService,
     private readonly repository: RagRetrievalRepository,
     private readonly config: RagRetrievalConfig = readRagRetrievalConfig(),
-    private readonly log: (entry: Record<string, unknown>) => void = (entry) => console.info(JSON.stringify(entry)),
+    private readonly log: (entry: Record<string, unknown>) => void = (entry) => { logEvent('rag_retrieval', 'retrieval', { durationMs: Number(entry.latencyMs) }); if (entry.relevanceState === 'RETRIEVAL_UNAVAILABLE') observeFailure(new DomainError('RETRIEVAL', 'RETRIEVAL_UNAVAILABLE', true), 'retrieval'); },
     private readonly planner: QueryPlanner = deterministicQueryPlan
   ) {}
 
   async retrieve(query: string, options: { requiredSources?: string[] } = {}): Promise<RagRetrievalResult> {
+    return timed('retrieval', () => this.retrieveInternal(query, options), 'RETRIEVAL');
+  }
+
+  private async retrieveInternal(query: string, options: { requiredSources?: string[] }): Promise<RagRetrievalResult> {
     const started = Date.now();
     const normalized = query.trim();
     if (!normalized || normalized.length > MAX_RAG_QUERY_LENGTH) return { status: 'NO_RELEVANT_EVIDENCE', evidence: [] };

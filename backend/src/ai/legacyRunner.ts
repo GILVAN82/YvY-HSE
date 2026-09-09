@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { streamText, stepCountIs, type LanguageModel, type ModelMessage, type ToolSet } from 'ai';
-import { SYSTEM_PROMPT } from './prompt';
+import { stepCountIs, type LanguageModel, type ModelMessage, type ToolSet } from 'ai';
+import { buildAgentPrompt } from './prompt';
+import { validatedModelStream, observedTools } from './modelStream';
+import { withExecution, currentExecution, timed } from './observability/context';
+import { resolveResponseLanguage } from './responseLanguage';
 import { MAX_AGENT_STEPS, MAX_HISTORY_TURNS, MODEL_TIMEOUT_MS } from './config';
 import { inspectInput } from './graph/nodes/guard.node';
 import { controlledRefusalMessage } from './graph/nodes/refuse.node';
@@ -13,20 +16,13 @@ import {
 } from './graph/hseAgent.types';
 import type { ChatTurn } from './graph/hseAgent.state';
 
-const REFUSAL_MESSAGES: Record<string, string> = {
-  [RefusalCode.EMPTY_INPUT]: 'Please send a question so I can help.',
-  [RefusalCode.TOO_LONG]: 'This message is too long. Summarize the question and try again.',
-  [RefusalCode.PROMPT_INJECTION]:
-    'I can only answer questions about HSE system data. I can help with KPIs, incidents, actions or projects.',
-};
-
 /**
  * The pre-LangGraph flow, kept behind AI_ORCHESTRATOR=legacy so the two orchestrators
  * can be compared side by side. It carries the same P0 fixes as the graph path —
  * `stopWhen` closing the agentic loop, the corrected tool SQL and the input guard —
- * so any behavioural difference comes from orchestration, not from stale bugs.
+ * This is a LEGACY_REQUIRED comparison path, not the Capstone architecture; it does not provide the graph verification/HITL workflow.
  */
-export async function runLegacyAgent(input: {
+async function runLegacyInContext(input: {
   message: string;
   history?: ChatTurn[];
   conversationId?: string;
@@ -34,8 +30,7 @@ export async function runLegacyAgent(input: {
   emit: EmitFn;
   tools?: ToolSet;
 }): Promise<AgentRunResult> {
-  const runId = randomUUID();
-  const conversationId = input.conversationId ?? randomUUID();
+  const {runId, threadId:conversationId} = currentExecution()!.context;
 
   const decision = inspectInput(input.message);
   if (!decision.allowed) {
@@ -64,17 +59,16 @@ export async function runLegacyAgent(input: {
   let steps = 0;
 
   try {
-    const result = streamText({
+    const stream = validatedModelStream({
       model: input.model,
-      system: SYSTEM_PROMPT,
-      tools: input.tools ?? {},
-      messages,
+      ...buildAgentPrompt({responseLanguage:resolveResponseLanguage({userMessage:input.message})}, messages, Object.keys(input.tools ?? {})),
+      tools: observedTools(input.tools ?? {}),
       maxOutputTokens: 4096,
       stopWhen: stepCountIs(MAX_AGENT_STEPS),
       timeout: MODEL_TIMEOUT_MS,
     });
 
-    for await (const part of result.fullStream) {
+    for await (const part of stream) {
       if (part.type === 'text-delta') {
         text += part.text;
         input.emit({ type: 'text', text: part.text });
@@ -112,4 +106,9 @@ export async function runLegacyAgent(input: {
   }
 
   return { runId, conversationId, status: AgentStatus.COMPLETED, text, toolsUsed, stepCount: steps };
+}
+
+export async function runLegacyAgent(input: Parameters<typeof runLegacyInContext>[0]): Promise<AgentRunResult> {
+  const runId = randomUUID(), threadId = input.conversationId ?? randomUUID();
+  return withExecution({ runId, threadId, startedAt: Date.now() }, () => timed('legacy', () => runLegacyInContext(input)));
 }

@@ -340,7 +340,7 @@ describe('12. feature flag legacy vs langgraph', () => {
       { toolCall: { name: 'get_projects', input: '{}' } },
       { text: 'Twelve projects.' },
     ]);
-    const r = await runLegacyAgent({ message: 'How many projects?', model, emit });
+    const r = await runLegacyAgent({ message: 'How many projects?', model, emit, tools: createHermeticToolFactory()(false) });
     assert.equal(model.callCount(), 2);
     assert.notEqual(r.text.trim(), '');
   });

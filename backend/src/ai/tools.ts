@@ -1,3 +1,4 @@
+import { observeFailure, logEvent } from './observability/context';
 import { createAppDataTools } from './appDataTools';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -14,8 +15,8 @@ import { assertProjectAccess, AuthorizationError, hasPermission } from '../auth/
  * Tool registry shared by both orchestrators (legacy AI SDK loop and the LangGraph
  * runner). Defined once here so the two paths can never drift apart.
  *
- * Every tool is read-only: all four run SELECT statements with positional
- * parameters. Nothing in this file can write to the database.
+ * Operational lookups use parameterized SELECTs. Explicit memory writes and
+ * locally registered review drafts retain their separate permission/HITL contracts.
  */
 
 /** Wraps a tool body so a database failure becomes a value the model can reason
@@ -24,10 +25,12 @@ async function safely<T>(toolName: string, run: () => Promise<T>) {
   try {
     return await run();
   } catch (error) {
+    const failure = observeFailure(error, `tool.${toolName}`, toolName === 'search_hse_knowledge' ? 'RETRIEVAL' : 'DATABASE');
+    if (failure.category === 'INTERNAL') throw error;
     return {
       error: true,
       tool: toolName,
-      ...(error instanceof AuthorizationError?{code:error.code}:{}),
+      code: error instanceof AuthorizationError ? error.code : failure.code,
       message:error instanceof AuthorizationError?'The requested resource is not available.':'The system data query could not be completed.',
     };
   }
@@ -156,20 +159,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
           params
         );
         const modelRows = projectActionsForModel(r.rows);
-        console.info(JSON.stringify({
-          event: 'operational_tool_egress',
-          tool: 'list_actions',
-          arguments: {
-            overdue: overdue === true,
-            projectFilterApplied: Boolean(normalizedProject && normalizedProject !== '*'),
-            portfolioWildcardReceived: normalizedProject === '*',
-            statusFilterApplied: Boolean(normalizedStatus),
-            limit,
-          },
-          rowCount: modelRows.length,
-          modelVisibleFields: ['actionId', 'description', 'status', 'targetDate', 'daysOverdue', 'priority', 'sourceModule'],
-          personalFieldsExcluded: true,
-        }));
+        logEvent('operational_tool_egress', 'tool', { tool: 'list_actions' });
         return operationalResult(modelRows, modelRows.length);
       }),
   }),

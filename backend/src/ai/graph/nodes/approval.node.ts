@@ -1,3 +1,4 @@
+import { observeFailure } from '../../observability/context';
 import { AuthorizationError } from '../../../auth/authorization';
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
@@ -15,6 +16,8 @@ export async function approvalGateNode(state: HseAgentState, config: LangGraphRu
     if (state.finalText) runtime.emit({ type:'text', text:state.finalText });
     return { status: AgentStatus.AWAITING_HUMAN_APPROVAL, approvalRequest, executedRoute };
   } catch(error) {
+    const failure=observeFailure(error,'approval_gate','HITL');
+    if(failure.category==='INTERNAL')throw error;
     if(error instanceof AuthorizationError)return {status:AgentStatus.FAILED,errorCode:error.code,finalText:'',executedRoute};
     return { status: AgentStatus.FAILED, errorCode: AgentErrorCode.HITL_PERSISTENCE, executedRoute };
   }

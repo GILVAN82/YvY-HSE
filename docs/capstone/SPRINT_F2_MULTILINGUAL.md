@@ -1,5 +1,7 @@
 # Sprint F.2 — Multilingual retrieval and baseline consistency
 
+Sprint G update: [prompt architecture and observability](SPRINT_G_PROMPTS_OBSERVABILITY.md) documents the current role boundaries, versioned policies, provider validation and correlated Inspector diagnostics. Retrieval policy and corpus remain unchanged.
+
 Base commit: `46971f19cccce2aa4e3926ca979c917d40c437fa` (F.1), following F `14e3c47`.
 Scope: controlled PT/EN retrieval and routing consistency only. Approved documents, `.env`,
 generation prompts, authorization and HITL are unchanged. Sprint G and Demo Mode are deferred.

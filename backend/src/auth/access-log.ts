@@ -1,3 +1,4 @@
+import { currentExecution, logEvent } from '../ai/observability/context';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import type { RequestHandler } from 'express';
@@ -9,6 +10,7 @@ export const accessLogContext:RequestHandler=(req,_res,next)=>{
   storage.run({requestId:randomUUID(),runId:null,threadId:typeof thread==='string'&&/^[a-f\d-]{36}$/i.test(thread)?thread:null,role:(req as AuthenticatedRequest).principal.role},next);
 };
 export function logAccessDenial(code:string,resourceType:string,operation:string,role?:string,context:{runId?:string;threadId?:string}={}) {
+  if (currentExecution()) { logEvent('authorization_denied', 'authorization', { level: 'warn', errorCategory: 'AUTHORIZATION', errorCode: code, recoverable: false }); return; }
   const current=storage.getStore();
   console.warn(JSON.stringify({timestamp:new Date().toISOString(),requestId:current?.requestId??null,runId:context.runId??current?.runId??null,threadId:context.threadId??current?.threadId??null,role:role??current?.role??null,resourceType,operation,projectScopeDecision:'DENIED',errorCategory:code}));
 }

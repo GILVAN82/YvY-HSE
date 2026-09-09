@@ -27,8 +27,8 @@ export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCo
         });
         chunks.push({
           type: 'finish',
-          finishReason: 'tool-calls',
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+          usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } },
         });
       } else {
         chunks.push({ type: 'text-start', id: '1' });
@@ -36,8 +36,8 @@ export function createMockModel(steps: ScriptedStep[]): LanguageModel & { callCo
         chunks.push({ type: 'text-end', id: '1' });
         chunks.push({
           type: 'finish',
-          finishReason: 'stop',
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: { unified: 'stop', raw: 'stop' },
+          usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } },
         });
       }
 

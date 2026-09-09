@@ -90,3 +90,10 @@ test('claim reserves only; cooldown and VOICE_SPOKEN require successful completi
   const spoken=calls.find(c=>c.sql.startsWith('UPDATE'));
   assert.match(spoken.sql,/notification_count=notification_count\+1/);assert.match(spoken.sql,/voice_claim_until>now/);assert.ok(calls.some(c=>c.args[3]==='VOICE_SPOKEN'));
 });
+
+test('malformed voice JSON is INVALID_RESPONSE and never mistaken for an empty catalog',async()=>{
+  for(const response of [new Response('not JSON'),Response.json({voices:'wrong'}),Response.json({})]) {
+    const adapter=new ElevenLabsAdapter(env,(async()=>response) as typeof fetch);
+    await assert.rejects(()=>adapter.voices(),(error:VoiceFailure)=>error.code==='INVALID_RESPONSE');
+  }
+});

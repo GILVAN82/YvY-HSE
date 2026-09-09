@@ -1,3 +1,4 @@
+import { capturedContext, capturedSystem } from '../../ai/__tests__/mockModel';
 import { afterEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -229,7 +230,7 @@ describe('POST /api/ai/approvals HTTP boundary', () => {
   test('identity fields supplied in the chat body are ignored in favor of RequestPrincipal',async()=>{
     const model=createMockModel([{text:'HSE assistance is available.'}]);const {port}=await start(model);
     const response=await post(port,{message:'HSE help',history:[],provider:'openai',model:'gpt-5.5',firstName:'Spoofed',displayName:'Spoofed User'});
-    assert.ok(response.some(event=>event.type==='done'));const input=JSON.stringify(model.callInputs()[0]);assert.match(input,/Trusted first name: Test/);assert.doesNotMatch(input,/Spoofed/);
+    assert.ok(response.some(event=>event.type==='done'));const input=JSON.stringify(model.callInputs()[0]);assert.equal(capturedContext(model).identity.firstName,'Test');assert.doesNotMatch(capturedSystem(model), /Trusted first name/);assert.doesNotMatch(input,/Spoofed/);
   });
 
   test('persists rejection and keeps the critical action blocked', async () => {

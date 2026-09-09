@@ -43,6 +43,17 @@
       <ng-template #noRoute><p class="not-observable">NOT CURRENTLY OBSERVABLE</p></ng-template>
     </section>
 
+    <section class="card" *ngIf="trace()?.observability as observation">
+      <div class="card-head"><h2>Prompt and Execution Diagnostics</h2></div>
+      <div class="kv"><span>Prompt version</span><code>{{ observation.prompt?.version || 'NOT_AVAILABLE' }}</code></div>
+      <div class="kv"><span>Prompt fingerprint</span><code>{{ observation.prompt?.fingerprint || 'NOT_AVAILABLE' }}</code></div>
+      <div class="kv"><span>Provider / model</span><strong>{{ observation.provider || 'NOT_AVAILABLE' }} / {{ observation.model || 'NOT_AVAILABLE' }}</strong></div>
+      <div class="kv" *ngFor="let timing of observation.stages"><span>{{ timing.stage }}</span><strong>{{ timing.durationMs }} ms</strong></div>
+      <div class="kv"><span>Token usage</span><strong>{{ observation.usage.status }} ? {{ observation.usage.inputTokens ?? '?' }} in / {{ observation.usage.outputTokens ?? '?' }} out / {{ observation.usage.totalTokens ?? '?' }} total</strong></div>
+      <div class="kv"><span>Cost</span><strong>{{ observation.cost }}</strong></div>
+      <div class="kv" *ngIf="observation.error as failure"><span>{{ failure.category }} / {{ failure.code }}</span><strong>Recoverable: {{ label(failure.recoverable) }}</strong></div>
+    </section>
+
     <div class="content-grid">
       <section class="card">
         <div class="card-head"><div><span class="section-number">02</span><h2>Tools Used</h2></div><span>{{ trace()?.tools?.length || 0 }}</span></div>
@@ -57,6 +68,7 @@
       <section class="card">
         <div class="card-head"><div><span class="section-number">03</span><h2>Knowledge Retrieval</h2></div></div>
         <div class="kv"><span>RAG Used</span><strong>{{ label(trace()?.rag?.used ?? run.ragUsed) }}</strong></div>
+        <div class="kv"><span>Retrieval mode</span><strong>{{ trace()?.rag?.diagnostics?.retrievalMode || 'NOT_AVAILABLE' }}</strong></div>
         <div class="kv"><span>Retrieval Status</span><strong>{{ trace()?.rag?.status || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
         <div class="kv"><span>Chunks Retrieved</span><strong>{{ trace()?.rag?.chunksRetrieved ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
         <div class="source" *ngFor="let citation of run.citations"><strong>{{ citation.citationLabel }}</strong><span>{{ citation.jurisdiction }}</span></div>
@@ -98,7 +110,7 @@
 
       <section class="card" *ngIf="trace()?.intent as intent">
         <div class="card-head"><div><span class="section-number">07A</span><h2>Intent Routing</h2></div></div>
-        <div class="kv"><span>Input</span><strong>{{ intent.input }}</strong></div>
+
         <div class="kv"><span>Normalized intent</span><strong>{{ intent.intent }}</strong></div>
         <div class="kv"><span>Scope</span><strong>{{ intent.scope }}</strong></div>
         <div class="kv"><span>Confidence band</span><strong>{{ intent.confidence }}</strong></div>

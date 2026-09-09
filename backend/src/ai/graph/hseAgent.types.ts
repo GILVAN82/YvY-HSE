@@ -74,6 +74,7 @@ export interface AgentToolTrace {
 }
 
 export interface AgentExecutionTrace {
+  observability?: import('../observability/context').RunObservation;
   timestamp: string;
   responseLanguage?: ResponseLanguage;
   authenticatedUser?: string;

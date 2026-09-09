@@ -1,3 +1,6 @@
+import { withExecution, currentExecution, timed, logEvent, observeFailure } from '../observability/context';
+import { DomainError } from '../observability/errors';
+import { PROMPT_REGISTRY } from '../prompts/composer';
 import { setAgentLogContext } from '../../auth/access-log';
 import { randomUUID } from 'node:crypto';
 import type { LanguageModel, ToolSet } from 'ai';
@@ -24,6 +27,8 @@ import { classifyIntent, clarificationMessage } from '../intent/intentRouter';
 import { contextualGreeting } from '../personalization';
 
 export interface RunAgentInput {
+  /** Server/test diagnostic sink; never read from request JSON. */
+  diagnosticSink?: (event: import('../observability/context').SafeEvent) => void;
   message: string;
   /** Trusted server-derived owner; never accepted from the chat request body. */
   userId?: string;
@@ -90,11 +95,34 @@ export function resetGraphCache() {
  * emits, keeping the Angular contract unchanged.
  */
 export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult> {
+  const runId = randomUUID(), threadId = resolveThreadId(input);
+  return withExecution({ runId, threadId, userId: input.userId, startedAt: Date.now(), locale: input.locale }, async () => {
+    const observation = currentExecution()!.observation;
+    observation.prompt = PROMPT_REGISTRY.agent;
+    if (typeof input.model === 'object') { observation.provider = input.model.provider; observation.model = input.model.modelId; }
+    logEvent('run_started', 'runner');
+    const result = await timed('runner', () => runHseAgentInContext(input, runId, threadId));
+    if (result.errorCode && !observation.error) {
+      const category = /DENIED|RESOURCE_NOT_FOUND/.test(result.errorCode) ? 'AUTHORIZATION' : /HITL/.test(result.errorCode) ? 'HITL' : /TOOL/.test(result.errorCode) ? 'TOOL' : 'INTERNAL';
+      observeFailure(new DomainError(category, result.errorCode, false), 'runner');
+    }
+    if (result.status === AgentStatus.AWAITING_HUMAN_APPROVAL) logEvent('hitl_pending', 'approval_gate');
+    if (result.executionTrace) {
+      result.executionTrace.observability = { ...observation, stages: [...observation.stages] };
+      // Inspector receives technical metadata, never request text or operational tool arguments.
+      delete result.executionTrace.authenticatedUser;
+      if (result.executionTrace.intent) { result.executionTrace.intent.input = ''; result.executionTrace.intent.normalizedQuery = ''; }
+      result.executionTrace.tools = result.executionTrace.tools.map(({ arguments: args, resultSummary, ...tool }) => ({ ...tool, arguments: args ? Object.fromEntries(Object.entries(args).filter(([,value]) => typeof value === 'boolean' || typeof value === 'number')) : undefined, resultSummary: resultSummary && /^(?:\d+(?: projects found| incidents? found| total incidents; \d+ open| record\(s\) returned)|No open incidents)$/.test(resultSummary) ? resultSummary : tool.status }));
+    }
+    logEvent('run_finished', 'runner', { durationMs: Date.now() - currentExecution()!.context.startedAt });
+    return result;
+  }, input.diagnosticSink);
+}
+
+async function runHseAgentInContext(input: RunAgentInput, runId: string, conversationId: string): Promise<AgentRunResult> {
   // Direct unit-test callers historically had no HTTP principal. Production always
   // supplies userId at the authenticated route boundary.
   const ownerId = input.userId ?? '00000000-0000-4000-8000-000000000000';
-  const runId = randomUUID();
-  const conversationId = resolveThreadId(input);
   setAgentLogContext(runId,conversationId);
   const executionTimestamp = new Date().toISOString();
   const responseLanguage = resolveResponseLanguage({ userMessage: input.message, voiceLanguage: input.voiceLanguage, uiLanguage: input.locale });
@@ -169,7 +197,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
     } catch {
       // Long-term memory is optional context. Fail open without leaking internals;
       // thread state, RAG and the agent remain usable.
-      console.warn(JSON.stringify({ event: 'long_term_memory_retrieval', status: 'UNAVAILABLE' }));
+      logEvent('memory_unavailable', 'memory', { level: 'warn', errorCategory: 'DATABASE', recoverable: true });
     }
   }
 
@@ -237,6 +265,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
     }
     return response;
   } catch (err: any) {
+    observeFailure(err, 'runner');
     // The graph itself failed (not the model) — nodes already convert model and tool
     // errors into states, so reaching here means something structural went wrong.
     input.emit({

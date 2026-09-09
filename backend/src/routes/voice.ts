@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { withExecution, logEvent } from '../ai/observability/context';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import type { AuthenticatedRequest } from '../auth/auth.types';
@@ -8,14 +10,16 @@ import type { VoicePreferences } from '../ai/voice/preferences';
 
 export function createVoiceRouter(preferences:VoicePreferences,adapter=new ElevenLabsAdapter()){
   const router=Router();
+  router.use(['/ai/voice','/ai/voice-preferences'], (req,_res,next) => { const runId=randomUUID(); withExecution({runId,threadId:runId,userId:(req as AuthenticatedRequest).principal?.userId,startedAt:Date.now()},next); });
   router.use(['/ai/voice','/ai/voice-preferences'],(req,res,next)=>{
     const principal=(req as AuthenticatedRequest).principal;
-    if(!principal){res.status(401).json({code:'AUTH_REQUIRED'});return;}
-    if(!hasPermission(principal,'AI_USE')){res.status(403).json({code:'ACCESS_DENIED'});return;}
+    if(!principal){logEvent('authentication_denied','voice',{level:'warn',errorCategory:'AUTHENTICATION',recoverable:false});res.status(401).json({code:'AUTH_REQUIRED'});return;}
+    if(!hasPermission(principal,'AI_USE')){logEvent('authorization_denied','voice',{level:'warn',errorCategory:'AUTHORIZATION',recoverable:false});res.status(403).json({code:'ACCESS_DENIED'});return;}
     res.setHeader('Cache-Control','no-store');next();
   });
   const failure=(res:import('express').Response,error:unknown)=>{
     const e=error instanceof VoiceFailure?error:new VoiceFailure('VOICE_UNAVAILABLE');
+    logEvent(e.fallbackAllowed?'voice_fallback':'voice_failed','voice',{level:'warn',errorCategory:'VOICE',errorCode:e.code,recoverable:e.fallbackAllowed});
     res.status(e.status).json({code:e.code,fallbackAllowed:e.fallbackAllowed,requestedEngine:'ELEVENLABS',effectiveEngine:e.fallbackAllowed?'BROWSER_FALLBACK':null,fallbackReason:e.code});
   };
   router.get('/ai/voice/voices',async(req,res)=>{const parsed=z.object({locale:voiceLocale.optional(),gender:z.enum(['FEMALE','MALE']).optional()}).safeParse(req.query);if(!parsed.success){res.status(400).json({code:'INVALID_FILTER'});return;}try{res.json({available:adapter.available,voices:adapter.available?(parsed.data.locale?await adapter.discover({locale:parsed.data.locale,gender:parsed.data.gender}):await adapter.voices()):[],model:adapter.model});}catch(e){failure(res,e);}});

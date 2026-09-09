@@ -44,4 +44,17 @@ describe('AgentInspectorService', () => {
     expect(service.latest()?.executionTrace?.verification.unsupportedClaims).toBe(1);
     expect(JSON.stringify(service.latest())).not.toContain('chainOfThought');
   });
+
+  it('retains prompt identity and timing while excluding request text and draft payloads', () => {
+    const service = TestBed.inject(AgentInspectorService);
+    service.record({runId:'r',threadId:'t',status:'FAILED',stepCount:1,toolsUsed:[],ragUsed:false,citations:[],orchestrator:'langgraph',recordDraft:{private:'PRIVATE_DRAFT'},
+      executionTrace:{timestamp:'now',route:[],tools:[{name:'search_hse_knowledge',status:'ERROR',arguments:{query:'PRIVATE_QUERY'}}],intent:{input:'PRIVATE_INPUT',normalizedQuery:'PRIVATE_INPUT',intent:'SEARCH_HSE_KNOWLEDGE',candidateTools:[]},
+        observability:{prompt:{version:'agent-g-v1',fingerprint:'abc'},provider:'mock',model:'mock-model',stages:[{stage:'provider',durationMs:12}],usage:{status:'NOT_AVAILABLE'},cost:'NOT_AVAILABLE',error:{category:'MODEL',code:'MODEL_TIMEOUT',recoverable:true}}}
+    });
+    const snapshot=service.latest();
+    expect(snapshot?.executionTrace?.observability?.prompt?.version).toBe('agent-g-v1');
+    expect(snapshot?.executionTrace?.observability?.stages[0].durationMs).toBe(12);
+    expect(JSON.stringify(snapshot)).not.toContain('PRIVATE_');
+    expect(sessionStorage.getItem('yvy-hse-agent-inspector-latest')).not.toContain('PRIVATE_');
+  });
 });

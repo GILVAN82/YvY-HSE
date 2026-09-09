@@ -1,3 +1,5 @@
+import { timed, observeFailure } from '../observability/context';
+import { DomainError } from '../observability/errors';
 import { z } from 'zod';
 
 export const voiceLocale = z.enum(['pt-PT','pt-BR','en','es','fr','de']);
@@ -15,6 +17,14 @@ export type VoiceDiscovery = {locale:z.infer<typeof voiceLocale>;gender?:'FEMALE
 export class VoiceFailure extends Error {
   constructor(public code:string,public fallbackAllowed=true,public status=503){super(code);}
 }
+const CatalogResponse = z.object({voices:z.array(z.record(z.string(),z.unknown())),has_more:z.boolean().optional(),next_page_token:z.string().nullable().optional()}).passthrough();
+const AddedVoiceResponse = z.object({voice_id:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/)}).passthrough();
+async function validatedVoiceJson(response:Response, kind:'catalog'|'voice'):Promise<any> {
+  let data:unknown; try { data=await response.json(); } catch { throw new VoiceFailure('INVALID_RESPONSE'); }
+  const parsed=(kind==='catalog'?CatalogResponse:AddedVoiceResponse).safeParse(data);
+  if(!parsed.success)throw new VoiceFailure('INVALID_RESPONSE');
+  return parsed.data;
+}
 export class ElevenLabsAdapter {
   readonly model:string;
   readonly available:boolean;
@@ -24,6 +34,9 @@ export class ElevenLabsAdapter {
     this.available=!!env.ELEVENLABS_API_KEY && env.ELEVENLABS_ENABLED!=='false';
   }
   private async call<T>(path:string,init:RequestInit,consume:(response:Response)=>Promise<T>,signal?:AbortSignal):Promise<T>{
+    return timed('voice.provider', async () => { try { return await this.callInternal(path,init,consume,signal); } catch (error) { if (error instanceof VoiceFailure) observeFailure(new DomainError('VOICE',error.code,error.fallbackAllowed),'voice.provider'); throw error; } }, 'VOICE');
+  }
+  private async callInternal<T>(path:string,init:RequestInit,consume:(response:Response)=>Promise<T>,signal?:AbortSignal):Promise<T>{
     if(!this.available)throw new VoiceFailure('UNAVAILABLE');
     const controller=new AbortController();
     const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});
@@ -45,7 +58,7 @@ export class ElevenLabsAdapter {
   async voices(signal?:AbortSignal):Promise<Voice[]>{
     const voices:Voice[]=[];let cursor:string|undefined;
     for(let page=0;page<20;page++){
-      const body=await this.call<{voices?:Array<{voice_id?:unknown;name?:unknown;labels?:Record<string,unknown>;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>;has_more?:boolean;next_page_token?:unknown}>(`/v2/voices?page_size=100${cursor?`&next_page_token=${encodeURIComponent(cursor)}`:''}`,{},async r=>await r.json() as any,signal);
+      const body=await this.call<{voices?:Array<{voice_id?:unknown;name?:unknown;labels?:Record<string,unknown>;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>;has_more?:boolean;next_page_token?:unknown}>(`/v2/voices?page_size=100${cursor?`&next_page_token=${encodeURIComponent(cursor)}`:''}`,{},r=>validatedVoiceJson(r,'catalog'),signal);
       for(const v of body.voices??[]){
         if(typeof v.voice_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id))continue;
         const label=(key:string)=>{const value=v.labels?.[key];return typeof value==='string'?value.slice(0,120):null;};
@@ -64,13 +77,13 @@ export class ElevenLabsAdapter {
   async discover(input:VoiceDiscovery,signal?:AbortSignal):Promise<Voice[]> {
     const key=`${input.locale}:${input.gender??'ALL'}`,cached=this.discoveryCache.get(key);if(cached&&cached.expires>Date.now())return cached.voices;
     const account=await this.voices(signal),language=input.locale.split('-')[0],query=new URLSearchParams({page_size:'50',language,sort:'usage_character_count_1y'});if(input.locale.startsWith('pt-'))query.set('locale',input.locale);if(input.gender)query.set('gender',input.gender.toLowerCase());
-    const body=await this.call<{voices?:Array<{voice_id?:unknown;public_owner_id?:unknown;name?:unknown;language?:unknown;accent?:unknown;gender?:unknown;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>}>(`/v1/shared-voices?${query}`,{},async r=>await r.json() as any,signal);
+    const body=await this.call<{voices?:Array<{voice_id?:unknown;public_owner_id?:unknown;name?:unknown;language?:unknown;accent?:unknown;gender?:unknown;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>}>(`/v1/shared-voices?${query}`,{},r=>validatedVoiceJson(r,'catalog'),signal);
     const shared=(body.voices??[]).flatMap(v=>{if(typeof v.voice_id!=='string'||typeof v.public_owner_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id)||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.public_owner_id))return[];const gender=typeof v.gender==='string'?v.gender.toLowerCase():'';const verified=this.verifiedLocales(v.verified_languages);return[{id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:typeof v.language==='string'?v.language.slice(0,20):null,locale:verified[0]??null,accent:typeof v.accent==='string'?v.accent.slice(0,120):null,profile:gender==='female'?'FEMALE' as const:gender==='male'?'MALE' as const:'UNKNOWN' as const,previewUrl:this.safeUrl(v.preview_url),category:typeof v.category==='string'?v.category.slice(0,80):null,source:'LIBRARY' as const,publicOwnerId:v.public_owner_id,verifiedLocales:verified}];});
     const merged=[...account,...shared.filter(v=>!account.some(a=>a.id===v.id))];this.discoveryCache.set(key,{expires:Date.now()+5*60_000,voices:merged});return merged;
   }
   async addShared(publicOwnerId:string,voiceId:string,name:string,signal?:AbortSignal){
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(publicOwnerId)||!/^[a-zA-Z0-9_-]{1,100}$/.test(voiceId))throw new VoiceFailure('INVALID_VOICE',false,400);
-    const result=await this.call<{voice_id?:unknown}>(`/v1/voices/add/${encodeURIComponent(publicOwnerId)}/${encodeURIComponent(voiceId)}`,{method:'POST',body:JSON.stringify({new_name:name.slice(0,120),bookmarked:true})},async r=>await r.json() as any,signal);if(typeof result.voice_id!=='string')throw new VoiceFailure('INVALID_RESPONSE');this.discoveryCache.clear();return result.voice_id;
+    const result=await this.call<{voice_id?:unknown}>(`/v1/voices/add/${encodeURIComponent(publicOwnerId)}/${encodeURIComponent(voiceId)}`,{method:'POST',body:JSON.stringify({new_name:name.slice(0,120),bookmarked:true})},r=>validatedVoiceJson(r,'voice'),signal);if(typeof result.voice_id!=='string')throw new VoiceFailure('INVALID_RESPONSE');this.discoveryCache.clear();return result.voice_id;
   }
   private verifiedLocales(value:unknown){return Array.isArray(value)?value.flatMap(item=>item&&typeof item==='object'&&typeof (item as any).locale==='string'?[(item as any).locale.slice(0,20)]:[]):[];}
   private safeUrl(value:unknown){try{const url=new URL(String(value));return url.protocol==='https:'&&!url.username&&!url.password&&url.href.length<2000?url.href:null;}catch{return null;}}

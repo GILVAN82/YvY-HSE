@@ -24,12 +24,13 @@ export interface AgentInspectorSnapshot {
   errorCode?: string;
   orchestrator: string;
   executionTrace?: {
+    observability?: { prompt?: {version:string;fingerprint:string}; provider?:string; model?:string; stages:Array<{stage:string;durationMs:number}>; usage:{status:'AVAILABLE'|'NOT_AVAILABLE';inputTokens?:number;outputTokens?:number;totalTokens?:number}; cost:'NOT_AVAILABLE'; error?:{category:string;code:string;recoverable:boolean} };
     timestamp: string;
     responseLanguage?: string;
     authenticatedUser?: string;
     route: string[];
     tools: AgentToolTrace[];
-    rag: { used: boolean; status: string; chunksRetrieved: number };
+    rag: { used: boolean; status: string; chunksRetrieved: number; diagnostics?: { retrievalMode:string;relevanceState:string;reformulationStatus:string;configFingerprint:string } };
     conversation: { stateActive: boolean; messageCount: number };
     memory: { used: boolean; operation: string; categories: string[]; status: string };
     guardrail: { status: string; reason?: string };
@@ -67,7 +68,7 @@ export class AgentInspectorService {
 
   record(payload: unknown) {
     if (!payload || typeof payload !== 'object') return;
-    const value = payload as AgentInspectorSnapshot;
+    const value = sanitizeSnapshot(payload as AgentInspectorSnapshot);
     if (!value.runId || !value.threadId || value.status === undefined) return;
     this.latest.set(value);
     try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* Demo trace remains in memory. */ }
@@ -94,8 +95,18 @@ export class AgentInspectorService {
   private read(): AgentInspectorSnapshot | null {
     try {
       const value = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-      return value && typeof value.runId === 'string' ? value : null;
+      return value && typeof value.runId === 'string' ? sanitizeSnapshot(value) : null;
     } catch { return null; }
   }
   private readAlertEvents():YvyAlertEvent[]{try{const value=JSON.parse(sessionStorage.getItem(ALERT_STORAGE_KEY)||'[]');return Array.isArray(value)?value:[];}catch{return[];}}
+}
+
+/** Store only Inspector fields; never carry draft payloads, prompts or request bodies. */
+export function sanitizeSnapshot(value: AgentInspectorSnapshot): AgentInspectorSnapshot {
+  const trace=value.executionTrace;
+  return { runId:value.runId,threadId:value.threadId,status:value.status,responseStatus:value.responseStatus,stepCount:value.stepCount,toolsUsed:value.toolsUsed,ragUsed:value.ragUsed,citations:value.citations,errorCode:value.errorCode,orchestrator:value.orchestrator,
+    approvalRequest:value.approvalRequest ? {...value.approvalRequest,resolutionNote:undefined} : undefined,
+    executionTrace:trace ? {timestamp:trace.timestamp,responseLanguage:trace.responseLanguage,route:trace.route,rag:trace.rag,conversation:trace.conversation,memory:trace.memory,guardrail:trace.guardrail,verification:trace.verification,error:trace.error,observability:trace.observability,intent:trace.intent ? {...trace.intent,input:'',normalizedQuery:''}:undefined,
+      tools:(trace.tools ?? []).map(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary})),
+    } : undefined };
 }

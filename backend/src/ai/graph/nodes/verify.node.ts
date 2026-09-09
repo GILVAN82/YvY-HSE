@@ -5,11 +5,8 @@ import { MAX_AGENT_STEPS } from '../../config';
 import { VerificationStatus } from '../evidence.contract';
 import { verifyEvidenceContract } from '../semanticVerifier';
 
-/**
- * Checks the run produced something usable. Deliberately does NOT call the model a
- * second time in this phase — it is a cheap structural check, not a semantic one.
- * Grounding and citation checks belong to the RAG phase.
- */
+/** Deterministic structural and semantic evidence verification, including citations,
+ * operational facts, safety and jurisdiction. No second model call is made. */
 const evidenceLimitedMessage={en:"I found operational information, but I couldn't verify the full summary. The available evidence is on screen.",pt:'Encontrei informações operacionais, mas não consegui verificar todo o resumo. As evidências disponíveis estão na tela.',es:'Encontré información operativa, pero no pude verificar todo el resumen. La evidencia disponible está en pantalla.',fr:"J’ai trouvé des informations opérationnelles, mais je n’ai pas pu vérifier l’ensemble du résumé. Les preuves disponibles sont à l’écran.",de:'Ich habe Betriebsinformationen gefunden, konnte die vollständige Zusammenfassung jedoch nicht verifizieren. Die verfügbaren Nachweise werden angezeigt.'} as const;
 
 export async function verifyNode(state: HseAgentState, config?:LangGraphRunnableConfig): Promise<Partial<HseAgentState>> {
