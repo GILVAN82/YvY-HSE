@@ -1,5 +1,7 @@
 # Sprint F.1 — Approved corpus reingestion and retrieval validation
 
+Sprint F.2 update: see [multilingual retrieval and baseline consistency](SPRINT_F2_MULTILINGUAL.md) for the current PT/EN policy, same-corpus before/after metrics and patch replay. Earlier results below remain historical.
+
 The four approved repository summaries are now synchronized with PostgreSQL. Canonical
 ingestion updated their content, embeddings, ingestion fingerprints and stable chunk IDs.
 Document count and chunk count remain **4 / 4**. A second ingestion skipped all four sources,

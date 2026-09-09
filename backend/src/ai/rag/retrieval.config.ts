@@ -1,3 +1,4 @@
+import { TECHNICAL_TERMS } from './technicalGlossary';
 import { z } from 'zod';
 import { RetrievalConfigError } from './errors';
 import { fingerprint } from './identity';
@@ -7,7 +8,7 @@ export const MAX_RAG_QUERY_LENGTH = 500;
 // Legacy constructor fields remain accepted; all execution uses this validated model.
 export type RagRetrievalConfig = Pick<RetrievalConfig, 'topK' | 'minSimilarity'> & Partial<RetrievalConfig>;
 export const RetrievalConfigSchema = z.object({
-  version: z.literal('hybrid-v1').default('hybrid-v1'),
+  version: z.literal('hybrid-pt-v2').default('hybrid-pt-v2'),
   topK: z.number().int().min(1).max(10), minSimilarity: z.number().min(0).max(1),
   semanticCandidateLimit: z.number().int().min(1).max(100).default(12),
   lexicalCandidateLimit: z.number().int().min(1).max(100).default(12),
@@ -16,7 +17,9 @@ export const RetrievalConfigSchema = z.object({
   allowLexicalFallback: z.boolean().default(true),
   fusion: z.enum(['RRF', 'SEMANTIC_ONLY']).default('RRF'),
   lexicalDictionary: z.literal('simple').default('simple'),
-  reformulation: z.literal('deterministic-v1').default('deterministic-v1'),
+  glossaryFingerprint: z.string().default(fingerprint(TECHNICAL_TERMS)),
+  primarySourcePolicy: z.literal('approved-module-primary-v1').default('approved-module-primary-v1'),
+  reformulation: z.literal('controlled-hse-pt-en-v1').default('controlled-hse-pt-en-v1'),
 }).strict();
 export type RetrievalConfig = z.infer<typeof RetrievalConfigSchema>;
 export function resolveRetrievalConfig(input: RagRetrievalConfig): RetrievalConfig {

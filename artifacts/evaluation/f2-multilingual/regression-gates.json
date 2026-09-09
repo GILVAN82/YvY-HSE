@@ -1,0 +1,150 @@
+{
+  "baseCommit": "46971f19cccce2aa4e3926ca979c917d40c437fa",
+  "integrated": {
+    "backendTests": {
+      "passed": 376,
+      "total": 376
+    },
+    "frontendTests": {
+      "passed": 117,
+      "total": 117
+    },
+    "backendTypecheck": 0,
+    "backendBuild": 0,
+    "frontendAppTypecheck": 0,
+    "frontendSpecTypecheck": 0,
+    "frontendBuild": 0
+  },
+  "isolated": {
+    "backendTests": {
+      "passed": 358,
+      "total": 358
+    },
+    "frontendTests": {
+      "passed": 111,
+      "total": 111
+    },
+    "backendTypecheck": 0,
+    "backendBuild": 0,
+    "frontendAppTypecheck": 0,
+    "frontendSpecTypecheck": 0,
+    "frontendBuild": 0
+  },
+  "commands": [
+    "backend: npm.cmd test",
+    "backend: npm.cmd run typecheck",
+    "backend: npm.cmd run build",
+    "frontend: npm.cmd run test:ci",
+    "frontend: npx.cmd tsc -p tsconfig.app.json --noEmit",
+    "frontend: npx.cmd tsc -p tsconfig.spec.json --noEmit",
+    "frontend: npm.cmd run build",
+    "backend: npm.cmd run eval:offline"
+  ],
+  "agent": {
+    "integrated": [
+      44,
+      44
+    ],
+    "isolated": [
+      44,
+      44
+    ],
+    "replay": [
+      44,
+      44
+    ],
+    "supplemental": [
+      3,
+      3
+    ],
+    "intent": [
+      134,
+      134
+    ],
+    "hermetic": "Sockets and fetch blocked by withoutNetwork"
+  },
+  "buildWarnings": "Existing non-fatal Angular bundle/style budget warnings; no budgets edited",
+  "rawLogsArchivedLocally": "C:\\Users\\Gil\\AppData\\Local\\Temp\\yvy-sprint-f2-diagnostics",
+  "logs": [
+    {
+      "name": "backend-build.log",
+      "sha256": "f8eb7e9987935fef7846afb9a62cffde166403d908a7a099fe31b233f87cfa7c",
+      "bytes": 132
+    },
+    {
+      "name": "backend-tests.log",
+      "sha256": "c7802b9c776ea010d645244acb368771a013020a33eb368fc444afba40bf5ce6",
+      "bytes": 89934
+    },
+    {
+      "name": "backend-typecheck.log",
+      "sha256": "882e4e99f14ce6a1888f7c840f5aa9753265446d1c7cdf1bb422b3897e8a7797",
+      "bytes": 122
+    },
+    {
+      "name": "frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "frontend-build.log",
+      "sha256": "26b490c0445532d5792c16881bf851512c34373e10abedc21a9d6de98948e6c3",
+      "bytes": 2830
+    },
+    {
+      "name": "frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "frontend-tests.log",
+      "sha256": "ef94d25b34f24a280b2c2025fa9bb1411ac5341fb8d9d32efd075129847135e4",
+      "bytes": 28344
+    },
+    {
+      "name": "integrated-agent.log",
+      "sha256": "c62778c7ca7e2320ca87abd2888b98a19d3f4927ae90747752dd84224634bac6",
+      "bytes": 5766
+    },
+    {
+      "name": "isolated-backend-build.log",
+      "sha256": "f8eb7e9987935fef7846afb9a62cffde166403d908a7a099fe31b233f87cfa7c",
+      "bytes": 132
+    },
+    {
+      "name": "isolated-backend-tests.log",
+      "sha256": "ccde9983b69fc597dffeb16f9ecb60b928e2611b1a07818ba504315f2363b4af",
+      "bytes": 84584
+    },
+    {
+      "name": "isolated-backend-typecheck.log",
+      "sha256": "882e4e99f14ce6a1888f7c840f5aa9753265446d1c7cdf1bb422b3897e8a7797",
+      "bytes": 122
+    },
+    {
+      "name": "isolated-frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "isolated-frontend-build.log",
+      "sha256": "00fc3c7dead163ed675c71fa821088276965aa60826fa1f7dd9d210dc3937743",
+      "bytes": 2856
+    },
+    {
+      "name": "isolated-frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "isolated-frontend-tests.log",
+      "sha256": "a58c314f3680183f539c723fed5b1f71a56f7b1a1f66f31eba436dcb2b912141",
+      "bytes": 27022
+    },
+    {
+      "name": "replay-agent.log",
+      "sha256": "a0014e90882db7488941852daf1bbd538c0b4c20d5ffff295ea587b46cd6b3cb",
+      "bytes": 5766
+    }
+  ]
+}

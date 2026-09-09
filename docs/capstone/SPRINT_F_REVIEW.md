@@ -1,5 +1,7 @@
 # Sprint F review and defence
 
+Sprint F.2 update: see [multilingual retrieval and baseline consistency](SPRINT_F2_MULTILINGUAL.md) for the current PT/EN policy, same-corpus before/after metrics and patch replay. Earlier results below remain historical.
+
 Sprint F.1 update: the four approved sources have now been reingested and validated against PostgreSQL. See [approved corpus validation](APPROVED_CORPUS_VALIDATION.md) for real-corpus metrics, idempotence, external calls and remaining limits. The Sprint F observations below are historical.
 
 ## Review dashboard

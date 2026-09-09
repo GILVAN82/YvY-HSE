@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {
+      "host": "api.openai.com",
+      "path": "/v1/embeddings",
+      "status": 200
+    }
+  ],
+  "embeddedTexts": 8,
+  "reusedQueries": 16,
+  "generationCalls": 0
+}

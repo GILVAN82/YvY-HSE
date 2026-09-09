@@ -1,3 +1,4 @@
+import { supportsPrimaryTopic } from './knowledgeTopics';
 import type { EmbeddingService } from './embedding.service';
 import type { RagRetrievalRepository } from './retrieval.repository';
 import { MAX_RAG_QUERY_LENGTH, readRagRetrievalConfig, type RagRetrievalConfig } from './retrieval.config';
@@ -65,8 +66,8 @@ export class RagRetrievalService implements RagRetriever {
     }
     const exactGate = (item: RagEvidence) => plan.exactTerms.every(term => lexicalTerms(item.content).includes(term.toLowerCase()));
     const jurisdictionGate = (item: RagEvidence) => !isJurisdictionClaim(normalized) || jurisdictionSupportsClaim(normalized, ragResultEvidence(item));
-    semantic = semantic.filter(item => item.score >= config.minSimilarity && exactGate(item) && jurisdictionGate(item));
-    lexical = lexical.filter(item => lexicalCoverage(plan.originalQuery, item.content) >= config.lexicalMinCoverage && exactGate(item) && jurisdictionGate(item));
+    semantic = semantic.filter(item => item.score >= config.minSimilarity && exactGate(item) && supportsPrimaryTopic(plan.originalQuery, item) && jurisdictionGate(item));
+    lexical = lexical.filter(item => lexicalCoverage(plan.lexicalQuery, item.content) >= config.lexicalMinCoverage && exactGate(item) && supportsPrimaryTopic(plan.originalQuery, item) && jurisdictionGate(item));
     const evidence = reciprocalRankFusion(semantic, lexical, config.rrfK).slice(0, config.topK);
     const partial = !!options.requiredSources?.some(source => !evidence.some(item => item.sourceId === source));
     const relevanceState: RetrievalDiagnostics['relevanceState'] = !evidence.length
