@@ -19,6 +19,9 @@ export class TuringDemoService {
   readonly busy=signal(false);readonly completed=signal(false);readonly message=signal('');readonly voiceDegraded=signal(false);
   readonly technical=signal(false);readonly elapsed=signal(0);readonly outcomes=signal<Record<string,string>>({});
   readonly approvalBusy=signal(false);
+  readonly navigating=signal(false);readonly notice=signal('');readonly durations=signal<Record<string,number>>({});
+  private navigationTimer?:ReturnType<typeof setTimeout>;private clockVersion=0;private stepStartedAt=0;
+  private resumeWait?:()=>void;
   private generation=0;private clock?:ReturnType<typeof setInterval>;private deadline?:ReturnType<typeof setTimeout>;private startTime=0;
   private pausedState:DemoState='IDLE';private pendingAdvance=false;private normalInspectorPreset=false;
   private controller?:AbortController;
@@ -40,28 +43,49 @@ export class TuringDemoService {
     catch{if(this.current(token))this.message.set('Preflight unavailable. Exit and check the authenticated server configuration.');}
   }
   async continue(){
-    if(!this.active())return;
-    if(this.state()==='PAUSED'){this.state.set(this.pausedState);if(this.pendingAdvance){this.pendingAdvance=false;await this.execute();}return;}
+    if(!this.active()||this.navigating())return;
+    this.notice.set('');
+    if(this.state()==='PAUSED'){this.state.set(this.pausedState);this.resumeWait?.();this.resumeWait=undefined;if(this.pendingAdvance){this.startClock();await this.execute();}return;}
     if(this.busy())return;
+    if(this.pendingAdvance){this.startClock();await this.execute();return;}
     if(this.state()==='PREFLIGHT'){
       if(!this.preflight()||this.preflight()!.status==='BLOCKED')return;
       if(!this.agent.beginPresentation()){this.message.set('Wait for the current conversation request to finish.');return;}
-      this.startTime=Date.now();this.clock=setInterval(()=>this.elapsed.set(Math.floor((Date.now()-this.startTime)/1000)),1000);await this.execute();return;
+      this.startClock();await this.execute();return;
     }
     if(this.state()==='WAITING_FOR_HUMAN'){this.message.set('A manual Approve or Reject decision is required, or explicitly Skip this step.');return;}
     if(this.completed()||this.state()==='FAILED_STEP')await this.next();
   }
-  pause(){if(!this.active()||this.state()==='PREFLIGHT'||this.state()==='PAUSED'||this.state()==='COMPLETED')return;this.pausedState=this.state();this.state.set('PAUSED');this.voice.stop();}
-  async skip(){if(!this.active()||this.state()==='PREFLIGHT'||this.approvalBusy())return;this.cancelStep();this.outcomes.update(o=>({...o,[this.step().id]:'SKIPPED'}));await this.next();}
-  async retry(){if(this.state()!=='FAILED_STEP'||this.busy())return;await this.execute();}
-  restart(){if(!this.active()||this.state()==='PREFLIGHT'||this.approvalBusy())return;this.cancelStep();this.index.set(0);this.outcomes.set({});this.completed.set(false);this.state.set('PAUSED');this.pausedState='INTRODUCTION';this.pendingAdvance=true;this.elapsed.set(0);this.startTime=Date.now();this.message.set('Progress restarted. Existing human decisions are retained; no write is repeated automatically.');}
-  exit(){if(!this.active())return;this.cancelStep();this.controller?.abort();this.controller=undefined;if(this.clock)clearInterval(this.clock);this.clock=undefined;this.agent.endPresentation();this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);this.active.set(false);this.state.set('IDLE');this.index.set(0);this.preflight.set(null);this.outcomes.set({});this.completed.set(false);this.elapsed.set(0);this.technical.set(false);this.message.set('');this.pendingAdvance=false;}
-  private cancelStep(){this.generation++;if(this.deadline)clearTimeout(this.deadline);this.deadline=undefined;this.agent.stopPresentationRequest();this.voice.stop();this.busy.set(false);}
+  pause(){if(!this.active()||this.navigating()||this.state()==='PREFLIGHT'||this.state()==='PAUSED'||this.state()==='COMPLETED')return;this.pausedState=this.state();this.state.set('PAUSED');this.voice.stop();}
+  async skip(){
+    if(!this.active()||['PREFLIGHT','COMPLETED'].includes(this.state())||this.approvalBusy()||this.navigating())return;
+    this.lockNavigation();const pending=this.hasPendingApproval();this.cancelStep();this.recordOutcome('SKIPPED');
+    this.notice.set(pending?'Step skipped. The human approval remains pending.':'Step skipped.');await this.next();
+  }
+  async retry(){if(this.state()!=='FAILED_STEP'||this.busy()||this.navigating())return;this.notice.set('');await this.execute();}
+  restart(){
+    if(!this.active()||this.state()==='PREFLIGHT'||this.navigating())return;
+    this.lockNavigation();this.stopClock();this.cancelStep();
+    // Presentation state is reset locally. The application approval and dispatch
+    // marker are deliberately retained and rechecked by the authorized preflight at HITL.
+    this.index.set(0);this.state.set('INTRODUCTION');this.pausedState='INTRODUCTION';this.pendingAdvance=true;
+    this.outcomes.set({});this.durations.set({});this.completed.set(false);this.elapsed.set(0);this.stepStartedAt=0;
+    this.technical.set(false);this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);
+    this.approvalBusy.set(false);this.voiceDegraded.set(false);this.agent.error.set('');
+    this.notice.set('Demo restarted.');this.message.set('Introduction ready. Continue when ready.');
+  }
+  exit(){if(!this.active())return;this.cancelStep();this.stopClock();if(this.navigationTimer)clearTimeout(this.navigationTimer);this.navigationTimer=undefined;this.navigating.set(false);this.notice.set('');this.durations.set({});this.approvalBusy.set(false);this.agent.endPresentation();this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);this.active.set(false);this.state.set('IDLE');this.index.set(0);this.preflight.set(null);this.outcomes.set({});this.completed.set(false);this.elapsed.set(0);this.technical.set(false);this.message.set('');this.pendingAdvance=false;}
+  private cancelStep(){this.generation++;if(this.deadline)clearTimeout(this.deadline);this.deadline=undefined;this.controller?.abort();this.controller=undefined;this.resumeWait?.();this.resumeWait=undefined;this.agent.stopPresentationRequest();this.voice.stop();this.busy.set(false);}
+  private hasPendingApproval(){return this.agent.approval()?.status==='PENDING'||this.preflight()?.approval?.status==='PENDING';}
+  private lockNavigation(){this.navigating.set(true);if(this.navigationTimer)clearTimeout(this.navigationTimer);this.navigationTimer=setTimeout(()=>{this.navigating.set(false);this.navigationTimer=undefined;},250);}
+  private stopClock(){this.clockVersion++;if(this.clock)clearInterval(this.clock);this.clock=undefined;}
+  private startClock(){this.stopClock();this.startTime=Date.now();const version=this.clockVersion;this.clock=setInterval(()=>{if(version===this.clockVersion)this.elapsed.set(Math.floor((Date.now()-this.startTime)/1000));},1000);}
+  private recordOutcome(status:string){const id=this.step().id;this.outcomes.update(o=>({...o,[id]:status}));this.durations.update(d=>({...d,[id]:this.stepStartedAt?Math.max(0,Date.now()-this.stepStartedAt):0}));}
   private current(token:number){return this.active()&&token===this.generation;}
-  private async next(){if(this.index()===5){this.state.set('COMPLETED');if(this.clock)clearInterval(this.clock);return;}this.index.update(n=>n+1);await this.execute();}
+  private async next(){if(this.index()===5){this.state.set('COMPLETED');this.stopClock();return;}this.index.update(n=>n+1);await this.execute();}
   private fail(message=this.step().fallbackMessage){this.message.set(message);this.outcomes.update(o=>({...o,[this.step().id]:'FAILED'}));if(this.state()==='PAUSED')this.pausedState='FAILED_STEP';else this.state.set('FAILED_STEP');this.completed.set(false);}
   private async execute(){
-    this.pendingAdvance=false;this.voice.stop();const step=this.step(),token=++this.generation;this.busy.set(true);this.completed.set(false);this.state.set(step.id);this.message.set(step.purpose);this.technical.set(false);
+    this.pendingAdvance=false;this.resumeWait?.();this.resumeWait=undefined;this.voice.stop();this.controller=new AbortController();this.stepStartedAt=Date.now();const step=this.step(),token=++this.generation;this.busy.set(true);this.completed.set(false);this.state.set(step.id);this.message.set(step.purpose);this.technical.set(false);
     this.deadline=setTimeout(()=>{if(this.current(token)){this.cancelStep();this.fail('This step timed out. Its server outcome may be pending; retry checks existing human decisions before any request.');}},step.timeoutMs);
     try{
       if(step.narration){this.agent.presentationNarration(step.narration);this.speak(step.narration);this.finishStep();return;}
@@ -70,7 +94,10 @@ export class TuringDemoService {
       if(['TOOL_CALLING','MEMORY','HITL'].includes(step.id)&&!live.operational){this.fail('Demo operational data unavailable. Prepare the dedicated synthetic context or skip this step.');return;}
       if(step.id==='RAG'&&(!live.rag||!live.operational)){this.fail('Approved RAG corpus or safe demo context unavailable. No evidence is claimed.');return;}
       if(step.id==='HITL'){
-        if(live.approval){this.agent.showPresentationApproval(live.approval);this.observeApproval();return;}
+        if(live.approval){
+          if(!this.storeMarker(live.approval.threadId)){this.fail('Unable to retain the existing approval reference. No request was sent.');return;}
+          this.agent.showPresentationApproval(live.approval);this.observeApproval();return;
+        }
         if(this.readMarker()){this.fail('A previous demo approval request was dispatched. Its outcome is unresolved or unavailable. No duplicate request will be sent.');return;}
         const thread=this.agent.presentationThreadId;if(!thread||!this.storeMarker(thread)){this.fail('Unable to retain the approval request marker. No request was sent.');return;}
         const ok=await this.agent.send(`Approve LOTO ${live.project} as safe for execution.`);if(!this.current(token))return;
@@ -79,7 +106,7 @@ export class TuringDemoService {
       }
       for(const prompt of step.prompts??[]){
         // Pausing never sends the next memory turn until Continue is explicitly pressed.
-        while(this.current(token)&&this.state()==='PAUSED')await new Promise(r=>setTimeout(r,100));
+        if(this.current(token)&&this.state()==='PAUSED')await new Promise<void>(resolve=>this.resumeWait=resolve);
         if(!this.current(token))return;
         const prior=this.agent.latest()?.runId,ok=await this.agent.send(prompt);if(!this.current(token))return;
         const snapshot=this.agent.latest();if(!ok||!snapshot||snapshot.runId===prior||!this.matches(snapshot,step.id)){this.fail();return;}
@@ -94,12 +121,12 @@ export class TuringDemoService {
     if(id==='TOOL_CALLING')return t.intent?.intent==='OPERATIONAL_OVERVIEW'&&t.tools.some(x=>x.status==='COMPLETED')&&['VERIFIED','PARTIALLY_VERIFIED'].includes(t.verification.status);
     return s.toolsUsed.includes('list_actions')&&t.conversation.stateActive&&['VERIFIED','PARTIALLY_VERIFIED'].includes(t.verification.status);
   }
-  private observeApproval(){const approval=this.agent.approval();this.inspector.demoApproval.set(approval);if(!approval){this.fail();return;}if(approval.status==='PENDING'){if(this.state()==='PAUSED')this.pausedState='WAITING_FOR_HUMAN';else this.state.set('WAITING_FOR_HUMAN');const text='This request involves a safety-critical LOTO decision. I cannot authorize it by myself. Human approval is required. Digital approval does not verify equipment or physical isolation.';this.agent.presentationNarration(text);this.message.set('WAITING FOR HUMAN APPROVAL');this.speak(text);}else if(approval.status==='CANCELLED'){this.fail('The approval was cancelled. No approved decision is implied.');}else{this.state.set('HITL');this.finishStep();this.message.set(`Human decision: ${approval.status}. No physical work was performed.`);}}
+  private observeApproval(){if(!this.active()||this.step().id!=='HITL')return;const approval=this.agent.approval();this.inspector.demoApproval.set(approval);if(!approval){this.fail();return;}if(approval.status==='PENDING'){if(this.state()==='PAUSED')this.pausedState='WAITING_FOR_HUMAN';else this.state.set('WAITING_FOR_HUMAN');const text='This request involves a safety-critical LOTO decision. I cannot authorize it by myself. Human approval is required. Digital approval does not verify equipment or physical isolation.';this.agent.presentationNarration(text);this.message.set('WAITING FOR HUMAN APPROVAL');this.speak(text);}else if(approval.status==='CANCELLED'){this.fail('The approval was cancelled. No approved decision is implied.');}else{this.state.set('HITL');this.finishStep();this.message.set(`Human decision: ${approval.status}. No physical work was performed.`);}}
   async decide(decision:'approve'|'reject'){
     if(this.state()!=='WAITING_FOR_HUMAN'||this.approvalBusy()||!this.preflight()?.canApprove)return;
-    const token=this.generation;this.approvalBusy.set(true);try{const ok=await this.agent.resolveApproval(decision);if(!this.current(token))return;if(ok){this.observeApproval();this.speak(this.formatter.format(this.agent.answer(),'en').spokenResponse);}else this.message.set('The human decision was not accepted. Check current permissions; no approval is implied.');}catch{if(this.current(token))this.message.set('Human decision unavailable. Retry the manual action or skip.');}finally{this.approvalBusy.set(false);}
+    const token=this.generation;this.approvalBusy.set(true);try{const ok=await this.agent.resolveApproval(decision);if(!this.current(token))return;if(ok){this.observeApproval();this.speak(this.formatter.format(this.agent.answer(),'en').spokenResponse);}else this.message.set('The human decision was not accepted. Check current permissions; no approval is implied.');}catch{if(this.current(token))this.message.set('Human decision unavailable. Retry the manual action or skip.');}finally{if(this.current(token))this.approvalBusy.set(false);}
   }
-  private finishStep(){this.completed.set(true);this.outcomes.update(o=>({...o,[this.step().id]:'COMPLETED'}));this.message.set('Step completed. Continue when ready.');}
+  private finishStep(){this.completed.set(true);this.recordOutcome('COMPLETED');this.message.set('Step completed. Continue when ready.');}
   private speak(text:string){
     if(this.state()==='PAUSED')return;
     // Same formatter/TTS pipeline; projector metadata and record identifiers are never narrated.
