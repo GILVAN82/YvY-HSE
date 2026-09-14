@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { explainAttention, type AttentionReader } from '../ai/attention/attention-explanation';
 import { AuthorizationError } from '../auth/authorization';
 import { Router, Request, Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
@@ -21,6 +23,8 @@ import type { AuthenticatedRequest } from '../auth/auth.types';
 import { hasPermission } from '../auth/authorization';
 
 export interface AiChatDependencies {
+  attentionReader?: AttentionReader;
+  attentionRag?: import('../ai/rag/retrieval.types').RagRetriever;
   resolveModel: (provider: string, model: string) => LanguageModel;
   readOrchestrator: () => 'legacy' | 'langgraph';
   runHseAgent: typeof runHseAgent;
@@ -38,6 +42,7 @@ export interface AiChatDependencies {
 // able to run up an unbounded bill.
 /** Request contract. Validated before anything reaches the model. */
 const chatRequestSchema = z.object({
+  attentionAlertId: z.string().uuid().optional(),
   message: z.string().min(1, 'message is required').max(MAX_MESSAGE_LENGTH),
   history: z
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() }))
@@ -138,7 +143,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     });
     return;
   }
-  const { message, history, conversationId, threadId, provider, model, attachmentIds = [], locale, voiceMetadata } = parsed.data;
+  const { attentionAlertId, message, history, conversationId, threadId, provider, model, attachmentIds = [], locale, voiceMetadata } = parsed.data;
   if (voiceMetadata && voiceMetadata.transcript !== message) {
     res.status(400).json({ error: 'Voice transcript must match the agent message.', code: 'AI_INVALID_VOICE_TRANSCRIPT' }); return;
   }
@@ -161,6 +166,18 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   catch (error) { sendAttachmentError(res, error); return; }
   const attachmentContext = attachments.length ? dependencies.attachmentService.buildContext(attachments, message) : undefined;
 
+  if(attentionAlertId){
+    const attentionThread=threadId??conversationId??randomUUID();
+    // Structured explain is read-only. Ignore UI descriptions/history as authority.
+    try{
+      if(dependencies.threadStateStore.forPrincipal)await dependencies.threadStateStore.forPrincipal(principal).load(attentionThread,principal.userId);
+    }catch{res.status(403).json({error:'Conversation context is unavailable.',code:'AUTHORIZATION_DENIED'});return;}
+    const result=await explainAttention({principal,alertId:attentionAlertId,threadId:attentionThread,locale,reader:dependencies.attentionReader??{get:async()=>null},rag:dependencies.attentionRag});
+    res.setHeader('Content-Type','text/event-stream');res.setHeader('Cache-Control','no-cache');
+    res.write(`data: ${JSON.stringify({type:'tool_use',name:'get_attention_alert'})}\n\n`);
+    res.write(`data: ${JSON.stringify({type:'text',text:result.text})}\n\n`);
+    res.write(`data: ${JSON.stringify({...result,type:'done',threadId:attentionThread,orchestrator:'attention',responseStatus:result.attention?'SUCCESS':'NO_DATA'})}\n\n`);res.end();return;
+  }
   let languageModel;
   try {
     languageModel = dependencies.resolveModel(provider, model);

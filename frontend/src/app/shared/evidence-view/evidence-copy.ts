@@ -1,6 +1,9 @@
 import { operationalCopy, operationalLanguage } from '../operational-overview/operational-copy';
 
 const labels = {
+  viewSources:['View sources','Ver fontes','Ver fuentes','Voir les sources','Quellen ansehen'],
+  viewDecisionBasis:['View decision basis','Ver base da decisão','Ver base de la decisión','Voir les éléments de décision','Entscheidungsgrundlage ansehen'],
+  whyConfirmation:['Why this needs confirmation','Por que precisa de confirmação','Por qué necesita confirmación','Pourquoi une confirmation est nécessaire','Warum eine Bestätigung erforderlich ist'],
   approvedSource:['Approved source','Fonte aprovada','Fuente aprobada','Source approuvée','Freigegebene Quelle'],
   relevantGuidance:['Relevant guidance','Orientação relevante','Orientación relevante','Consignes pertinentes','Relevante Hinweise'],
   viewSource:['View source','Ver fonte','Ver fuente','Voir la source','Quelle öffnen'],

@@ -12,6 +12,7 @@ export interface AgentToolTrace {
 export type AgentResponseStatus = 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
 
 export interface AgentInspectorSnapshot {
+  attention?: import('../shared/attention/attention.presenter').AttentionFacts;
   runId: string;
   threadId: string;
   status: string;
@@ -97,7 +98,7 @@ export class AgentInspectorService {
   /** Synchronizes only from the persisted approval returned by the backend. */
   recordApproval(approval: ApprovalSnapshot) {
     const current = this.latest();
-    if (!current || current.threadId !== approval.threadId) return;
+    if (!current || (current.threadId !== approval.threadId && !(current.approvalRequest?.approvalId===approval.approvalId && current.approvalRequest.threadId===approval.threadId))) return;
     this.record({ ...current, status: approval.status, responseStatus: approval.status === 'APPROVED' ? 'APPROVED' : approval.status === 'REJECTED' ? 'REJECTED' : 'PENDING', approvalRequest: approval });
   }
   recordAlertEvents(events:YvyAlertEvent[]){const safe=events.slice(0,50).map(({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata})=>({id,alertId,eventType,severity,category,sourceType,ruleId,evidenceCount,createdAt,metadata}));this.alertEvents.set(safe);try{sessionStorage.setItem(ALERT_STORAGE_KEY,JSON.stringify(safe));}catch{}}
@@ -118,6 +119,6 @@ export function sanitizeSnapshot(value: AgentInspectorSnapshot): AgentInspectorS
   return { runId:value.runId,threadId:value.threadId,status:value.status,responseStatus:value.responseStatus,stepCount:value.stepCount,toolsUsed:value.toolsUsed,ragUsed:value.ragUsed,citations:value.citations,errorCode:value.errorCode,orchestrator:value.orchestrator,
     approvalRequest:value.approvalRequest ? {...value.approvalRequest,resolutionNote:undefined} : undefined,
     executionTrace:trace ? {timestamp:trace.timestamp,responseLanguage:trace.responseLanguage,route:trace.route,rag:trace.rag,conversation:trace.conversation,memory:trace.memory,guardrail:trace.guardrail,verification:trace.verification,error:trace.error,observability:trace.observability,intent:trace.intent ? {...trace.intent,input:'',normalizedQuery:''}:undefined,
-      tools:(trace.tools ?? []).map(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary})),
+      tools:(trace.tools ?? []).map(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary,arguments:tool.name==='get_attention_alert'&&typeof tool.arguments?.['alertId']==='string'&&/^[a-f0-9]{8}-[a-f0-9-]{27}$/i.test(tool.arguments['alertId'])?{alertId:tool.arguments['alertId']}:undefined})),
     } : undefined };
 }

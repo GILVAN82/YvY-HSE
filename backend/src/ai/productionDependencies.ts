@@ -1,3 +1,4 @@
+import { PostgresAttentionReader } from './attention/attention-explanation';
 import { pool } from '../db/pool';
 import { computeKpi } from '../routes/kpi.service';
 import { readOrchestrator } from './config';
@@ -41,6 +42,8 @@ export function createProductionAiComposition(): ProductionAiComposition {
   };
 
   const aiChatDependencies: AiChatDependencies = {
+    attentionReader: new PostgresAttentionReader(pool,humanApprovalService),
+    attentionRag: ragRetriever,
     resolveModel,
     readOrchestrator,
     runHseAgent,

@@ -116,6 +116,7 @@
         <ng-container *ngIf="run.approvalRequest as approval; else noApproval">
           <div class="approval">{{ approval.status === 'PENDING' ? 'HUMAN APPROVAL REQUIRED' : 'HUMAN DECISION RECORDED' }}</div>
           <div class="kv" *ngIf="approval.status !== 'PENDING'"><span>Decision</span><strong>{{ approval.status }}</strong></div>
+          <div class="kv"><span>Approval ID</span><code>{{approval.approvalId}}</code></div><div class="kv"><span>Approval thread</span><code>{{approval.threadId}}</code></div>
           <div class="kv"><span>Operation</span><strong>{{ approval.actionType }}</strong></div>
           <div class="kv"><span>Risk</span><strong>{{ approval.riskLevel }}</strong></div>
           <div class="kv"><span>Status</span><strong>{{ approval.status }}</strong></div>

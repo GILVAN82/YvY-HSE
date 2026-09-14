@@ -1,3 +1,5 @@
+import { AttentionSummaryComponent, AttentionItemComponent } from '../../shared/attention/attention.component';
+import { attentionText, presentAttention, type AttentionFacts } from '../../shared/attention/attention.presenter';
 import { ResponseEvidenceComponent } from '../../shared/evidence-view/response-evidence.component';
 import { OperationalOverviewComponent } from '../../shared/operational-overview/operational-overview.component';
 import { operationalCopy } from '../../shared/operational-overview/operational-copy';
@@ -32,7 +34,7 @@ import { SafeMarkdownPipe } from '../../shared/ai-chat-widget/safe-markdown.pipe
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
-  imports: [ResponseEvidenceComponent, OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
+  imports: [AttentionSummaryComponent, AttentionItemComponent, ResponseEvidenceComponent, OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
   templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss','./demo/turing-demo-workspace.scss'],
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
@@ -84,10 +86,12 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   operationalLanguage(item:ConversationItem){return this.i18n.lang();}
   async copyMessage(item:ConversationItem){try{await navigator.clipboard.writeText(item.text);}catch{/* Clipboard availability does not affect the conversation. */}}
   replayMessage(item:ConversationItem){const language=(item.language as VoiceConversationTurn['language'])||'en',response=this.spokenFormatter.format(item.text,language);if(this.speechSynthesis.speak(response.spokenResponse,language,()=>this.voiceStatus.set('idle'),()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');}
-  askAboutAlert(alert:YvyAlert){
-    this.prompt=`Explain the ${alert.severity.toLowerCase()} alert ${alert.sourceId}: ${alert.summary}`;
+  attentionCopy(){return attentionText(this.i18n.lang());}
+  attentionFacts(alert:YvyAlert):AttentionFacts{return {summary:alert.category==='OVERDUE_ACTION'?alert.summary:undefined,approvalActionType:alert.approvalActionType,category:alert.category,severity:alert.severity,status:alert.businessStatus??alert.status,sourceType:alert.sourceType,projectLabel:alert.projectLabel,decisionRequired:(alert.businessStatus??alert.status)==='PENDING'};}
+  async askAboutAlert(alert:YvyAlert){
+    if(this.agent.loading())return;
     this.closeDetails();
-    queueMicrotask(()=>document.getElementById('yvy-command')?.focus());
+    await this.agent.send(presentAttention(this.attentionFacts(alert),this.i18n.lang()).explainMessage,undefined,undefined,alert.id);
   }
   setAlertPreference(key:'criticalVoice'|'highVoice'|'routineReminders'|'desktopNotifications',value:boolean){this.alerts.setPreferences({...this.alerts.preferences(),[key]:value});}
   async startVoice(){if(this.demo.active())return;

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import type { ApprovalSnapshot } from '../../core/agent-inspector.service';
 import { EvidenceViewComponent } from './evidence-view.component';
 import { presentResponseEvidence, type EvidenceSnapshot } from './evidence.presenter';
-import { operationalCopy } from './evidence-copy';
+import { operationalCopy, evidenceCopy } from './evidence-copy';
 
 @Component({selector:'app-response-evidence',standalone:true,imports:[CommonModule,EvidenceViewComponent],
   template:`<ng-container *ngIf="models.length"><button type="button" class="evidence-toggle" (click)="open=!open" [attr.aria-expanded]="open">{{label}}</button>
@@ -18,6 +18,12 @@ export class ResponseEvidenceComponent {
   @Input() approvalTarget?:string;
   open=false;
   get models(){return this.snapshot?presentResponseEvidence(this.snapshot,this.conclusion,this.language,this.approval??undefined,this.approvalTarget):[];}
-  get label(){return operationalCopy(this.open?'hideEvidence':'viewEvidence',this.language);}
+  get label(){
+    if(this.open)return operationalCopy('hideEvidence',this.language);
+    if(this.snapshot?.approvalRequest)return evidenceCopy('viewDecisionBasis',this.language);
+    if(this.snapshot?.executionTrace?.verification?.status==='PARTIALLY_VERIFIED')return evidenceCopy('whyConfirmation',this.language);
+    if(this.snapshot?.ragUsed || this.snapshot?.evidencePresentation?.documents.length)return evidenceCopy('viewSources',this.language);
+    return operationalCopy('viewEvidence',this.language);
+  }
   index(index:number){return index;}
 }
