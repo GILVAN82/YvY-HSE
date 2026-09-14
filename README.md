@@ -2,7 +2,7 @@
 
 YvY is an AI-powered HSE work companion for HSE professionals and project teams. It combines operational tools, approved knowledge retrieval, evidence verification, memory and human approval to support safer and more traceable HSE decisions. It helps navigate fragmented records and procedures; it does not replace professional judgement or claim a proven reduction in accidents.
 
-**SHOWCASE LINK: PENDING USER SUBMISSION** - MISSING / USER ACTION REQUIRED. No public showcase URL has been supplied.
+**Showcase:** [View YvY HSE on Turing Showcase](https://showcase.turingcollege.com/project/849048c7-dcdb-4648-8719-a98ae2268c75)
 
 ## Capstone baseline
 
@@ -23,7 +23,7 @@ Prompt `agent-g-v1`: `9105843caf313fe5e749bb34df5ddfa9b5f75dcb58fc181a8270b2fd5c
 [Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence](docs/capstone/DEFENCE_NOTES.md) |
 [Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md).
 
-Timed continuous rehearsal, oral defence and Showcase publication remain user actions. Feature freeze is active.
+Timed continuous rehearsal and oral defence remain user actions. Feature freeze is active.
 
 ## Local Authentication
 

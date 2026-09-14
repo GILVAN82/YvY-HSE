@@ -4,7 +4,7 @@ Date: 2026-09-14. Branch: `capstone/yvy-hse`. Runtime commit: `f9b58d0`.
 The submission HEAD is the documentation commit containing this report; resolve it with
 `git log -1 --format=%H -- docs/capstone/FINAL_SUBMISSION_BASELINE.md`.
 Feature freeze: no new agent capability, RAG source or demonstration step.
-Showcase: **PENDING USER SUBMISSION**. A timed continuous rehearsal and Gilvan's oral defence remain user actions.
+Showcase: **PUBLISHED** — [View YvY HSE on Turing Showcase](https://showcase.turingcollege.com/project/849048c7-dcdb-4648-8719-a98ae2268c75). A timed continuous rehearsal and Gilvan's oral defence remain user actions.
 
 ## Scope and preservation
 
@@ -106,7 +106,7 @@ No production persistent value needs changing. Open the frontend and run preflig
 
 ## Remaining / feature freeze
 
-- USER ACTION REQUIRED: continuous timed rehearsal, manual HITL decision, oral ownership, real Showcase and README URL.
+- USER ACTION REQUIRED: continuous timed rehearsal, manual HITL decision and oral ownership.
 - DOCUMENTED LIMITATION: four-document corpus, bounded evaluations, browser STT, digital approval without equipment-level certification,
   finite injection/semantic controls, no complete live answer-quality benchmark and no institutional reviewer sign-off.
 - FUTURE PRODUCT HARDENING: thread compare-and-swap (version increments are not conflict protection), retention/purge,
