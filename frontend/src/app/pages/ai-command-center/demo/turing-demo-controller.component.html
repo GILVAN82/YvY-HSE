@@ -17,10 +17,16 @@
     <details><summary>Presenter notes · screen-visible</summary><p>{{demo.step().cue}}</p><small>These notes are not narrated. Close before projecting the public narrative.</small></details>
   </div>
   <div *ngIf="demo.state()==='WAITING_FOR_HUMAN'" class="human">
-    <strong>WAITING FOR HUMAN APPROVAL</strong><span>Digital workflow only. Physical verification remains with competent people.</span>
-    <button type="button" (click)="demo.decide('approve')" [disabled]="!demo.preflight()?.canApprove || demo.approvalBusy()">Approve</button>
+    <strong>HUMAN DECISION REQUIRED</strong><span>LOTO request · {{demo.humanContext()?.projectId}}</span>
+    <p *ngIf="demo.previousDecision() as previous">Previous decision: {{previous.status}}. This request requires a new human decision.</p>
+    <dl><dt>Why approval is required</dt><dd>This request involves a safety-critical LOTO decision.</dd>
+      <dt>What YvY verified</dt><dd>{{demo.knowledgeBasis()?'Approved LOTO guidance was retrieved in this presentation.':'No approved guidance was verified in this presentation.'}}</dd>
+      <dt>What YvY cannot verify</dt><dd>Physical isolation and safe field conditions. YvY cannot authorize the work.</dd></dl>
+    <span>Decision</span>
     <button type="button" (click)="demo.decide('reject')" [disabled]="!demo.preflight()?.canApprove || demo.approvalBusy()">Reject</button>
+    <button type="button" (click)="demo.decide('approve')" [disabled]="!demo.preflight()?.canApprove || demo.approvalBusy()">Approve</button>
     <small *ngIf="!demo.preflight()?.canApprove">The current user cannot resolve this decision. Skip or exit; no automatic approval.</small>
+    <details class="decision-evidence" *ngIf="demo.decisionEvidence().length"><summary>Decision basis · View evidence</summary><app-evidence-view *ngFor="let evidence of demo.decisionEvidence()" [model]="evidence" language="en"></app-evidence-view></details>
   </div>
   <section *ngIf="demo.technical()" class="technical" aria-label="Technical evidence"><button type="button" (click)="demo.technical.set(false)">Close evidence</button><app-agent-inspector></app-agent-inspector></section>
 </section>

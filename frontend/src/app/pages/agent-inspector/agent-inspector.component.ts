@@ -11,7 +11,7 @@ import { AgentInspectorService } from '../../core/agent-inspector.service';
 })
 export class AgentInspectorComponent {
   readonly inspector = inject(AgentInspectorService);
-  readonly snapshot = this.inspector.latest;
+  readonly snapshot = computed(()=>this.inspector.demoHumanContext()?this.inspector.demoApprovalRun():this.inspector.latest());
   readonly trace = computed(() => this.snapshot()?.executionTrace ?? null);
 
   label(value: unknown): string { return value === true ? 'Yes' : value === false ? 'No' : String(value ?? 'NOT CURRENTLY OBSERVABLE'); }

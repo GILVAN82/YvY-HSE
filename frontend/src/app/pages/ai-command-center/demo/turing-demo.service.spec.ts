@@ -16,9 +16,9 @@ describe('Turing presentation sequence, not an agent',()=>{
   beforeEach(()=>{
     sessionStorage.clear();preflight={...ready};count=0;auth={user:signal<any>(user)};
     agent={error:signal(''),loading:signal(false),latest:signal<any>(null),approval:signal<any>(null),answer:signal('Verified details on screen.'),presentationThreadId:pending.threadId,
-      beginPresentation:jasmine.createSpy().and.returnValue(true),endPresentation:jasmine.createSpy(),stopPresentationRequest:jasmine.createSpy(),presentationNarration:jasmine.createSpy(),showPresentationApproval:jasmine.createSpy().and.callFake((a:any)=>agent.approval.set(a)),
-      resolveApproval:jasmine.createSpy().and.callFake(async(decision:string)=>{agent.approval.set({...pending,status:decision==='approve'?'APPROVED':'REJECTED'});return true;}),
-      send:jasmine.createSpy().and.callFake(async(prompt:string)=>{count++;if(prompt.startsWith('Approve LOTO'))agent.approval.set(pending);agent.latest.set({runId:`run-${count}`,threadId:pending.threadId,status:'COMPLETED',toolsUsed:[prompt.includes('LOTO guidance')?'search_hse_knowledge':'list_actions'],citations:prompt.includes('LOTO guidance')?[{citationLabel:'Approved reference'}]:[],executionTrace:{intent:{intent:'OPERATIONAL_OVERVIEW'},tools:[{name:'list_actions',status:'COMPLETED'}],rag:{used:true,chunksRetrieved:1},conversation:{stateActive:true,messageCount:count*2},verification:{status:'VERIFIED'}}});return true;})};
+      selectPresentationRequestInstance:jasmine.createSpy().and.callFake((id:string)=>{agent.presentationThreadId=id;return true;}),beginPresentation:jasmine.createSpy().and.returnValue(true),endPresentation:jasmine.createSpy(),stopPresentationRequest:jasmine.createSpy(),presentationNarration:jasmine.createSpy(),showPresentationApproval:jasmine.createSpy().and.callFake((a:any)=>agent.approval.set(a)),
+      resolveApproval:jasmine.createSpy().and.callFake(async(decision:string)=>{agent.approval.set({...agent.approval(),status:decision==='approve'?'APPROVED':'REJECTED'});return true;}),
+      send:jasmine.createSpy().and.callFake(async(prompt:string)=>{count++;if(prompt.startsWith('Approve LOTO'))agent.approval.set(agent.presentationThreadId===pending.threadId?pending:{...pending,threadId:agent.presentationThreadId,approvalId:'new-approval'});agent.latest.set({runId:`run-${count}`,threadId:pending.threadId,status:'COMPLETED',toolsUsed:[prompt.includes('LOTO guidance')?'search_hse_knowledge':'list_actions'],citations:prompt.includes('LOTO guidance')?[{citationLabel:'Approved reference'}]:[],executionTrace:{intent:{intent:'OPERATIONAL_OVERVIEW'},tools:[{name:'list_actions',status:'COMPLETED'}],rag:{used:true,chunksRetrieved:1},conversation:{stateActive:true,messageCount:count*2},verification:{status:'VERIFIED'}}});return true;})};
     voice={stop:jasmine.createSpy(),speak:jasmine.createSpy().and.returnValue(true),playback:signal(null)};
     fetcher=spyOn(window,'fetch').and.callFake(async(input:any)=>new Response(JSON.stringify(String(input).includes('/config')?{enabled:true}:preflight),{status:200,headers:{'Content-Type':'application/json'}}));
     TestBed.configureTestingModule({providers:[{provide:AuthService,useValue:auth},{provide:YvyCommandCenterAgentService,useValue:agent},{provide:VoiceEngineService,useValue:voice}]});
@@ -37,6 +37,39 @@ describe('Turing presentation sequence, not an agent',()=>{
   it('pauses and resumes without replaying a completed request',async()=>{await start();demo.pause();expect(demo.state()).toBe('PAUSED');await demo.continue();expect(demo.state()).toBe('INTRODUCTION');expect(agent.send).not.toHaveBeenCalled();});
   it('skip records a skipped step, not successful evidence',async()=>{await start();await demo.skip();expect(demo.outcomes()['INTRODUCTION']).toBe('SKIPPED');expect(demo.index()).toBe(1);});
   it('agent failure is visible and Retry uses the actual agent service again',async()=>{await start();agent.send.and.resolveTo(false);await demo.continue();expect(demo.state()).toBe('FAILED_STEP');await demo.retry();expect(agent.send.calls.count()).toBe(2);});
+  for(const status of ['APPROVED','REJECTED'] as const)it(`historical ${status} requires a new pending instance and a current human click`,async()=>{
+    preflight={...ready,approval:{...pending,status}};await hitl();
+    expect(demo.state()).toBe('WAITING_FOR_HUMAN');expect(demo.completed()).toBeFalse();
+    expect(agent.selectPresentationRequestInstance).toHaveBeenCalled();expect(agent.approval().threadId).not.toBe(pending.threadId);
+    expect(demo.humanContext()?.decisionMadeDuringCurrentDemo).toBeFalse();expect(demo.humanContext()?.status).toBe('PENDING');
+    const f=TestBed.createComponent(TuringDemoControllerComponent);f.detectChanges();
+    const buttons=Array.from(f.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    expect(buttons.find(b=>b.textContent?.trim()==='Approve')).toBeDefined();expect(buttons.find(b=>b.textContent?.trim()==='Reject')).toBeDefined();
+    expect(buttons.find(b=>b.textContent?.trim()==='Continue')?.disabled).toBeTrue();
+    await demo.continue();expect(demo.index()).toBe(4);expect(demo.completed()).toBeFalse();
+    await demo.decide('reject');expect(demo.completed()).toBeTrue();expect(demo.humanContext()?.decisionMadeDuringCurrentDemo).toBeTrue();
+    expect(demo.message()).toContain('Human decision: REJECTED');f.destroy();
+  });
+  it('an externally resolved approval never substitutes for a click in this demo',async()=>{
+    await hitl();agent.approval.set({...pending,status:'APPROVED'});TestBed.flushEffects();
+    expect(demo.completed()).toBeFalse();expect(demo.humanContext()?.decisionMadeDuringCurrentDemo).toBeFalse();expect(demo.outcomes()['HITL']).not.toBe('COMPLETED');
+  });
+  it('double Approve issues one resolution and marks only its correlated success',async()=>{
+    await hitl();let release!:(v:boolean)=>void;agent.resolveApproval.and.returnValue(new Promise<boolean>(r=>release=r));
+    const first=demo.decide('approve');await demo.decide('approve');expect(agent.resolveApproval.calls.count()).toBe(1);
+    agent.approval.set({...pending,status:'APPROVED'});release(true);await first;
+    expect(demo.completed()).toBeTrue();expect(demo.humanContext()?.decisionMadeDuringCurrentDemo).toBeTrue();
+  });
+  it('Restart creates another demo session and a finalized decision does not complete it',async()=>{
+    await hitl();await demo.decide('approve');const previousSession=demo.demoSessionId();preflight={...ready,approval:agent.approval()};
+    demo.restart();expect(demo.demoSessionId()).not.toBe(previousSession);await new Promise(r=>setTimeout(r,260));demo.index.set(4);await (demo as any).execute();
+    expect(demo.state()).toBe('WAITING_FOR_HUMAN');expect(demo.completed()).toBeFalse();expect(demo.humanContext()?.decisionMadeDuringCurrentDemo).toBeFalse();
+  });
+  it('Retry and repeated preflight reuse the same pending request without another dispatch',async()=>{
+    await hitl();const calls=agent.send.calls.count();preflight={...ready,approval:agent.approval()};
+    demo.state.set('FAILED_STEP');await demo.retry();expect(agent.send.calls.count()).toBe(calls);expect(demo.state()).toBe('WAITING_FOR_HUMAN');
+    expect(demo.humanContext()?.approvalId).toBe(pending.approvalId);
+  });
   it('Retry accepts a new successful attempt after explicit recoverable failures without resolving HITL',async()=>{
     await start();let attempt=0;
     agent.send.and.callFake(async()=>{attempt++;agent.latest.set({runId:`retry-${attempt}`,threadId:pending.threadId,status:attempt<3?'FAILED':'COMPLETED',toolsUsed:attempt<3?[]:['list_actions'],executionTrace:{intent:{intent:'OPERATIONAL_OVERVIEW'},tools:attempt<3?[]:[{status:'COMPLETED'}],verification:{status:attempt<3?'INSUFFICIENT_EVIDENCE':'VERIFIED'},observability:{error:attempt<3?{code:'MODEL_PROVIDER_UNAVAILABLE',recoverable:true}:undefined}}});return attempt>=3;});

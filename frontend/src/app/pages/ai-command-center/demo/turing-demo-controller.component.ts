@@ -2,8 +2,9 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuringDemoService } from './turing-demo.service';
 import { AgentInspectorComponent } from '../../agent-inspector/agent-inspector.component';
+import { EvidenceViewComponent } from '../../../shared/evidence-view/evidence-view.component';
 
-@Component({selector:'app-turing-demo-controller',standalone:true,imports:[CommonModule,AgentInspectorComponent],
+@Component({selector:'app-turing-demo-controller',standalone:true,imports:[CommonModule,AgentInspectorComponent,EvidenceViewComponent],
   templateUrl:'./turing-demo-controller.component.html',styleUrl:'./turing-demo-controller.component.scss'})
 export class TuringDemoControllerComponent {
   readonly demo=inject(TuringDemoService);

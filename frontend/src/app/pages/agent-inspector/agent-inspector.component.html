@@ -1,3 +1,9 @@
+<section *ngIf="inspector.demoHumanContext() as context" class="inspector-page" aria-label="Demo human decision correlation">
+  <h2>Human decision correlation</h2><dl><dt>Demo session</dt><dd>{{context.demoSessionId}}</dd>
+    <dt>Request instance</dt><dd>{{context.requestInstanceId}}</dd><dt>Approval ID</dt><dd>{{context.approvalId}}</dd>
+    <dt>Project</dt><dd>{{context.projectId}}</dd><dt>Status</dt><dd>{{context.status}}</dd>
+    <dt>Decision source</dt><dd>{{context.decisionMadeDuringCurrentDemo?'HUMAN':'NONE'}}</dd></dl>
+</section>
 <section *ngIf="inspector.demoPreset()" class="inspector-page demo-preset" aria-label="Compact real execution evidence">
   <header class="page-head"><h2>Technical evidence</h2><button type="button" (click)="inspector.demoPreset.set(false)">Full Inspector</button></header>
   <dl *ngIf="snapshot() as run">

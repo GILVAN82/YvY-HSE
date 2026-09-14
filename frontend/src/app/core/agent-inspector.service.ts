@@ -56,12 +56,18 @@ export interface ApprovalSnapshot {
 }
 
 const STORAGE_KEY = 'yvy-hse-agent-inspector-latest';
+export interface DemoHumanApprovalContext {
+  demoSessionId:string; requestInstanceId:string; approvalId:string; resourceId:string; projectId:string;
+  status:ApprovalSnapshot['status']; decisionMadeDuringCurrentDemo:boolean;
+}
 const ALERT_STORAGE_KEY = 'yvy-hse-agent-inspector-alert-events';
 
 @Injectable({ providedIn: 'root' })
 export class AgentInspectorService {
   readonly demoPreset=signal(false);
   readonly demoApproval=signal<ApprovalSnapshot|null>(null);
+  readonly demoHumanContext=signal<DemoHumanApprovalContext|null>(null);
+  readonly demoApprovalRun=signal<AgentInspectorSnapshot|null>(null);
   readonly voiceEngine=signal<{requestedEngine:string;effectiveEngine:string;fallbackReason:string|null;voiceName:string|null}|null>(null);
   readonly voiceSession=signal<{authenticatedUser:string|null;voiceResponseMode:string;inputMode:'TEXT'|'VOICE';autoVoice:boolean;spokenPolicy:'FACTUAL'|'EVIDENCE_LIMITED'|'TECHNICAL_ERROR'|'NONE';verificationStatus:string|null}|null>(null);
   readonly latest = signal<AgentInspectorSnapshot | null>(this.read());
