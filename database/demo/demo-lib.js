@@ -35,8 +35,15 @@ async function applySchemaAndMigrations(client) {
   await client.query(fs.readFileSync(path.join(databaseDir, 'schema.sql'), 'utf8'));
   await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   for (const name of fs.readdirSync(path.join(databaseDir, 'migrations')).filter((item) => item.endsWith('.sql')).sort()) {
-    await client.query(fs.readFileSync(path.join(databaseDir, 'migrations', name), 'utf8'));
-    await client.query('INSERT INTO schema_migrations(name) VALUES($1) ON CONFLICT DO NOTHING', [name]);
+    await client.query('BEGIN');
+    try {
+      await client.query(fs.readFileSync(path.join(databaseDir, 'migrations', name), 'utf8'));
+      await client.query('INSERT INTO schema_migrations(name) VALUES($1) ON CONFLICT DO NOTHING', [name]);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
   }
 }
 
