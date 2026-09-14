@@ -1,5 +1,9 @@
 # Review compliance matrix
 
+## Sprint I.1 — critical LOTO routing correction
+
+[Canonical HITL correction and validation](../hitl-critical-routing-fix.md) records the exact rehearsal failure, deterministic routing/gate repair, authorized contextual scope, and regression results. It maps evidence for Jochen (gate/focused demo), Fatima (impossible-state prevention), Andrius (failure/design reasoning), and Justinas (safe failure). This is implementation evidence, not reviewer sign-off; live rehearsal remains separate.
+
 ## Current Sprint I presentation status
 
 | Item | Status | Evidence | Remaining |

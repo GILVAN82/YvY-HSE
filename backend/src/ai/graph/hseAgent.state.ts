@@ -72,6 +72,8 @@ export const hseAgentStateSchema = z.object({
     resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA']).optional(),
   })).default([]),
   ragUsed: z.boolean().default(false),
+  /** Deterministic per-turn requirement; generated text and verification cannot clear it. */
+  requiresHumanApproval: z.boolean().default(false),
   retrievalDiagnostics: z.object({ retrievalMode: z.enum(['HYBRID', 'SEMANTIC_ONLY', 'LEXICAL_FALLBACK']), relevanceState: z.string(), reformulationStatus: z.string(), configFingerprint: z.string() }).optional(),
   ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'RETRIEVAL_UNAVAILABLE', 'PARTIAL_REQUIRED_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
   ragEvidence: z.array(ragEvidenceSchema).default([]),

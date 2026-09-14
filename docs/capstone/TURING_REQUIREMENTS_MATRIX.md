@@ -1,5 +1,9 @@
 # Turing requirements matrix
 
+## Sprint I.1 — critical LOTO routing correction
+
+[Canonical HITL correction and validation](../hitl-critical-routing-fix.md) adds deterministic critical-intent precedence, carries the human-approval requirement through verification, and proves `SAFETY_BLOCKED` can coexist with a safe `PENDING` request. This updates Advanced Agent Execution and Ethical AI / Human Oversight evidence. It does not certify a live rehearsal or authorize physical work.
+
 ## Current Sprint I presentation status
 
 | Item | Status | Evidence | Remaining |

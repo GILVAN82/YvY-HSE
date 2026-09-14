@@ -46,4 +46,10 @@ describe('Shared Evidence View rendering',()=>{
     const fixture=TestBed.createComponent(EvidenceViewComponent);fixture.componentInstance.model=presentResponseEvidence({...snapshot,evidencePresentation:{operational:[],documents:[{title:'Procedure',citation:'[Procedure]',passage,url:'https://example.org'}]}},'Check isolation.')[0];fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('blockquote').textContent).toContain('full context');expect(fixture.nativeElement.textContent).not.toContain('Verify all isolation points');expect(fixture.nativeElement.querySelector('a')).not.toBeNull();
   });
+  it('preserves the human decision basis alongside a safety-blocked RAG result',()=>{
+    const fixture=TestBed.createComponent(ResponseEvidenceComponent);
+    fixture.componentInstance.snapshot={...snapshot,executionTrace:{...snapshot.executionTrace,verification:{status:'SAFETY_BLOCKED'}},approvalRequest:{approvalId:'approval',threadId:'t',actionType:'LOTO_SAFETY_EXECUTION',status:'PENDING',riskLevel:'CRITICAL'}};
+    fixture.componentInstance.conclusion='This request requires human approval.';fixture.detectChanges();fixture.nativeElement.querySelector('button').click();fixture.detectChanges();
+    const text=fixture.nativeElement.textContent;expect(text).toContain('Decision basis');expect(text).toContain('Human decision required');expect(text).toContain('cannot confirm physical isolation');expect(text).toContain('Approved knowledge sources');expect(text).toContain('Next step');expect(text).not.toContain('equipment is safe');
+  });
 });

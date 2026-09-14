@@ -5,6 +5,7 @@ import { classifyExplicitMemoryIntent, classifyMemorySafetyRejection } from '../
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { AgentRuntime } from '../hseAgent.types';
 import { classifyIntent } from '../../intent/intentRouter';
+import { classifyAgentAction } from '../../hitl/hitl.policy';
 
 /**
  * Patterns that try to make the model disclose its instructions or credentials.
@@ -108,5 +109,5 @@ export async function guardNode(state: HseAgentState, config?: LangGraphRunnable
     }
     return { status: AgentStatus.REFUSED, refusalReason: decision.reason, executedRoute: [...state.executedRoute, 'guard'] };
   }
-  return { status: AgentStatus.AUTHORIZED, executedRoute: [...state.executedRoute, 'guard'] };
+  return { status: AgentStatus.AUTHORIZED, requiresHumanApproval:classifyAgentAction(last?.content??'',state.messages.filter(m=>m!==last))==='CRITICAL_APPROVAL', executedRoute: [...state.executedRoute, 'guard'] };
 }

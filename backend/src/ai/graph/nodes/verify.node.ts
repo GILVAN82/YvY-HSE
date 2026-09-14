@@ -4,6 +4,7 @@ import { AgentStatus, AgentErrorCode, type AgentRuntime } from '../hseAgent.type
 import { MAX_AGENT_STEPS } from '../../config';
 import { VerificationStatus } from '../evidence.contract';
 import { verifyEvidenceContract } from '../semanticVerifier';
+import { humanApprovalRequiredMessage } from '../../hitl/hitl.policy';
 
 /** Deterministic structural and semantic evidence verification, including citations,
  * operational facts, safety and jurisdiction. No second model call is made. */
@@ -28,6 +29,12 @@ export async function verifyNode(state: HseAgentState, config?:LangGraphRunnable
   }
 
   const verificationResult = verifyEvidenceContract(state.finalText, state.evidence);
+  if(state.requiresHumanApproval){
+    const runtime=config?.configurable?.runtime as AgentRuntime|undefined;
+    // Preserve the original verification verdict (including SAFETY_BLOCKED), but
+    // never expose the rejected answer or confuse human review with verified safety.
+    return {status:AgentStatus.PROCESSING,verificationResult,finalText:humanApprovalRequiredMessage(runtime?.responseLanguage),executedRoute};
+  }
   const hasUsableOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&(item.resultStatus==='SUCCESS_WITH_DATA'||item.resultStatus==='SUCCESS_NO_DATA'));
   const hasFailedOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&item.resultStatus==='ERROR');
   if(hasUsableOperationalEvidence&&hasFailedOperationalEvidence&&verificationResult.status===VerificationStatus.VERIFIED){
@@ -45,6 +52,7 @@ export async function verifyNode(state: HseAgentState, config?:LangGraphRunnable
 }
 
 /** Edge predicate: which finalizer to route to. */
-export function verifyOutcome(state: HseAgentState): 'valid' | 'invalid' {
+export function verifyOutcome(state: HseAgentState): 'valid' | 'invalid' | 'requires_approval' {
+  if(state.requiresHumanApproval && state.status===AgentStatus.PROCESSING && state.verificationResult)return 'requires_approval';
   return state.status === AgentStatus.VERIFIED ? 'valid' : 'invalid';
 }

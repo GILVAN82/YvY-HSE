@@ -3,6 +3,8 @@ import type { RequestPrincipal } from '../../auth/auth.types';
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { ApprovalActionType, ApprovalRequest, HumanDecision } from './hitl.types';
+import { hasLotoContext, isLotoExecutionFollowUp } from './hitl.policy';
+import { PostgresThreadStateStore } from '../graph/threadState.repository';
 
 export class ApprovalResolutionError extends Error {}
 
@@ -19,7 +21,15 @@ export class PostgresApprovalService {
     const existingThread=await this.db.query('SELECT user_id FROM agent_thread_state WHERE thread_id=$1',[threadId]);
     if(existingThread.rows.length&&existingThread.rows[0].user_id!==p.userId)denyAccess(p,'RESOURCE_OWNERSHIP_DENIED','loto','prepare');
     const projects=await this.db.query('SELECT code FROM projects');
-    const scope=projects.rows.map(row=>String(row.code)).filter(code=>this.requestText.split(/[^\w-]+/).includes(code));
+    let scope=projects.rows.map(row=>String(row.code)).filter(code=>this.requestText.split(/[^\w-]+/).includes(code));
+    if(!scope.length && isLotoExecutionFollowUp(this.requestText)){
+      // Never trust client-supplied history or reuse an arbitrary old project.
+      const thread=await new PostgresThreadStateStore(this.db,p).load(threadId,p.userId);
+      const prior=thread?.messages.slice().reverse().find(turn=>turn.role==='user');
+      if(prior && hasLotoContext(prior.content))scope=projects.rows.map(row=>String(row.code)).filter(code=>prior.content.split(/[^\w-]+/).includes(code));
+      // Multiple antecedent projects require an explicit choice in the request.
+      if(scope.length!==1)denyAccess(p,'PROJECT_SCOPE_DENIED','loto','prepare');
+    }
     if(!scope.length)denyAccess(p,'PROJECT_SCOPE_DENIED','loto','prepare');
     scope.forEach(code=>assertProjectAccess(p,code));
     const summary = 'LOTO safety execution approval requested';

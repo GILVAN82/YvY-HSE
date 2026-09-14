@@ -204,7 +204,7 @@ async function runHseAgentInContext(input: RunAgentInput, runId: string, convers
 
   try {
     const final = await graph.invoke(
-      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], evidence: [], finalText: '' },
+      { runId, conversationId, messages, status: AgentStatus.RECEIVED, stepCount: 0, toolNames: [], executedRoute: [], toolTrace: [], ragUsed: false, ragStatus: 'NOT_USED', ragEvidence: [], evidence: [], finalText: '', requiresHumanApproval:false, approvalRequest:undefined, verificationResult:undefined, errorCode:undefined, refusalReason:undefined },
       {
         configurable: {
           runtime: { model: input.model, emit: input.emit, ragRetriever: input.ragRetriever, memoryService: input.memoryService, longTermMemories, allowMemoryWrite, approvalService: input.approvalService, tools: input.tools, toolFactory: input.toolFactory, attachmentContext: input.attachmentContext, attachments: input.attachments, responseLanguage, intentDecision, authenticatedFirstName:input.authenticatedFirstName, firstInteraction, contextualGreeting:contextualGreeting(responseLanguage,input.authenticatedFirstName) },

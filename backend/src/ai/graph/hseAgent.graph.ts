@@ -42,6 +42,7 @@ export function buildHseAgentGraph(options: { checkpointer?: MemorySaver } = {})
     .addEdge('agent', 'verify')
     .addConditionalEdges('verify', verifyOutcome, {
       valid: 'approval_gate',
+      requires_approval: 'approval_gate',
       invalid: 'finalize_failure',
     })
     .addConditionalEdges('approval_gate', approvalOutcome, {

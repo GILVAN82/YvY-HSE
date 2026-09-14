@@ -1,0 +1,90 @@
+{
+  "baseCommit": "6adcd8bfcf03627d537b2d19d8a85edd9fa20150",
+  "validationDate": "2026-09-14",
+  "mode": "SYNTHETIC_DEPENDENCIES_REAL_GRAPH_AND_APPROVAL_REPOSITORY",
+  "candidate": "HEAD plus only the task source files listed below; no unrelated local changes",
+  "taskSourceFiles": {
+    "backend/src/ai/__tests__/critical-loto-authorization.test.ts": "f453169b456ce59cccb7d26a2ec3ab2f6f1a1b0ebfde7a18a298b0db192b0888",
+    "backend/src/ai/__tests__/critical-loto-routing.test.ts": "95e9a9553859702b2c76ffe0178083397d331caca358392962796e1874fe68b9",
+    "backend/src/ai/graph/hseAgent.graph.ts": "981fe486bd75ba648d38f773d15cf74d872c26cd410a300b2f71a311910af064",
+    "backend/src/ai/graph/hseAgent.runner.ts": "fd2f7e4ba029642100d4275e67d66a47dd65a29f1fb51db795ede5fd64a68a2c",
+    "backend/src/ai/graph/hseAgent.state.ts": "b849ce27e06f1510f9bae7140d7d26398faded6fc70c921ac714e4138251e0c7",
+    "backend/src/ai/graph/nodes/approval.node.ts": "f31aad50ae0bf0bf3a45f97ae45635d36f5ed206faea8ca427e37a854d587b16",
+    "backend/src/ai/graph/nodes/guard.node.ts": "5e30271daf656d63a9723cf6d25779075b032e75b67bd34b9be21cc3ab2d98b8",
+    "backend/src/ai/graph/nodes/verify.node.ts": "85efc44c4e4a9230004693b31a29a927149aeda86ab1ff32ba66423e6f0eae32",
+    "backend/src/ai/hitl/hitl.policy.ts": "b8e3ca14480fe9062d513479e3932a26fee7e8dcf4eedcd00cb5386793ab59fa",
+    "backend/src/ai/hitl/hitl.repository.ts": "8f7230ec973ee8996662a515fa8622f11ff435b8d24dc21b386ca9510c5ce9b3",
+    "backend/src/ai/intent/intentRouter.ts": "c8b00bb4d32ca303b25ac49a1293a961542d00eea1dfb809df4b91736893b5e3",
+    "backend/src/ai/intent/knowledgeQueryPolicy.ts": "d89e8a3ccaae4da376abdf32d487f20359f938ac2145f9d77d51e87e4ffd367a",
+    "frontend/src/app/shared/evidence-view/evidence-view.component.spec.ts": "59de6e33031801b90f3494aa7a21dd6d5599db8bce44510267611505b702415c"
+  },
+  "workingTree": {
+    "backend": {
+      "passed": 415,
+      "total": 415
+    },
+    "frontend": {
+      "passed": 199,
+      "total": 199
+    },
+    "typechecks": "PASS",
+    "builds": "PASS"
+  },
+  "isolatedCandidate": {
+    "backendAndHermetic": {
+      "passed": 397,
+      "total": 397
+    },
+    "frontend": {
+      "passed": 191,
+      "total": 191
+    },
+    "agentEvaluation": {
+      "passed": 44,
+      "total": 44
+    },
+    "supplementary": {
+      "passed": 3,
+      "total": 3
+    },
+    "intentBaseline": {
+      "passed": 134,
+      "total": 134
+    },
+    "typechecks": "PASS",
+    "builds": "PASS",
+    "dotenvPresent": false,
+    "databaseAndProviderCredentialsRemoved": true
+  },
+  "retrievalBaseline": {
+    "semantic": {
+      "requiredSourceRecall": 1,
+      "relevantRecallAtK": 1,
+      "irrelevantRetrievalRate": 0.16666666666666666,
+      "mrr": 0.875,
+      "top1SourceAccuracy": 0.75
+    },
+    "rrf": {
+      "requiredSourceRecall": 1,
+      "relevantRecallAtK": 1,
+      "irrelevantRetrievalRate": 0.16666666666666666,
+      "mrr": 1,
+      "top1SourceAccuracy": 1
+    }
+  },
+  "regressions": {
+    "exactFailingPhrase": "PASS",
+    "criticalInputsExisting": 15,
+    "criticalInputsAdditional": 17,
+    "contextualFollowUps": 3,
+    "informationalKnowledgeCases": 8,
+    "verificationPreserved": "SAFETY_BLOCKED retained; generated safety assertion not emitted",
+    "authorization": "authenticated permission, owner, persisted scope, resource linkage and single-use resolution preserved",
+    "checkpointIsolation": "PASS"
+  },
+  "warnings": [
+    "Existing frontend bundle/style budget warnings",
+    "Synthetic tests do not prove production retrieval recall, live-provider behavior or physical safety"
+  ],
+  "sourceHashEncoding": "SHA-256 of UTF-8 file bytes normalized to LF (Git content)"
+}
