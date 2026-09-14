@@ -1,3 +1,18 @@
+# Final defence baseline
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+Runtime f9b58d0. Defend the controlled workflow, not an autonomous safety authority.
+Explain short-term thread context versus explicit long-term memory; memory is not operational evidence.
+Explain why missing toolsUsed is normalized but malformed provided state is rejected.
+Explain migration 014 user-scoped deduplication; thread compare-and-swap remains future hardening.
+Attention/Pending Approvals are deterministic canonical reads, distinct from LLM tool selection.
+Draft creation and expanded page-context routing are excluded. Digital LOTO approval does not verify equipment.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 # Defence notes
 
 Committed runtime `a0edf23`, branch `capstone/yvy-hse`. H documents existing behavior. Alternatives are design comparisons, not recommendations to change libraries. Local record creation and shared-chat improvements are excluded.

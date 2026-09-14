@@ -1,3 +1,19 @@
+# Final Turing Demo baseline
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+The six implemented steps remain Introduction, Tool Calling, RAG + Citation, Memory, Human Approval and Closing.
+The current two-sentence RAG question and citation placement are submitted; retrieval/corpus are unchanged.
+Current PENDING requires a correlated manual human decision; historical APPROVED/REJECTED cannot satisfy a new session.
+Restart resets local step/timer/generation and preserves persistent approval; Skip retains PENDING.
+Finish presentation reaches COMPLETED, freezes the timer and shows truthful step outcomes. Voice failure leaves text usable.
+Feature flags and safe context remain required. Final smoke opens preflight only; a timed continuous rehearsal remains a separate user action.
+Prior browser acceptance: [HITL](../turing-live-human-decision-validation.md), [navigation](../demo-navigation-hitl-validation.md), [terminal](../turing-terminal-state-validation.md).
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 # SPRINT I - TURING DEMO MODE
 
 Presentation implementation on branch `capstone/yvy-hse`, based on Sprint H `4e8f52b`. The commit containing this document is the Sprint I baseline; resolve it with `git log -1 --format=%H -- docs/capstone/TURING_DEMO_MODE.md`.

@@ -1,3 +1,27 @@
+# Final code map entry points
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](../capstone/FINAL_SUBMISSION_BASELINE.md).
+
+| Concern | Canonical file / symbol |
+|---|---|
+| Execution graph | backend/src/ai/graph/hseAgent.graph.ts ? buildHseAgentGraph |
+| Tools and counts | backend/src/ai/tools.ts ? createHseTools |
+| Prompt identity | backend/src/ai/prompts/composer.ts ? PROMPT_REGISTRY |
+| Evidence verification | backend/src/ai/graph/semanticVerifier.ts ? verifyEvidenceContract |
+| RAG | backend/src/ai/rag/retrieval.service.ts ? RagRetrievalService |
+| Memory uniqueness | database/migrations/014_scope_memory_content_deduplication.sql |
+| Memory integration proof | backend/src/ai/memory/memory-isolation.integration.cli.ts |
+| Pending source | backend/src/ai/hitl/hitl.repository.ts ? PostgresApprovalService.listPending |
+| Snapshot boundary | frontend/src/app/core/agent-inspector.service.ts ? sanitizeSnapshot |
+| Canonical evidence | frontend/src/app/shared/evidence-view/ |
+| Demo navigation/HITL | frontend/src/app/pages/ai-command-center/demo/turing-demo.service.ts |
+No recordDrafts, record-review or assistant-page-context file is required by this submission.
+The detailed older map below is historical; line numbers and local-feature entries are not current imports.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 # YvY HSE Complete Code Map
 
 Branch: `capstone/yvy-hse`. Runtime HEAD: `a0edf2398be4ac4cc91947f8b614460e548b35ad`. Sprint H adds documentation only. Approximate start lines are generated from committed source and current local files on 2026-09-09; search the named symbol if edits move lines.

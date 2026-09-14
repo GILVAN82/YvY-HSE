@@ -1,3 +1,24 @@
+# Final Turing requirements
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+Case 2 is primary; RAG is complementary; Cases 3-7 are not claimed.
+| Requirement | Status | Evidence / remaining |
+|---|---|---|
+| Purpose / design / tools / advanced execution | IMPLEMENTED / VALIDATED within tests | State graph, bounded loop, scoped tools, memory, verification, HITL |
+| Interactive prototype / UI | IMPLEMENTED | Canonical Command Center; normalized legacy snapshots; final gate required |
+| Evaluation | VALIDATED within datasets | 449 backend; 262 frontend; 44 agent; 134 intent; 24 retrieval |
+| Prompt / function calling / learning | IMPLEMENTED | Versioned policies and real tool execution; oral ownership remains |
+| Ethics / privacy | IMPLEMENTED with limitations | Scope, owner, human authority; no physical safety certification |
+| Documentation | UPDATED | Final submission baseline supersedes historical rows below |
+| Presentation | REMAINING | Six steps implemented; continuous timed rehearsal remains |
+| Showcase / README URL | MISSING / USER ACTION REQUIRED | Real URL pending |
+The full original institutional rubric is not present; this maps the user-supplied applicable requirements.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 # Turing requirements matrix
 
 ## Sprint I.1 — critical LOTO routing correction

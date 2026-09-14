@@ -1,6 +1,6 @@
 # Current limitations and residual risks
 
-Baseline: committed runtime `a0edf23`, branch `capstone/yvy-hse`; Sprint H documentation audit. Authentication, RBAC, authenticated approval and project isolation are implemented. This is not a production certification.
+Baseline: consolidated runtime `f9b58d0`, branch `capstone/yvy-hse`; final submission consolidation. Authentication, RBAC, authenticated approval and project isolation are implemented. This is not a production certification.
 
 | Classification | Residual risk / boundary | Response / ownership |
 |---|---|---|
@@ -19,4 +19,6 @@ Baseline: committed runtime `a0edf23`, branch `capstone/yvy-hse`; Sprint H docum
 | OUT OF CAPSTONE SCOPE | Company-level SaaS tenancy and production/legal certification. | No claim that project scope implements company tenancy. |
 | OUT OF CAPSTONE SCOPE | Physical LOTO execution, inspection and legal truth verification. | Competent humans and approved site procedures retain authority. |
 
-The committed agent reads operational data and can persist controlled memory/HITL state. Record-draft write assistance and shared chat/history refinements remain LOCAL / UNCOMMITTED. The current system supports decisions; it does not replace the HSE professional or prove accident reduction.
+The committed agent reads operational data and can persist controlled memory/HITL state. Record-draft write assistance and expanded shared page-context routing are excluded. Submitted Command Center lifecycle/layout corrections have no local source dependency. The current system supports decisions; it does not replace the HSE professional or prove accident reduction.
+
+Thread concurrency remains FUTURE PRODUCT HARDENING: save increments version but has no compare-and-swap condition; simultaneous clients can overwrite context. Migration 014 fixes user-scoped memory content deduplication without changing retention/forget semantics.

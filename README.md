@@ -6,14 +6,24 @@ YvY is an AI-powered HSE work companion for HSE professionals and project teams.
 
 ## Capstone baseline
 
-**Case 2 - AI agent for task automation**, with RAG as a complementary capability. Branch `capstone/yvy-hse`; runtime based on `4e8f52b` (Sprint H), extended by Sprint I presentation mode. The primary agent graph and policies are unchanged. This is a project evidence mapping, not a claim of institutional approval.
+**Case 2 - AI agent for task automation**, with complementary RAG. Branch `capstone/yvy-hse`;
+consolidated runtime `f9b58d0`. Resolve the final documentation/submission commit with
+`git log -1 --format=%H -- docs/capstone/FINAL_SUBMISSION_BASELINE.md`.
 
-- **COMMITTED:** authenticated and project-scoped workflow, read-only operational tools, hybrid RAG, explicit memory, digital HITL, voice, attention, verification and observability.
-- **LOCAL / UNCOMMITTED:** record-draft creation/review, broader automatic app-data intent routing, incident-count fallback and chat layout/history refinements. These are preserved separately and are not demonstrated as released Capstone capabilities.
-- **COMMITTED IN SPRINT I:** server-gated Turing Demo presentation sequence using the existing agent, voice and Inspector. Full safe-data manual acceptance remains pending.
-- **FUTURE:** timed rehearsal, wider evaluation and deployment hardening.
+The baseline includes canonical counts/evidence, Attention/Pending Approvals, owned memory deduplication,
+manual HITL, the six-step Turing Demo and its terminal state, current Command Center layout and voice lifecycle.
+Record drafts/review, generic creation and expanded page-context routing are excluded; there are no local source dependencies.
 
-[Demo Mode and acceptance limits](docs/capstone/TURING_DEMO_MODE.md) | [H compliance baseline](docs/capstone/SPRINT_H_FINAL_COMPLIANCE.md) | [Requirements](docs/capstone/TURING_REQUIREMENTS_MATRIX.md) | [Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence notes](docs/capstone/DEFENCE_NOTES.md) | [Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md)
+Validated source gates: backend **449/449**, frontend **262/262 twice**, agent **44/44**, supplementary **3/3**,
+intent **134/134**; typechecks/builds pass. Retrieval remains the bounded 24-query EN16/PT8 evaluation.
+Prompt `agent-g-v1`: `9105843caf313fe5e749bb34df5ddfa9b5f75dcb58fc181a8270b2fd5cb91948`. These are engineering checks, not institutional approval or universal AI accuracy.
+
+[Final baseline, fresh-checkout gate and limitations](docs/capstone/FINAL_SUBMISSION_BASELINE.md) |
+[Demo](docs/capstone/TURING_DEMO_MODE.md) | [Requirements](docs/capstone/TURING_REQUIREMENTS_MATRIX.md) |
+[Reviewer matrix](docs/capstone/REVIEW_COMPLIANCE_MATRIX.md) | [Defence](docs/capstone/DEFENCE_NOTES.md) |
+[Code map](docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md).
+
+Timed continuous rehearsal, oral defence and Showcase publication remain user actions. Feature freeze is active.
 
 ## Local Authentication
 
@@ -121,7 +131,7 @@ Only registry-approved files under `knowledge/approved` can be ingested. The 24-
 
 ### Short-Term Memory / Conversation State
 
-Each conversation uses a UUID thread ID. Bounded messages, recent RAG usage and source references are persisted in PostgreSQL `agent_thread_state`. The runner restores context only from the same thread, so one thread cannot authorize or supply context to another. Failed runs leave previously persisted state intact. Committed UI conversation lifecycle is distinct from the local shared-history refinements; see the baseline manifest and code map. State ownership is enforced by the server, not by a UUID alone.
+Each conversation uses a UUID thread ID. Bounded messages, recent RAG usage and source references are persisted in PostgreSQL `agent_thread_state`. The runner restores context only from the same thread, so one thread cannot authorize or supply context to another. Failed runs leave previously persisted state intact. The submitted Command Center retains its conversation across component recreation until the user ends it; optional cross-surface page context is excluded. State ownership is enforced by the server, not by a UUID alone.
 
 The graph also supports an in-memory LangGraph `MemorySaver` for development/tests, but durable application conversation state is provided by the explicit PostgreSQL repository. The application does not claim native PostgreSQL LangGraph checkpoint resumability.
 
@@ -145,6 +155,8 @@ A deterministic policy classifies requests that combine approval/authorization l
 - initial status `PENDING`
 - an isolated thread ID
 - request and resolution timestamps
+
+Active content deduplication is scoped by user (migration 014); unowned historical memories remain inaccessible to user-scoped reads. Thread version increments do not provide compare-and-swap protection.
 
 The UI offers human `Approve` and `Reject` controls. Resolution updates only the matching pending record and thread, making each decision single-use. Approval produces a controlled continuation message; rejection keeps the action blocked.
 

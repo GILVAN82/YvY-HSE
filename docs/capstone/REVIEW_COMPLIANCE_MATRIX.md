@@ -1,3 +1,23 @@
+# Final reviewer closure
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+Known feedback mapping; not reviewer sign-off. Original external transcripts are not all present.
+| Reviewer | Current implementation / remaining |
+|---|---|
+| Jochen | Hermetic dependencies, valid zero, tools/RAG/memory/HITL, focused Demo and frontend regressions; oral/timed rehearsal remains |
+| Stefano | System/User boundaries, typed outputs, modular prompts, model identity and safeguards; legacy scope explicit |
+| Vytautas | Real hybrid/RRF retrieval, planning, threshold/abstention, 24-source evaluation, versioning and offline/live separation; broader live quality remains bounded |
+| Erikas | Module boundaries, config, schemas, modern adapters, near-source errors; order-dependent snapshot failure fixed |
+| Andrius | WHY/trade-offs, code map, domain failures and structured logs; Gilvan oral ownership remains |
+| Justinas | Provider validation, quota/rate distinction, Retry/new execution and safe messages; production load/reassignment remain future hardening |
+| Fatima | Explicit contracts, legacy normalization, user-scoped memory uniqueness and single HITL resolution; equipment-level linkage remains a limitation |
+No new agent capability or Demo step is required. Historical feedback source inventory below is retained, not relabelled as current test proof.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 # Review compliance matrix
 
 ## Sprint I.1 — critical LOTO routing correction

@@ -1,3 +1,18 @@
+# Final evaluation baseline
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+Consolidated source: backend 449/449; frontend 262/262 on two full runs; demo safety 14/14.
+Agent 44/44, supplementary 3/3 and intent 134/134 use a network-blocked simulated-model harness.
+Retrieval: 24 queries EN16/PT8; RRF required/relevant recall=1, irrelevant rate=0, MRR/top-1=1.
+Semantic-only recall=0.666667, MRR/top-1=0.636364. Production retrieval runs against PostgreSQL with retained real vectors.
+The fresh-final-commit gate is required; no source files or .env may be copied into that checkout.
+Earlier runs/artifacts below retain their original hashes, counts and live/offline meanings.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 > **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
 
 # Sprint E/E.1 — Evaluation baseline and reproducibility

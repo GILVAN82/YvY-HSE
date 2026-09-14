@@ -1,3 +1,17 @@
+# Final security and ethical boundary
+
+2026-09-14; runtime `f9b58d0`. [Canonical final evidence](FINAL_SUBMISSION_BASELINE.md).
+
+Authorization/ownership and live project scope remain server-enforced. Pending Approvals and Attention share the current canonical read.
+Migration 014 fixes global memory-content uniqueness without assigning unowned historical rows to anyone.
+Inspector rejects malformed supplied snapshot collections and normalizes missing legacy lists.
+Draft write assistance is excluded. HITL is manual, owner/project bound and single-resolution; no physical isolation or equipment safety follows from a digital decision.
+Source scans must exclude real secrets, .env, uploads and dumps. Free-text privacy, retention, thread CAS and transactional reassignment remain limitations/hardening.
+
+## Historical sprint reference
+
+The remainder preserves earlier source evidence. Its counts, local-feature labels and readiness states are superseded by the final baseline above.
+
 > **HISTORICAL / VERSIONED SPRINT EVIDENCE.** Preserve the measurements and source baseline below. The current consolidated authority is [Sprint H](SPRINT_H_FINAL_COMPLIANCE.md), [test strategy](TEST_STRATEGY.md), [requirements](TURING_REQUIREMENTS_MATRIX.md) and [review matrix](REVIEW_COMPLIANCE_MATRIX.md). Earlier counts, line numbers, readiness decisions and pending items are not current claims. No old live result validates the current model/prompt baseline.
 
 # YvY HSE
