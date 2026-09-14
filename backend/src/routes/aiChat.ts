@@ -208,6 +208,7 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
     stepCount: result.stepCount,
     ragUsed: result.ragUsed ?? false,
     citations: result.citations ?? [],
+    evidencePresentation: result.evidencePresentation,
     errorCode: result.errorCode,
     orchestrator,
     approvalRequest: result.approvalRequest,

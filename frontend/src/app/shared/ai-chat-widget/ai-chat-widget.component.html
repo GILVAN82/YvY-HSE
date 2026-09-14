@@ -71,6 +71,7 @@
                class="assistant-markdown"
                [innerHTML]="m.content | safeMarkdown"></div>
           <app-operational-overview *ngIf="m.role==='assistant'" [snapshot]="m.snapshot" [language]="i18n.lang()"></app-operational-overview>
+          <app-response-evidence *ngIf="m.role==='assistant'" [snapshot]="m.snapshot" [conclusion]="m.content" [language]="i18n.lang()" [approval]="approval()" [approvalTarget]="approval()?.approvalId===m.snapshot?.approvalRequest?.approvalId ? 'yvy-widget-approval' : undefined"></app-response-evidence>
           <ng-template #plainUserMessage>{{ m.content }}</ng-template>
         </ng-container>
       </div>
@@ -89,7 +90,7 @@
     <small class="attachment-notice">{{ i18n.t('Attachments are temporarily processed by the configured AI service and are not added to the permanent knowledge base.') }}</small>
   </div>
 
-  <section class="approval-panel" *ngIf="approval() as item" aria-live="polite">
+  <section class="approval-panel" id="yvy-widget-approval" tabindex="-1" *ngIf="approval() as item" aria-live="polite">
     <strong>{{ item.status === 'PENDING' ? 'Human Approval Required' : 'Human Decision Recorded' }}</strong>
     <div><span>Operation</span><code>{{ item.actionType }}</code></div>
     <div><span>Risk</span><b>{{ item.riskLevel }}</b></div>

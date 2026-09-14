@@ -1,3 +1,4 @@
+import { ResponseEvidenceComponent } from '../../shared/evidence-view/response-evidence.component';
 import { OperationalOverviewComponent } from '../../shared/operational-overview/operational-overview.component';
 import { operationalCopy } from '../../shared/operational-overview/operational-copy';
 import { I18nService } from '../../core/i18n.service';
@@ -31,7 +32,7 @@ import { SafeMarkdownPipe } from '../../shared/ai-chat-widget/safe-markdown.pipe
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
-  imports: [OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
+  imports: [ResponseEvidenceComponent, OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
   templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss','./demo/turing-demo-workspace.scss'],
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {

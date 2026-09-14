@@ -1,3 +1,4 @@
+import { ResponseEvidenceComponent } from '../evidence-view/response-evidence.component';
 import { OperationalOverviewComponent } from '../operational-overview/operational-overview.component';
 import type { AgentInspectorSnapshot } from '../../core/agent-inspector.service';
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
@@ -111,7 +112,7 @@ export const SUGGESTED_PROMPTS = [
 @Component({
   selector: 'app-ai-chat-widget',
   standalone: true,
-  imports: [OperationalOverviewComponent, CommonModule, FormsModule, SafeMarkdownPipe],
+  imports: [ResponseEvidenceComponent, OperationalOverviewComponent, CommonModule, FormsModule, SafeMarkdownPipe],
   templateUrl: './ai-chat-widget.component.html',
   styleUrl: './ai-chat-widget.component.scss',
 })

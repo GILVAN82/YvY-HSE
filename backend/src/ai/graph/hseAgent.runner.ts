@@ -1,3 +1,4 @@
+import { buildEvidencePresentation } from './evidencePresentation';
 import { withExecution, currentExecution, timed, logEvent, observeFailure } from '../observability/context';
 import { DomainError } from '../observability/errors';
 import { PROMPT_REGISTRY } from '../prompts/composer';
@@ -219,6 +220,7 @@ async function runHseAgentInContext(input: RunAgentInput, runId: string, convers
     const memoryOperation = memoryTool === 'save_memory' ? 'WRITE' : memoryTool === 'forget_memory' ? 'FORGET' : longTermMemories.length ? 'READ' : 'NONE';
     const citations = final.ragEvidence.map(({ sourceId, citationLabel, sourceUrl, jurisdiction }) => ({ sourceId, citationLabel, sourceUrl, jurisdiction }));
     const response: AgentRunResult = {
+      evidencePresentation: buildEvidencePresentation(final.evidence, final.toolTrace, final.ragEvidence, executionTimestamp),
       runId,
       conversationId,
       status: final.status,

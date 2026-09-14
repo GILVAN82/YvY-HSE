@@ -126,6 +126,7 @@ export interface AgentRuntime {
 
 /** Shape returned by the runner to the HTTP layer. */
 export interface AgentRunResult {
+  evidencePresentation?: import('./evidencePresentation').EvidencePresentation;
   runId: string;
   conversationId: string;
   status: AgentStatus;
