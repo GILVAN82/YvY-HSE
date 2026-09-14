@@ -19,6 +19,9 @@ export class TuringDemoService {
   readonly steps=DEMO_STEPS;readonly step=computed(()=>this.steps[this.index()]);readonly preflight=signal<DemoPreflight|null>(null);
   readonly busy=signal(false);readonly completed=signal(false);readonly message=signal('');readonly voiceDegraded=signal(false);
   readonly technical=signal(false);readonly elapsed=signal(0);readonly outcomes=signal<Record<string,string>>({});
+  readonly startedAt=signal<number|null>(null);readonly completedAt=signal<number|null>(null);readonly elapsedMs=signal(0);
+  readonly finalStepReady=computed(()=>this.index()===this.steps.length-1&&this.completed()&&this.state()==='CLOSING');
+  readonly summary=computed(()=>this.steps.map(step=>({title:step.title,status:this.outcomes()[step.id]??'NOT_RUN'})));
   readonly approvalBusy=signal(false);
   readonly demoSessionId=signal('');
   readonly humanContext=signal<DemoHumanApprovalContext|null>(null);
@@ -56,7 +59,7 @@ export class TuringDemoService {
     catch{if(this.current(token))this.message.set('Preflight unavailable. Exit and check the authenticated server configuration.');}
   }
   async continue(){
-    if(!this.active()||this.navigating())return;
+    if(!this.active()||this.navigating()||this.state()==='COMPLETED')return;
     this.notice.set('');
     if(this.state()==='PAUSED'){this.state.set(this.pausedState);this.resumeWait?.();this.resumeWait=undefined;if(this.pendingAdvance){this.startClock();await this.execute();}return;}
     if(this.busy())return;
@@ -82,20 +85,29 @@ export class TuringDemoService {
     // Presentation state is reset locally. The application approval and dispatch
     // marker are deliberately retained and rechecked by the authorized preflight at HITL.
     this.index.set(0);this.state.set('INTRODUCTION');this.pausedState='INTRODUCTION';this.pendingAdvance=true;
-    this.outcomes.set({});this.durations.set({});this.completed.set(false);this.elapsed.set(0);this.stepStartedAt=0;
+    this.outcomes.set({});this.durations.set({});this.completed.set(false);this.elapsed.set(0);this.elapsedMs.set(0);this.startedAt.set(null);this.completedAt.set(null);this.stepStartedAt=0;
     this.technical.set(false);this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);
     this.approvalBusy.set(false);this.voiceDegraded.set(false);this.agent.error.set('');
     this.notice.set('Demo restarted.');this.message.set('Introduction ready. Continue when ready.');
   }
-  exit(){if(!this.active())return;this.cancelStep();this.resetHumanSession();this.stopClock();if(this.navigationTimer)clearTimeout(this.navigationTimer);this.navigationTimer=undefined;this.navigating.set(false);this.notice.set('');this.durations.set({});this.approvalBusy.set(false);this.agent.endPresentation();this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);this.active.set(false);this.state.set('IDLE');this.index.set(0);this.preflight.set(null);this.outcomes.set({});this.completed.set(false);this.elapsed.set(0);this.technical.set(false);this.message.set('');this.pendingAdvance=false;}
+  exit(){if(!this.active())return;this.cancelStep();this.resetHumanSession();this.stopClock();if(this.navigationTimer)clearTimeout(this.navigationTimer);this.navigationTimer=undefined;this.navigating.set(false);this.notice.set('');this.durations.set({});this.approvalBusy.set(false);this.agent.endPresentation();this.inspector.demoPreset.set(this.normalInspectorPreset);this.inspector.demoApproval.set(null);this.active.set(false);this.state.set('IDLE');this.index.set(0);this.preflight.set(null);this.outcomes.set({});this.completed.set(false);this.elapsed.set(0);this.elapsedMs.set(0);this.startedAt.set(null);this.completedAt.set(null);this.technical.set(false);this.message.set('');this.pendingAdvance=false;}
   private cancelStep(){this.generation++;if(this.deadline)clearTimeout(this.deadline);this.deadline=undefined;this.controller?.abort();this.controller=undefined;this.resumeWait?.();this.resumeWait=undefined;this.agent.stopPresentationRequest();this.voice.stop();this.busy.set(false);}
   private hasPendingApproval(){return this.agent.approval()?.status==='PENDING'||this.preflight()?.approval?.status==='PENDING';}
   private lockNavigation(){this.navigating.set(true);if(this.navigationTimer)clearTimeout(this.navigationTimer);this.navigationTimer=setTimeout(()=>{this.navigating.set(false);this.navigationTimer=undefined;},250);}
   private stopClock(){this.clockVersion++;if(this.clock)clearInterval(this.clock);this.clock=undefined;}
-  private startClock(){this.stopClock();this.startTime=Date.now();const version=this.clockVersion;this.clock=setInterval(()=>{if(version===this.clockVersion)this.elapsed.set(Math.floor((Date.now()-this.startTime)/1000));},1000);}
+  private startClock(){this.stopClock();this.startTime=Date.now();this.startedAt.set(this.startTime);this.completedAt.set(null);const version=this.clockVersion;this.clock=setInterval(()=>{if(version===this.clockVersion){this.elapsedMs.set(Math.max(0,Date.now()-this.startTime));this.elapsed.set(Math.floor(this.elapsedMs()/1000));}},1000);}
   private recordOutcome(status:string){const id=this.step().id;this.outcomes.update(o=>({...o,[id]:status}));this.durations.update(d=>({...d,[id]:this.stepStartedAt?Math.max(0,Date.now()-this.stepStartedAt):0}));}
   private current(token:number){return this.active()&&token===this.generation;}
-  private async next(){if(this.index()===5){this.state.set('COMPLETED');this.stopClock();return;}this.index.update(n=>n+1);await this.execute();}
+  private async next(){if(this.index()===this.steps.length-1){this.finishPresentation();return;}this.index.update(n=>n+1);await this.execute();}
+  private finishPresentation(){
+    if(this.state()==='COMPLETED')return;
+    // Terminal transition is presentation-only: never dispatch, replay or resolve.
+    this.generation++;if(this.deadline)clearTimeout(this.deadline);this.deadline=undefined;
+    this.stopClock();const now=Date.now();this.completedAt.set(now);
+    this.elapsedMs.set(this.startedAt()===null?0:Math.max(0,now-this.startedAt()!));this.elapsed.set(Math.floor(this.elapsedMs()/1000));
+    this.pendingAdvance=false;this.busy.set(false);this.notice.set('');this.technical.set(false);
+    this.state.set('COMPLETED');this.message.set('Demo completed');
+  }
   private fail(message=this.step().fallbackMessage){this.message.set(message);this.outcomes.update(o=>({...o,[this.step().id]:'FAILED'}));if(this.state()==='PAUSED')this.pausedState='FAILED_STEP';else this.state.set('FAILED_STEP');this.completed.set(false);}
   private async execute(){
     this.pendingAdvance=false;this.resumeWait?.();this.resumeWait=undefined;this.voice.stop();this.controller=new AbortController();this.stepStartedAt=Date.now();const step=this.step(),token=++this.generation;this.busy.set(true);this.completed.set(false);this.state.set(step.id);this.message.set(step.purpose);this.technical.set(false);this.outcomes.update(o=>{const next={...o};delete next[step.id];return next;});if(step.id!=='HITL'){this.inspector.demoHumanContext.set(null);this.inspector.demoApprovalRun.set(null);}
@@ -176,7 +188,7 @@ export class TuringDemoService {
     }catch{if(this.current(token))this.message.set('Human decision unavailable. Retry the manual action or skip.');}
     finally{if(this.current(token))this.approvalBusy.set(false);}
   }
-  private finishStep(){this.completed.set(true);this.recordOutcome('COMPLETED');this.message.set('Step completed. Continue when ready.');}
+  private finishStep(){this.completed.set(true);this.recordOutcome('COMPLETED');this.message.set(this.index()===this.steps.length-1?'Closing completed. Finish presentation when ready.':'Step completed. Continue when ready.');}
   private speak(text:string){
     if(this.state()==='PAUSED')return;
     // Same formatter/TTS pipeline; projector metadata and record identifiers are never narrated.

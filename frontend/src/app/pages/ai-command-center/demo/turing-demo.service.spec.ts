@@ -27,6 +27,34 @@ describe('Turing presentation sequence, not an agent',()=>{
   afterEach(()=>{demo.exit();sessionStorage.clear();});
   async function start(){await demo.loadFlag();await demo.open();await demo.continue();}
   async function hitl(){await start();for(let i=0;i<4;i++)await demo.continue();}
+  it('finishes Closing once without agent, narration, speech or approval mutations',async()=>{
+    await start();demo.index.set(demo.steps.length-1);await (demo as any).execute();
+    const approval=agent.approval(),run=agent.latest(),calls=agent.send.calls.count(),narrations=agent.presentationNarration.calls.count(),speech=voice.speak.calls.count();
+    const f=TestBed.createComponent(TuringDemoControllerComponent);f.detectChanges();
+    const finish=Array.from(f.nativeElement.querySelectorAll('button')).find((b:any)=>b.textContent.trim()==='Finish presentation') as HTMLButtonElement;
+    expect(finish).toBeDefined();finish.click();await Promise.resolve();f.detectChanges();
+    expect(demo.state()).toBe('COMPLETED');expect(demo.index()).toBe(demo.steps.length-1);expect(demo.step().id).toBe('CLOSING');
+    await demo.continue();await demo.skip();demo.pause();
+    expect(demo.state()).toBe('COMPLETED');expect(agent.send.calls.count()).toBe(calls);expect(agent.presentationNarration.calls.count()).toBe(narrations);expect(voice.speak.calls.count()).toBe(speech);
+    expect(agent.resolveApproval).not.toHaveBeenCalled();expect(agent.approval()).toBe(approval);expect(agent.latest()).toBe(run);expect(agent.endPresentation).not.toHaveBeenCalled();
+    expect(f.nativeElement.textContent).toContain('Demo completed');expect(f.nativeElement.textContent).not.toContain('Step 6');
+    expect(Array.from(f.nativeElement.querySelectorAll('button')).map((b:any)=>b.textContent.trim())).toEqual(['Exit Demo','Restart']);f.destroy();
+  });
+  it('freezes exact elapsed time and ignores late speech callbacks; Restart and Exit reset the timer',fakeAsync(()=>{
+    fetcher.and.callFake(async(input:any)=>({ok:true,json:async()=>String(input).includes('/config')?{enabled:true}:preflight} as Response));
+    void start();flushMicrotasks();tick(1234);demo.index.set(5);void (demo as any).execute();flushMicrotasks();
+    const callback=voice.speak.calls.mostRecent().args[3];void demo.continue();flushMicrotasks();
+    expect(demo.elapsedMs()).toBe(1234);expect(demo.completedAt()!-demo.startedAt()!).toBe(1234);
+    tick(3000);callback();expect(demo.elapsedMs()).toBe(1234);expect(demo.message()).toBe('Demo completed');
+    demo.restart();expect(demo.state()).toBe('INTRODUCTION');expect(demo.index()).toBe(0);expect(demo.elapsedMs()).toBe(0);expect(demo.startedAt()).toBeNull();expect(demo.completedAt()).toBeNull();
+    tick(260);void demo.continue();flushMicrotasks();demo.index.set(5);void (demo as any).execute();flushMicrotasks();void demo.continue();flushMicrotasks();demo.exit();
+    expect(demo.active()).toBeFalse();expect(demo.state()).toBe('IDLE');expect(demo.startedAt()).toBeNull();tick(2000);expect(demo.elapsed()).toBe(0);
+  }));
+  it('renders truthful six-step terminal outcomes instead of claiming all passed',async()=>{
+    await start();demo.index.set(5);await (demo as any).execute();demo.outcomes.set({INTRODUCTION:'COMPLETED',TOOL_CALLING:'SKIPPED',RAG:'WARNING',MEMORY:'FAILED',HITL:'SKIPPED',CLOSING:'COMPLETED'});await demo.continue();
+    const f=TestBed.createComponent(TuringDemoControllerComponent);f.detectChanges();const rows=f.nativeElement.querySelectorAll('.completion-summary li');
+    expect(rows.length).toBe(6);expect(rows[0].textContent).toContain('Completed');expect(rows[1].textContent).toContain('Skipped');expect(rows[2].textContent).toContain('Completed with warning');expect(rows[3].textContent).toContain('Failed');f.destroy();
+  });
   it('does not open or create a presentation session when feature flag is disabled',async()=>{await demo.open();expect(demo.active()).toBeFalse();expect(agent.beginPresentation).not.toHaveBeenCalled();expect(fetcher).not.toHaveBeenCalled();});
   it('hides the entry point while disabled',()=>{const f=TestBed.createComponent(TuringDemoControllerComponent);f.detectChanges();expect(f.nativeElement.querySelector('.demo-entry')).toBeNull();f.destroy();});
   it('preflight ready does not dispatch any model call',async()=>{await demo.loadFlag();await demo.open();expect(demo.preflight()?.status).toBe('READY');expect(agent.send).not.toHaveBeenCalled();});
