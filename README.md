@@ -431,8 +431,30 @@ Wider independent and live-provider evaluation, equipment-bound approvals, trans
 
 ## Screenshots
 
-| HSE operations | Portfolio | AI Agent |
-| --- | --- | --- |
-| ![HSE operations dashboard](docs/screenshots/hse-operations-dashboard.png) | ![Portfolio dashboard](docs/screenshots/portfolio-dashboard.png) | ![AI Agent using operational data](docs/screenshots/ai-agent-operational-data.png) |
+Real browser captures updated on 14 September 2026, using the synthetic demo environment and the Turing DEMO Presenter session. Click an image to inspect it at full size.
 
-Additional examples: [Agentic RAG](docs/screenshots/ai-agent-rag.png) and [human-in-the-loop](docs/screenshots/ai-agent-hitl.png).
+### AI Command Center / IA Agent
+
+![Current AI Command Center with the integrated agent and capability ring](docs/screenshots/yvy-ai-command-center.png)
+
+### Agent conversation and operational overview
+
+![Current agent conversation with verified operational cards](docs/screenshots/ai-agent-operational-data.png)
+
+### Approved knowledge evidence
+
+This capture shows a real controlled abstention (Needs confirmation), with the approved source, jurisdiction, version and source action. It does not demonstrate a verified answer; a compact passage was unavailable for this response.
+
+![Current RAG evidence view with controlled abstention and approved source](docs/screenshots/ai-agent-rag.png)
+
+### Pending approval lookup
+
+The current session had no approvals waiting for a decision. This image shows the lookup result, not an Approve/Reject interaction. No approval was created or resolved for these screenshots.
+
+![Agent reporting that no approvals are pending](docs/screenshots/ai-agent-hitl.png)
+
+### Operational dashboards
+
+| Project dashboard | Portfolio dashboard |
+| --- | --- |
+| ![Current project dashboard using synthetic demo data](docs/screenshots/hse-operations-dashboard.png) | ![Current portfolio dashboard for DEMO-LIS-01](docs/screenshots/portfolio-dashboard.png) |

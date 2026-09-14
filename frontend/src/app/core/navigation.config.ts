@@ -54,7 +54,7 @@ export const NAVIGATION: NavigationModule[] = [
     icon: Bot,
     defaultRoute: '/home',
     items: [
-      { id: 'home', label: 'AI Command Center', route: '/home', icon: Bot },
+      { id: 'home', label: 'IA Agent', route: '/home', icon: Bot },
       { id: 'instructions', label: 'Instructions', route: '/instructions', icon: BookOpenText },
       { id: 'agent-inspector', label: 'Agent Inspector', route: '/agent-inspector', icon: Activity, badge: 'Demo' },
       { id: 'portfolio', label: 'Portfolio Dashboard', route: '/portfolio', icon: ChartPie },
