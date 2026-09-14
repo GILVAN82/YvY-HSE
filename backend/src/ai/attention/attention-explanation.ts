@@ -10,6 +10,7 @@ import { buildEvidencePresentation } from '../graph/evidencePresentation';
 import { ACTION_OVERDUE_SQL } from '../../domain/actions';
 
 export interface AttentionFacts {
+  basisSource?:'APPROVAL_REGISTER';
   summary?:string; approvalActionType?:string; category:string; severity:string; status:string; projectLabel?:string;
   sourceType:string; decisionRequired:boolean; checkedAt:string;
 }

@@ -1,3 +1,5 @@
+import { isPendingApprovalQuery } from '../ai/intent/pendingApprovalIntent';
+import { pendingApprovalsResponse, pendingApprovalError, pendingApprovalProject } from '../ai/hitl/pending-approvals';
 import { randomUUID } from 'node:crypto';
 import { explainAttention, type AttentionReader } from '../ai/attention/attention-explanation';
 import { AuthorizationError } from '../auth/authorization';
@@ -42,6 +44,8 @@ export interface AiChatDependencies {
 // able to run up an unbounded bill.
 /** Request contract. Validated before anything reaches the model. */
 const chatRequestSchema = z.object({
+  pageContext: z.string().max(5000).optional(),
+  approvalProject: z.string().trim().min(1).max(160).optional(),
   attentionAlertId: z.string().uuid().optional(),
   message: z.string().min(1, 'message is required').max(MAX_MESSAGE_LENGTH),
   history: z
@@ -166,6 +170,19 @@ router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
   catch (error) { sendAttachmentError(res, error); return; }
   const attachmentContext = attachments.length ? dependencies.attachmentService.buildContext(attachments, message) : undefined;
 
+  if(!attentionAlertId && isPendingApprovalQuery(message)){
+    const pendingThreadId=threadId??conversationId??randomUUID();
+    try{
+      const store=dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore;
+      await store.load(pendingThreadId,principal.userId);
+      const result=await pendingApprovalsResponse({principal,service:dependencies.humanApprovalService,message,threadId:pendingThreadId,locale,project:pendingApprovalProject(parsed.data.approvalProject,parsed.data.pageContext,message)});
+      res.setHeader('Content-Type','text/event-stream');res.setHeader('Cache-Control','no-cache');
+      res.write(`data: ${JSON.stringify({type:'tool_use',name:'list_pending_approvals'})}\n\n`);
+      res.write(`data: ${JSON.stringify({type:'text',text:result.text})}\n\n`);
+      res.write(`data: ${JSON.stringify({...result,type:'done',threadId:pendingThreadId,orchestrator:'approval-read',responseStatus:result.pendingApprovals.length?'SUCCESS':'NO_DATA'})}\n\n`);res.end();
+    }catch(error){const failure=pendingApprovalError(error,locale);res.status(error instanceof AuthorizationError?error.code==='RESOURCE_NOT_FOUND'?404:403:503).json(failure);}
+    return;
+  }
   if(attentionAlertId){
     const attentionThread=threadId??conversationId??randomUUID();
     // Structured explain is read-only. Ignore UI descriptions/history as authority.

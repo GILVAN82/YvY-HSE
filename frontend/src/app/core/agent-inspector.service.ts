@@ -12,6 +12,7 @@ export interface AgentToolTrace {
 export type AgentResponseStatus = 'SUCCESS' | 'NO_DATA' | 'ERROR' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUSED';
 
 export interface AgentInspectorSnapshot {
+  pendingApprovals?: Array<{approval:ApprovalSnapshot;facts:import('../shared/attention/attention.presenter').AttentionFacts}>;
   attention?: import('../shared/attention/attention.presenter').AttentionFacts;
   runId: string;
   threadId: string;
@@ -119,6 +120,6 @@ export function sanitizeSnapshot(value: AgentInspectorSnapshot): AgentInspectorS
   return { runId:value.runId,threadId:value.threadId,status:value.status,responseStatus:value.responseStatus,stepCount:value.stepCount,toolsUsed:value.toolsUsed,ragUsed:value.ragUsed,citations:value.citations,errorCode:value.errorCode,orchestrator:value.orchestrator,
     approvalRequest:value.approvalRequest ? {...value.approvalRequest,resolutionNote:undefined} : undefined,
     executionTrace:trace ? {timestamp:trace.timestamp,responseLanguage:trace.responseLanguage,route:trace.route,rag:trace.rag,conversation:trace.conversation,memory:trace.memory,guardrail:trace.guardrail,verification:trace.verification,error:trace.error,observability:trace.observability,intent:trace.intent ? {...trace.intent,input:'',normalizedQuery:''}:undefined,
-      tools:(trace.tools ?? []).map(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary,arguments:tool.name==='get_attention_alert'&&typeof tool.arguments?.['alertId']==='string'&&/^[a-f0-9]{8}-[a-f0-9-]{27}$/i.test(tool.arguments['alertId'])?{alertId:tool.arguments['alertId']}:undefined})),
+      tools:(trace.tools ?? []).map<AgentToolTrace>(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary,arguments:tool.name==='list_pending_approvals'&&typeof tool.arguments?.['scope']==='string'?({scope:tool.arguments['scope'].slice(0,160)} as Record<string,string>):tool.name==='get_attention_alert'&&typeof tool.arguments?.['alertId']==='string'&&/^[a-f0-9]{8}-[a-f0-9-]{27}$/i.test(tool.arguments['alertId'])?({alertId:tool.arguments['alertId']} as Record<string,string>):undefined})),
     } : undefined };
 }

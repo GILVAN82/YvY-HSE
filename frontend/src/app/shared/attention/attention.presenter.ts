@@ -1,6 +1,6 @@
 import type { EvidenceViewModel } from '../evidence-view/evidence.presenter';
 import { businessText } from '../evidence-view/evidence.presenter';
-export interface AttentionFacts {summary?:string;approvalActionType?:string;category:string;severity:string;status:string;projectLabel?:string;sourceType:string;decisionRequired:boolean;checkedAt?:string}
+export interface AttentionFacts {basisSource?:'APPROVAL_REGISTER';summary?:string;approvalActionType?:string;category:string;severity:string;status:string;projectLabel?:string;sourceType:string;decisionRequired:boolean;checkedAt?:string}
 export interface AttentionItemViewModel {title:string;severity?:string;businessStatus:string;summary:string;projectLabel?:string;sourceLabel:string;decisionRequired:boolean;primaryAction:string;evidenceAction:string;explainMessage:string}
 export const attentionCopy={
  en:{heading:'Operational attention',one:'item needs review',many:'items need review',review:'Review attention items',loto:'LOTO approval',action:'Overdue action',generic:'Operational review',pending:'Awaiting human decision',approved:'Approved — previous decision',rejected:'Rejected — previous decision',resolved:'Resolved',ack:'Acknowledged',active:'Needs review',reason:'This is a safety-critical execution request.',physical:'YvY cannot verify physical isolation or field conditions, or authorize the work.',operational:'Review the current operational record and its status.',approval:'Review approval',basis:'View decision basis',evidence:'View evidence',explain:'Explain this attention item.',explainLoto:'Explain this critical LOTO approval alert.',source:'Operational alert register',project:'Project',status:'Current status',why:'Why attention is required',cannot:'What YvY cannot verify',verified:'Verified',partial:'Partially verified',missing:'Approved supporting guidance is unavailable.',facts:'Current alert and approval status',critical:'critical',high:'high',ask:'Explain alert',next:'Review the current record before taking action.'},
@@ -12,6 +12,7 @@ export const attentionCopy={
 export function attentionText(language='en'){
  const lang=language.slice(0,2) as keyof typeof attentionCopy,index=['en','pt','es','fr','de'].indexOf(lang),i=index<0?0:index;
  return {...(attentionCopy[lang]??attentionCopy.en),
+ approvalSource:['Human approval register','Registro de aprova\u00e7\u00f5es humanas','Registro de aprobaciones humanas','Registre des approbations humaines','Register menschlicher Genehmigungen'][i],
  approve:['Approve','Aprovar','Aprobar','Approuver','Genehmigen'][i],
  reject:['Reject','Rejeitar','Rechazar','Rejeter','Ablehnen'][i],
  all:['Current and historical items','Itens atuais e históricos','Elementos actuales e históricos','Éléments actuels et historiques','Aktuelle und historische Einträge'][i],
@@ -26,7 +27,7 @@ export function presentAttention(item:AttentionFacts,language='en'):AttentionIte
  primaryAction:hitl?c.approval:c.review,evidenceAction:hitl?c.basis:c.evidence,explainMessage:loto&&item.severity==='CRITICAL'?c.explainLoto:c.explain};
 }
 export function attentionEvidence(facts:AttentionFacts,language='en',knowledgeAvailable=false):EvidenceViewModel {
- const c=attentionText(language),view=presentAttention(facts,language),partial=facts.sourceType==='HITL'&&!knowledgeAvailable;
+ const c=attentionText(language),view=presentAttention(facts,language),partial=facts.sourceType==='HITL'&&facts.basisSource!=='APPROVAL_REGISTER'&&!knowledgeAvailable;
  return {title:view.evidenceAction,verificationState:partial?'PARTIALLY_VERIFIED':'VERIFIED',verificationLabel:partial?c.partial:c.verified,conclusion:`${view.title}: ${view.businessStatus}`,explanation:view.summary,
- sourceLabel:c.source,scopeLabel:view.projectLabel,checkedAt:facts.checkedAt,evidenceItems:[{label:c.status,value:view.businessStatus}],available:[c.facts],missing:facts.sourceType==='HITL'?[...(partial?[c.missing]:[]),c.physical]:[],nextStep:c.next};
+ sourceLabel:facts.basisSource==='APPROVAL_REGISTER'?c.approvalSource:c.source,scopeLabel:view.projectLabel,checkedAt:facts.checkedAt,evidenceItems:[{label:c.status,value:view.businessStatus}],available:[c.facts],missing:facts.sourceType==='HITL'?[...(partial?[c.missing]:[]),c.physical]:[],nextStep:c.next};
 }

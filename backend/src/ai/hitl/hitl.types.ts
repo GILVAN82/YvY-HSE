@@ -5,6 +5,7 @@ export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 export type HumanDecision = 'APPROVE' | 'REJECT';
 
 export interface ApprovalRequest {
+  scopeProjects?: string[];
   approvalId: string;
   threadId: string;
   actionType: ApprovalActionType;
@@ -18,6 +19,7 @@ export interface ApprovalRequest {
 }
 
 export interface ApprovalService {
+  listPending?(project?:string):Promise<ApprovalRequest[]>;
   forPrincipal?(principal:RequestPrincipal,message?:string):ApprovalService;
   create(threadId: string, actionType: ApprovalActionType): Promise<ApprovalRequest>;
   resolve(approvalId: string, threadId: string, decision: HumanDecision, note?: string, resolvedByUserId?: string): Promise<ApprovalRequest>;

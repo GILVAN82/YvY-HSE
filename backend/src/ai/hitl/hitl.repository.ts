@@ -16,6 +16,23 @@ export class PostgresApprovalService {
   constructor(private readonly db: Pick<Pool,'query'>,private readonly principal?:RequestPrincipal,private readonly requestText='') {}
   forPrincipal(principal:RequestPrincipal,message=''){return new PostgresApprovalService(this.db,principal,message);}
   private owner(){if(!this.principal)throw new AuthorizationError(undefined,'RESOURCE_OWNERSHIP_DENIED');return this.principal;}
+  /** Shared source for Attention and the agent. No creation, decisions or side effects. */
+  async listPending(project?:string):Promise<ApprovalRequest[]> {
+    const p=this.owner();assertPermission(p,'AI_USE','approval','read');assertPermission(p,'HSE_DATA_READ','approval','read');
+    if(project)assertProjectAccess(p,project);
+    const allowed=p.permissions.includes('ADMIN_ACCESS')?null:p.allowedProjectIds;
+    const result=await this.db.query(`SELECT a.id,a.thread_id,a.action_type,a.summary,a.reason,a.risk_level,a.status,a.created_at,a.scope_projects
+      FROM agent_human_approval a JOIN agent_thread_state t ON t.thread_id=a.thread_id
+      WHERE t.user_id=$1 AND a.requested_by=$1 AND a.status='PENDING' AND cardinality(a.scope_projects)>0
+      AND ($2::text[] IS NULL OR a.scope_projects <@ $2::text[])
+      AND ($3::text IS NULL OR $3=ANY(a.scope_projects))
+      AND EXISTS(SELECT 1 FROM app_user au WHERE au.id=$1 AND au.active=true
+        AND NOT EXISTS(SELECT 1 FROM unnest(a.scope_projects) sp(project)
+          WHERE NOT EXISTS(SELECT 1 FROM projects pr WHERE pr.code=sp.project)
+          OR (au.role<>'ADMIN' AND NOT EXISTS(SELECT 1 FROM app_user_project ap WHERE ap.user_id=au.id AND ap.project_code=sp.project))))
+      ORDER BY a.created_at DESC,a.id`,[p.userId,allowed,project??null]);
+    return result.rows.map(row=>({...map(row),scopeProjects:[...row.scope_projects]}));
+  }
   async create(threadId: string, actionType: ApprovalActionType): Promise<ApprovalRequest> {
     const p=this.owner();assertPermission(p,'AI_USE','loto','prepare');
     const existingThread=await this.db.query('SELECT user_id FROM agent_thread_state WHERE thread_id=$1',[threadId]);
