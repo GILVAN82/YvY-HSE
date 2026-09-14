@@ -6,6 +6,7 @@ export type EvidenceVerificationState='VERIFIED'|'PARTIALLY_VERIFIED'|'NEEDS_CON
 export type EvidenceAction={label:string;route:string}|{label:string;url:string}|{label:string;approvalTarget:string};
 export interface EvidenceItem {label:string;value?:string;passage?:string;jurisdiction?:string;version?:string;source?:string;action?:EvidenceAction;}
 export interface EvidenceViewModel {
+  kind?:'knowledge';
   title:string;verificationState:EvidenceVerificationState;verificationLabel:string;conclusion:string;explanation:string;
   sourceLabel:string;scopeLabel?:string;jurisdiction?:string;evidenceItems:EvidenceItem[];checkedAt?:string;
   available:string[];missing:string[];nextStep?:string;sourceAction?:EvidenceAction;nextAction?:EvidenceAction;
@@ -26,6 +27,16 @@ function sourceUrl(value:unknown):string|undefined {
   try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password ? url.href : undefined;}catch{return undefined;}
 }
 function scopeText(value:unknown):string|undefined {const text=businessText(value,160);return text && !/^(?:\*|unknown|unspecified|n\/a)$/i.test(text)?text:undefined;}
+/** Display only bounded prose, never serialize metadata or cut off a qualification. */
+function knowledgeText(value:unknown,limit:number):string|undefined {
+  if(typeof value!=='string' || /source[_-]?id|document[_-]?id|chunk[_-]?id|content[_-]?state|retrieved[_-]?at|embedding|\bRRF\b|vector[_\s-]?scores?|ingestion|metadata|https?:\/\/|www\.|[{}]|\[[\s\d,"\]]*\]/i.test(value))return undefined;
+  const text=businessText(value,Number.MAX_SAFE_INTEGER);
+  return text && text.length<=limit && !/(?:…|\.{3})$/.test(text) ? text : undefined;
+}
+function knowledgeMetadata(value:unknown,limit:number):string|undefined {
+  const text=knowledgeText(value,limit);
+  return text && !/^(?:\*|unknown|unspecified|n\/a|null|undefined|none)$/i.test(text)?text:undefined;
+}
 function state(snapshot:EvidenceSnapshot,result?:OperationalResult,zero=false):EvidenceVerificationState {
   if(result?.status==='ERROR')return 'EVIDENCE_UNAVAILABLE';
   if(result && result.status!=='COMPLETED')return 'NEEDS_CONFIRMATION';
@@ -77,14 +88,15 @@ export function presentResponseEvidence(snapshot:EvidenceSnapshot,conclusion:str
   const documents=snapshot.evidencePresentation?.documents ?? [];
   if(snapshot.ragUsed || documents.length || snapshot.citations?.length) {
     const verification=state(snapshot),model=emptyModel(operationalCopy('supporting',language),verification,language);
-    model.conclusion=businessText(conclusion)??operationalCopy('confirmation',language);
+    model.kind='knowledge';
+    model.conclusion=knowledgeText(conclusion,600)??evidenceCopy('seeAnswer',language);
     model.sourceLabel=evidenceCopy('approved',language);model.explanation=evidenceCopy('ragExplanation',language);
     const sources=documents.length ? documents : (snapshot.citations??[]).map(c=>({title:c.citationLabel,citation:c.citationLabel,passage:'',jurisdiction:c.jurisdiction,url:c.sourceUrl,organization:undefined,version:undefined}));
     model.evidenceItems=sources.slice(0,8).map(doc=>{
       const url=sourceUrl(doc.url);
-      return {label:businessText(doc.title,200)??evidenceCopy('approved',language),value:businessText(doc.citation,200),
-        passage:businessText(doc.passage)??evidenceCopy('noPassage',language),jurisdiction:scopeText(doc.jurisdiction),version:businessText(doc.version,80),source:businessText(doc.organization,160),
-        action:url?{label:evidenceCopy('document',language),url}:undefined};
+      return {label:knowledgeText(doc.title,200)??evidenceCopy('approvedSource',language),
+        passage:knowledgeText(doc.passage,700)??evidenceCopy(doc.passage?'passageContext':'noPassage',language),jurisdiction:knowledgeMetadata(doc.jurisdiction,160),version:knowledgeMetadata(doc.version,80),
+        action:url?{label:evidenceCopy('viewSource',language),url}:undefined};
     });
     Object.assign(model,support(snapshot,verification,language));
     if(model.missing.length){model.explanation+=` ${evidenceCopy('partialWhy',language)}`;model.nextStep=evidenceCopy('review',language);}

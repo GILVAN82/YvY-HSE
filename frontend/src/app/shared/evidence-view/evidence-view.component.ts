@@ -10,6 +10,7 @@ import type { EvidenceAction, EvidenceViewModel } from './evidence.presenter';
   template:`<section class="evidence" *ngIf="model as view" [attr.aria-label]="view.title">
     <header><h3>{{view.title}}</h3><span class="verification" [class.verified]="view.verificationState==='VERIFIED'">{{view.verificationState==='VERIFIED'?'✓ ':''}}{{view.verificationLabel}}</span></header>
     <h4>{{t('conclusion')}}</h4><p class="conclusion">{{view.conclusion}}</p>
+    <ng-container *ngIf="view.kind!=='knowledge'">
     <h4>{{t('explanation')}}</h4><p>{{view.explanation}}</p>
     <dl class="source-context"><dt>{{sourceLabel}}</dt><dd>{{view.sourceLabel}}</dd>
       <ng-container *ngIf="view.scopeLabel"><dt>{{t('scope')}}</dt><dd>{{view.scopeLabel}}</dd></ng-container>
@@ -20,6 +21,16 @@ import type { EvidenceAction, EvidenceViewModel } from './evidence.presenter';
     <ul class="evidence-items"><li *ngFor="let item of view.evidenceItems"><strong>{{item.label}}</strong><p *ngIf="item.value">{{item.value}}</p>
       <blockquote *ngIf="item.passage">{{item.passage}}</blockquote>
       <p *ngIf="item.source">{{sourceLabel}}: {{item.source}}</p><p *ngIf="item.jurisdiction">{{t('jurisdiction')}}: {{item.jurisdiction}}</p><p *ngIf="item.version">{{t('version')}}: {{item.version}}</p>
+      <ng-container *ngTemplateOutlet="action;context:{$implicit:item.action}"></ng-container>
+    </li></ul>
+    </ng-container>
+    <ul class="evidence-items" *ngIf="view.kind==='knowledge'"><li *ngFor="let item of view.evidenceItems">
+      <h4>{{t('approvedSource')}}</h4><strong>{{item.label}}</strong>
+      <h4>{{t('relevantGuidance')}}</h4><blockquote>{{item.passage}}</blockquote>
+      <dl class="source-context" *ngIf="item.jurisdiction || item.version">
+        <ng-container *ngIf="item.jurisdiction"><dt>{{t('jurisdiction')}}</dt><dd>{{item.jurisdiction}}</dd></ng-container>
+        <ng-container *ngIf="item.version"><dt>{{t('version')}}</dt><dd>{{item.version}}</dd></ng-container>
+      </dl>
       <ng-container *ngTemplateOutlet="action;context:{$implicit:item.action}"></ng-container>
     </li></ul>
     <ng-container *ngIf="view.missing.length"><h4>{{t('available')}}</h4><ul *ngIf="view.available.length; else none"><li *ngFor="let item of view.available">{{item}}</li></ul><ng-template #none><p>{{t('noEvidence')}}</p></ng-template>

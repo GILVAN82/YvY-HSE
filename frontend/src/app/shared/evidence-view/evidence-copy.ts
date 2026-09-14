@@ -1,6 +1,11 @@
 import { operationalCopy, operationalLanguage } from '../operational-overview/operational-copy';
 
 const labels = {
+  approvedSource:['Approved source','Fonte aprovada','Fuente aprobada','Source approuvée','Freigegebene Quelle'],
+  relevantGuidance:['Relevant guidance','Orientação relevante','Orientación relevante','Consignes pertinentes','Relevante Hinweise'],
+  viewSource:['View source','Ver fonte','Ver fuente','Voir la source','Quelle öffnen'],
+  seeAnswer:['See the conclusion in the answer above.','Consulte a conclusão na resposta acima.','Consulte la conclusión en la respuesta anterior.','Consultez la conclusion dans la réponse ci-dessus.','Die Schlussfolgerung steht in der Antwort oben.'],
+  passageContext:['A compact passage is unavailable. Consult the source for the guidance in full context.','Um trecho compacto não está disponível. Consulte a fonte para ler a orientação em seu contexto completo.','No hay un pasaje compacto disponible. Consulte la fuente para leer la orientación en su contexto completo.','Aucun extrait compact n’est disponible. Consultez la source pour lire les consignes dans leur contexte complet.','Ein kompakter Auszug ist nicht verfügbar. Lesen Sie die Hinweise im vollständigen Kontext der Quelle.'],
   conclusion:['Conclusion','Conclusão','Conclusión','Conclusion','Schlussfolgerung'],
   explanation:['Evidence','Evidências','Evidencias','Preuves','Nachweise'],
   scope:['Project scope','Escopo do projeto','Alcance del proyecto','Périmètre du projet','Projektbereich'],
