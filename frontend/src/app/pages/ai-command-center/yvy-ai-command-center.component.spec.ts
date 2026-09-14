@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { presentOperationalResult } from '../../shared/operational-overview/operational-result.presenter';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { YvyAiCommandCenterComponent } from './yvy-ai-command-center.component';
@@ -9,6 +10,23 @@ const snapshot=(extra:any={})=>({runId:'r',threadId:'11111111-1111-4111-8111-111
 describe('YvY agent-first workspace',()=>{
   let fixture:ComponentFixture<YvyAiCommandCenterComponent>;let component:YvyAiCommandCenterComponent;
   beforeEach(async()=>{await TestBed.configureTestingModule({imports:[YvyAiCommandCenterComponent],providers:[provideHttpClient(),provideRouter([])]}).compileComponents();fixture=TestBed.createComponent(YvyAiCommandCenterComponent);component=fixture.componentInstance;fixture.detectChanges();});
+  it('pauses a presentation on navigation and restores its step and conversation on return',()=>{
+    const demo=component.demo;demo.active.set(true);demo.state.set('TOOL_CALLING');demo.index.set(1);demo.completed.set(true);
+    const item:any={id:'demo-narration',role:'SYSTEM',text:'Presentation retained',status:'COMPLETE',createdAt:new Date().toISOString()};
+    component.agent.timeline.set([item]);fixture.destroy();
+    expect(demo.active()).toBeTrue();expect(demo.state()).toBe('PAUSED');expect(demo.index()).toBe(1);
+    fixture=TestBed.createComponent(YvyAiCommandCenterComponent);component=fixture.componentInstance;fixture.detectChanges();
+    expect(component.agent.timeline()).toEqual([item]);expect(component.demo).toBe(demo);expect(component.demo.index()).toBe(1);
+    demo.exit();
+  });
+  it('shows only the evidence belonging to the selected operational card',()=>{
+    const result=snapshot({executionTrace:{...trace,tools:[{name:'list_actions',status:'COMPLETED',presentationFacts:{pendingCount:4}},{name:'list_incidents',status:'COMPLETED',resultStatus:'SUCCESS_NO_DATA',presentationFacts:{openCount:0}}]}});
+    component.agent.timeline.set([{id:'evidence',role:'YVY',text:'Overview',status:'COMPLETE',snapshot:result,createdAt:new Date().toISOString()}]);fixture.detectChanges();
+    const cards=fixture.nativeElement.querySelectorAll('.result-card');cards[1].querySelector('button').click();fixture.detectChanges();
+    expect(cards[1].querySelector('.evidence').textContent).toContain('No open incidents found.');expect(cards[0].querySelector('.evidence')).toBeNull();
+    expect(cards[1].querySelector('.evidence').textContent).not.toMatch(/SUCCESS_NO_DATA|Filters:|recordCount|\?/);
+    cards[1].querySelector('button').click();fixture.detectChanges();expect(cards[1].querySelector('.evidence')).toBeNull();
+  });
   it('shows a calm work-companion empty state and real quick actions',()=>{const text=fixture.nativeElement.textContent;expect(text).toContain('Your HSE work companion');expect(text).toContain('Review overdue actions');expect(text).toContain('Pending approvals');});
   it('shows the approved YvY core and eight business capabilities without technical panels',()=>{expect(fixture.nativeElement.querySelector('app-yvy-ai-core')).not.toBeNull();expect(fixture.nativeElement.querySelectorAll('app-yvy-capability-node').length).toBe(8);expect(fixture.nativeElement.querySelector('app-yvy-workflow')).toBeNull();expect(fixture.nativeElement.querySelector('app-yvy-response-panel')).toBeNull();expect(fixture.nativeElement.querySelector('app-yvy-details-drawer')).toBeNull();expect(fixture.nativeElement.textContent).not.toContain('AI GUARD');});
   it('renders user and streaming YvY turns in one timeline',()=>{component.agent.timeline.set([{id:'u',role:'USER',text:'Which actions?',status:'COMPLETE',createdAt:new Date().toISOString()},{id:'a',role:'YVY',text:'Based on current records…',status:'STREAMING',createdAt:new Date().toISOString()}]);fixture.detectChanges();const messages=fixture.nativeElement.querySelectorAll('.message');expect(messages.length).toBe(2);expect(messages[1].textContent).toContain('Based on current records');});
@@ -24,18 +42,61 @@ describe('YvY agent-first workspace',()=>{
   it('keeps voice settings accessible from the header',()=>{expect(fixture.nativeElement.querySelector('.workspace-header app-yvy-voice-settings')).not.toBeNull();});
   it('replays one YvY message through the shared voice engine',()=>{const item:any={id:'a',role:'YVY',text:'Verified response.',status:'COMPLETE',language:'en',createdAt:new Date().toISOString()};const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.replayMessage(item);expect(speak).toHaveBeenCalled();});
   it('speaks the factual answer for a verified typed response in ALL_RESPONSES mode',async()=>{component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.agent.latest.set(snapshot());component.agent.answer.set('Eight actions require review.');spyOn(component.agent,'send').and.resolveTo(true);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.prompt='What is open?';await component.submit();expect(speak).toHaveBeenCalledWith('Eight actions require review.','en',jasmine.any(Function),jasmine.any(Function));});
-  it('speaks verified facts plus the warning for a partial overview',async()=>{component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.agent.latest.set(snapshot({executionTrace:{...trace,verification:{...trace.verification,status:'PARTIALLY_VERIFIED'}}}));component.agent.answer.set('I found 8 pending actions. Part of the summary still needs confirmation.');expect(component.state().agentState).toBe('needs-confirmation');spyOn(component.agent,'send').and.resolveTo(true);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.prompt='What is open?';await component.submit();expect(speak.calls.mostRecent().args[0]).toContain('8 pending actions');expect(speak.calls.mostRecent().args[0]).toContain('needs confirmation');});
+  it('speaks verified facts plus the warning for a partial overview',async()=>{component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.agent.latest.set(snapshot({executionTrace:{...trace,verification:{...trace.verification,status:'PARTIALLY_VERIFIED'}}}));component.agent.answer.set('I found 8 pending actions. Part of the summary still needs confirmation.');expect(component.state().agentState).toBe('needs-confirmation');spyOn(component.agent,'send').and.resolveTo(true);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.prompt='What is open?';await component.submit();expect(speak.calls.mostRecent().args[0]).toContain('8 pending');expect(speak.calls.mostRecent().args[0]).toContain('needs confirmation');});
   it('speaks only a safe message for insufficient evidence and keeps the core out of ERROR',async()=>{component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.agent.latest.set(snapshot({status:'FAILED',errorCode:'AI_SEMANTIC_VERIFICATION_FAILED',executionTrace:{...trace,verification:{...trace.verification,status:'INSUFFICIENT_EVIDENCE',verifiedClaims:0,unsupportedClaims:1}}}));component.agent.runtimeState.set('error');component.agent.answer.set('Unverified operational numbers.');expect(component.state().agentState).toBe('needs-confirmation');spyOn(component.agent,'send').and.resolveTo(false);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.prompt='What is open?';await component.submit();expect(speak.calls.mostRecent().args[0]).toContain("couldn't verify the full summary");});
   it('speaks a short safe message after a provider error in ALL_RESPONSES mode',async()=>{component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.agent.latest.set(snapshot({status:'FAILED',errorCode:'AI_PROVIDER_UNAVAILABLE',executionTrace:{...trace,error:{category:'AI_PROVIDER_UNAVAILABLE',node:'agent',recoverable:true}}}));component.agent.runtimeState.set('error');component.agent.answer.set('');spyOn(component.agent,'send').and.resolveTo(false);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.prompt='What is open?';await component.submit();expect(speak.calls.mostRecent().args[0]).toContain('could not complete that query');});
   it('does not speak typed responses when voice mode is OFF or mute is active',async()=>{const send=spyOn(component.agent,'send').and.resolveTo(true);const speak=spyOn(component.speechSynthesis,'speak').and.returnValue(true);component.agent.latest.set(snapshot());component.agent.answer.set('Verified answer.');component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'OFF'}));component.prompt='First';await component.submit();component.speechSynthesis.preference.update(value=>({...value,voiceResponseMode:'ALL_RESPONSES'}));component.muted.set(true);component.prompt='Second';await component.submit();expect(send).toHaveBeenCalledTimes(2);expect(speak).not.toHaveBeenCalled();});
   it('clears the previous user timeline on account change',()=>{component.agent.timeline.set([{id:'a',role:'YVY',text:'Private',status:'COMPLETE',createdAt:new Date().toISOString()}]);component.auth.user.set({userId:'B',email:'b@example.invalid',displayName:'Bea',role:'HSE_USER',permissions:['AI_USE'],allowedProjectIds:[]});TestBed.flushEffects();expect(component.agent.timeline()).toEqual([]);});
   it('retains a mobile-first full-width timeline through its responsive stylesheet',()=>{expect(fixture.nativeElement.querySelector('.timeline')).not.toBeNull();expect(fixture.nativeElement.querySelector('.composer')).not.toBeNull();});
-  it('shows only the evidence belonging to the selected operational card',()=>{
-    const result=snapshot({executionTrace:{...trace,tools:[{name:'list_actions',status:'COMPLETED',presentationFacts:{pendingCount:4}},{name:'list_incidents',status:'COMPLETED',resultStatus:'SUCCESS_NO_DATA',presentationFacts:{openCount:0}}]}});
-    component.agent.timeline.set([{id:'evidence',role:'YVY',text:'Overview',status:'COMPLETE',snapshot:result,createdAt:new Date().toISOString()}]);fixture.detectChanges();
-    const cards=fixture.nativeElement.querySelectorAll('.result-card');cards[1].querySelector('button').click();fixture.detectChanges();
-    expect(cards[1].querySelector('.evidence').textContent).toContain('No open incidents found.');expect(cards[0].querySelector('.evidence')).toBeNull();
-    expect(cards[1].querySelector('.evidence').textContent).not.toMatch(/SUCCESS_NO_DATA|Filters:|recordCount|\?/);
-    cards[1].querySelector('button').click();fixture.detectChanges();expect(cards[1].querySelector('.evidence')).toBeNull();
+  it('preserves the conversation across page recreation until the user ends it',()=>{
+    const item:any={id:'saved',role:'YVY',text:'Saved answer',status:'COMPLETE',createdAt:new Date().toISOString()};
+    component.agent.timeline.set([item]);
+    fixture.nativeElement.querySelector('#yvy-command').dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.conversation-active')).not.toBeNull();
+    fixture.destroy();
+    fixture=TestBed.createComponent(YvyAiCommandCenterComponent);component=fixture.componentInstance;fixture.detectChanges();
+    expect(component.agent.timeline()).toEqual([item]);
+    expect(fixture.nativeElement.querySelector('.conversation-active')).not.toBeNull();
+    component.endConversation();fixture.detectChanges();
+    expect(component.agent.timeline()).toEqual([]);
+    expect(fixture.nativeElement.querySelector('.conversation-active')).toBeNull();
+
   });
+  it('does not collapse while a response is streaming',()=>{
+    component.beginConversation();component.agent.runtimeState.set('streaming');
+    component.endConversation();expect(component.conversationActive()).toBeTrue();
+  });
+  it('scrolls after rendering and respects readers who scroll up',fakeAsync(()=>{
+    const el=fixture.nativeElement.querySelector('.timeline') as HTMLElement;
+    Object.defineProperty(el,'scrollHeight',{configurable:true,value:1400});
+    Object.defineProperty(el,'clientHeight',{configurable:true,value:400});
+    const scroll=spyOn(el,'scrollTo');
+    component.beginConversation();tick(20);expect(scroll).toHaveBeenCalled();scroll.calls.reset();
+    el.scrollTop=0;component.onTimelineScroll();
+    component.agent.timeline.set([{id:'new',role:'YVY',text:'New response',status:'COMPLETE',createdAt:new Date().toISOString()}]);
+    fixture.detectChanges();tick(20);
+    expect(scroll).not.toHaveBeenCalled();expect(component.newResponseAvailable()).toBeTrue();
+    component.scrollToLatest();tick();expect(scroll).toHaveBeenCalled();expect(component.newResponseAvailable()).toBeFalse();
+  }));
+
+  it('formats a wide operational table without squeezing IDs or dates',()=>{
+    component.agent.timeline.set([{id:'layout',role:'YVY',text:'| ID | Priority | Status | Days overdue | Due date | Action |\n| --- | --- | --- | --- | --- | --- |\n| DEMO-0001 | Critical | In Progress | 77 | 2026-06-23 | Example action description long enough to need natural wrapping. |',status:'COMPLETE',createdAt:new Date().toISOString()}]);
+    component.beginConversation();fixture.detectChanges();
+    const region=fixture.nativeElement.querySelector('.markdown-table-scroll') as HTMLElement;
+    region.style.width='280px';
+    const cells=region.querySelectorAll('tbody td');
+    expect(getComputedStyle(cells[0]).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(cells[4]).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(cells[5]).whiteSpace).toBe('normal');
+    expect(getComputedStyle(region).overflowX).toBe('auto');
+    expect(region.scrollWidth).toBeGreaterThan(region.clientWidth);
+  });
+
+  it('links action results to the registered CAPA sheet and removes the ready card',()=>{
+    expect(presentOperationalResult({name:'list_actions',status:'COMPLETED'},'VERIFIED').actions[0].route).toBe('/sheet/Action Tracker (CAPA)');
+    expect(fixture.nativeElement.querySelector('.ready-card')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Click the microphone or type your question.');
+  });
+
 });

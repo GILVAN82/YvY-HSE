@@ -31,6 +31,7 @@ export class VoiceEngineService {
   readonly available=signal(false);
   readonly ready=signal(false);
   readonly busy=signal(false);
+  readonly speaking=signal(false);
   readonly error=signal('');
   private owner:string|null=null;
   private generation=0;
@@ -69,7 +70,7 @@ export class VoiceEngineService {
   preview(preference:VoicePreference,onEnd?:()=>void,onError?:()=>void){return this.start(previewText[preference.languageLocale],preference.languageLocale.split('-')[0] as ConversationLanguage,preference,true,onEnd,onError);}
   replay(onEnd?:()=>void){return this.last?this.speak(this.last.text,this.last.language,onEnd,()=>onEnd?.()):false;}
   setMuted(value:boolean){this.muted=value;this.browser.setMuted(value);if(value)this.stop();}
-  stop(){this.generation++;this.busy.set(false);if(this.timer){clearTimeout(this.timer);this.timer=null;}this.controller?.abort();this.controller=null;if(this.audio){this.audio.onended=null;this.audio.onerror=null;this.audio.pause();this.audio.removeAttribute('src');this.audio.load();this.audio=null;}if(this.url){URL.revokeObjectURL(this.url);this.url=null;}this.browser.stop();}
+  stop(){this.generation++;this.busy.set(false);this.speaking.set(false);if(this.timer){clearTimeout(this.timer);this.timer=null;}this.controller?.abort();this.controller=null;if(this.audio){this.audio.onended=null;this.audio.onerror=null;this.audio.pause();this.audio.removeAttribute('src');this.audio.load();this.audio=null;}if(this.url){URL.revokeObjectURL(this.url);this.url=null;}this.browser.stop();}
   private start(text:string,language:ConversationLanguage,preference:VoicePreference,preview:boolean,onEnd?:()=>void,onError?:()=>void){
     if(this.muted||!this.auth.user()||!text.trim())return false;
     this.stop();this.busy.set(true);const token=this.generation,owner=this.auth.user()!.userId;
@@ -79,7 +80,7 @@ export class VoiceEngineService {
     const complete=()=>{if(!current())return;this.stop();onEnd?.();};
     const failed=()=>{if(!current())return;this.stop();onError?.();};
     let usedFallback=false;
-    const fallback=(reason:string)=>{if(!current()||usedFallback)return;usedFallback=true;if(this.audio){this.audio.onended=null;this.audio.onerror=null;this.audio.pause();this.audio=null;}if(this.url){URL.revokeObjectURL(this.url);this.url=null;}record('BROWSER_FALLBACK',reason);if(!this.browser.speak(text,language,complete,failed,{locale,rate:preference.speed}))failed();};
+    const fallback=(reason:string)=>{if(!current()||usedFallback)return;usedFallback=true;this.speaking.set(false);if(this.audio){this.audio.onended=null;this.audio.onerror=null;this.audio.pause();this.audio=null;}if(this.url){URL.revokeObjectURL(this.url);this.url=null;}record('BROWSER_FALLBACK',reason);if(!this.browser.speak(text,language,complete,failed,{locale,rate:preference.speed,onStart:()=>{if(current())this.speaking.set(true);}}))failed();};
     if(text.length>1200||/[|{}]|```|https?:\/\//.test(text)){queueMicrotask(failed);return true;}
     if(preference.engine==='BROWSER'||!this.available()){queueMicrotask(()=>fallback(preference.engine==='BROWSER'?'USER_SELECTED':'UNAVAILABLE'));return true;}
     const voice=preference.voiceId;
@@ -93,7 +94,7 @@ export class VoiceEngineService {
         if(!response.ok){const body=await response.json().catch(()=>({}));if(body.fallbackAllowed===true||[401,403,404,408,429].includes(response.status)||response.status>=500){fallback(typeof body.fallbackReason==='string'?body.fallbackReason:'SERVICE_UNAVAILABLE');return;}this.error.set('O conteúdo da fala foi rejeitado.');failed();return;}
         if(response.headers.get('content-type')?.split(';')[0]!=='audio/mpeg'){fallback('INVALID_AUDIO');return;}
         const blob=await response.blob();if(!current())return;if(!blob.size||blob.size>4*1024*1024){fallback('INVALID_AUDIO');return;}
-        this.url=URL.createObjectURL(blob);const audio=new Audio(this.url);this.audio=audio;audio.onended=complete;audio.onerror=()=>fallback('PLAYBACK_ERROR');
+        this.url=URL.createObjectURL(blob);const audio=new Audio(this.url);this.audio=audio;audio.onplaying=()=>{if(current())this.speaking.set(true);};audio.onpause=()=>{if(current())this.speaking.set(false);};audio.onended=complete;audio.onerror=()=>fallback('PLAYBACK_ERROR');
         record('ELEVENLABS');await audio.play();
       }catch{if(current())fallback(controller.signal.aborted?'TIMEOUT':'NETWORK_ERROR');}
       finally{clearTimeout(timer);}

@@ -6,7 +6,7 @@ import { operationalCopy } from '../../shared/operational-overview/operational-c
 import { I18nService } from '../../core/i18n.service';
 import { TuringDemoService } from './demo/turing-demo.service';
 import { TuringDemoControllerComponent } from './demo/turing-demo-controller.component';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -35,15 +35,17 @@ import { SafeMarkdownPipe } from '../../shared/ai-chat-widget/safe-markdown.pipe
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
   imports: [AttentionSummaryComponent, AttentionItemComponent, ResponseEvidenceComponent, OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
-  templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss','./demo/turing-demo-workspace.scss'],
+  templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss','./yvy-approved-layout.part2.scss','./yvy-approved-layout.part3.scss','./yvy-approved-layout.part4.scss','./yvy-approved-layout.part5.scss','./demo/turing-demo-workspace.scss'],
 })
-export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
+export class YvyAiCommandCenterComponent implements OnInit,AfterViewInit,OnDestroy {
+  @ViewChild('promptInput') private promptElement?:ElementRef<HTMLTextAreaElement>;
   @ViewChild('timeline') private timelineElement?:ElementRef<HTMLElement>;
-  readonly i18n=inject(I18nService);
   readonly operationalCopy=operationalCopy;
+  readonly i18n=inject(I18nService);
   readonly demo=inject(TuringDemoService);
   readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(VoiceEngineService);readonly spokenFormatter=inject(SpokenResponseFormatterService);readonly alerts=inject(YvyAlertService);private readonly inspector=inject(AgentInspectorService);private readonly proactiveVoiceQueue=new ProactiveVoiceQueue();private stopContinuousAttention:()=>void=()=>{};
   readonly sendIcon = Send;
+  readonly attentionIcon = TriangleAlert;
   readonly micIcon=Mic;readonly stopIcon=Square;readonly cancelIcon=X;readonly volumeIcon=Volume2;readonly mutedIcon=VolumeX;readonly replayIcon=RotateCcw;
   readonly voiceStatus=signal<VoiceStatus>('idle');readonly voiceError=signal('');readonly muted=signal(false);readonly languageName=languageName;
   readonly voiceConversation=signal<VoiceConversationTurn[]>([]);readonly lastSpokenResponse=signal('');
@@ -57,7 +59,26 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   ];
   readonly selected=signal<string|null>(null);private returnFocus:HTMLElement|null=null;
   readonly state=computed<YvyVisualState>(()=>this.mapLiveState());
-  prompt = '';
+  readonly conversationActive=this.agent.conversationActive;
+  private timelineResize?:ResizeObserver;
+  private scrollFrame:number|null=null;
+  get prompt(){return this.agent.draft();}
+  set prompt(value:string){this.agent.draft.set(value);}
+  beginConversation(){this.conversationActive.set(true);this.scheduleTimelineScroll();}
+  endConversation(){
+    if(this.agent.loading()||this.queuedPrompts().length)return;
+    this.cancelVoice();this.agent.resetSession();this.inspector.clear();this.prompt='';this.newResponseAvailable.set(false);
+  }
+  resizeComposer(event:Event){const input=event.target as HTMLTextAreaElement;input.style.height='auto';input.style.height=`${Math.min(input.scrollHeight,130)}px`;}
+  private scheduleTimelineScroll(){
+    if(this.scrollFrame!==null)cancelAnimationFrame(this.scrollFrame);
+    this.scrollFrame=requestAnimationFrame(()=>{this.scrollFrame=null;const el=this.timelineElement?.nativeElement;if(el&&this.followTimeline)el.scrollTo({top:el.scrollHeight,behavior:'instant' as ScrollBehavior});});
+  }
+  ngAfterViewInit(){
+    this.timelineResize=new ResizeObserver(()=>this.scheduleTimelineScroll());
+    const el=this.timelineElement?.nativeElement;if(el){this.timelineResize.observe(el);this.timelineResize.observe(el.querySelector('.timeline-content')!);}
+    this.scheduleTimelineScroll();
+  }
   readonly queuedPrompts=signal<string[]>([]);readonly newResponseAvailable=signal(false);private followTimeline=true;
   readonly currentHour=new Date().getHours();
   readonly firstName=computed(()=>this.auth.user()?.displayName?.trim().split(/\s+/)[0]||'there');
@@ -66,9 +87,9 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   readonly executedStages=computed(()=>{const route=this.trace()?.route??[];const stages=['guard'];if(this.snapshot()?.toolsUsed.length)stages.push('tools');if(this.snapshot()?.ragUsed)stages.push('rag');if(route.includes('verify'))stages.push('verify');if(this.snapshot()?.approvalRequest)stages.push('approval');return stages;});
   readonly drawerTitle=computed(()=>({core:'YvY Agent Overview',alerts:'YvY Attention Center',guard:'AI Guard',tools:'Operational Tools',rag:'RAG Engine',verify:'Semantic Verification',approval:'Human Approval',response:'AI Response',safety:'Safety',compliance:'Compliance',risk:'Risk',operations:'Operations',people:'People',permits:'Permits',knowledge:'Knowledge',approvals:'Approvals'}[this.selected()??'']??'YvY Details'));
 
-  constructor(){let previous:string|null|undefined;effect(()=>{const id=this.auth.user()?.userId??null;if(id!==previous){previous=id;this.agent.resetSession();this.inspector.clear();this.alerts.resetVoiceSession();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();this.queuedPrompts.set([]);this.voiceConversation.set([]);this.lastSpokenResponse.set('');this.voiceStatus.set('idle');this.inspector.voiceSession.set(null);}},{allowSignalWrites:true});effect(()=>{if(this.speechSynthesis.ready()&&!this.speechSynthesis.busy())this.drainProactiveVoice();},{allowSignalWrites:true});effect(()=>{this.agent.timeline();queueMicrotask(()=>{if(this.followTimeline)this.timelineElement?.nativeElement.scrollTo({top:this.timelineElement.nativeElement.scrollHeight});else this.newResponseAvailable.set(true);});},{allowSignalWrites:true});}
+  constructor(){let previous=this.auth.user()?.userId??null;effect(()=>{const id=this.auth.user()?.userId??null;if(id!==previous){previous=id;this.alerts.resetVoiceSession();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();this.queuedPrompts.set([]);this.voiceConversation.set([]);this.lastSpokenResponse.set('');this.voiceStatus.set('idle');this.inspector.voiceSession.set(null);}},{allowSignalWrites:true});effect(()=>{if(this.speechSynthesis.ready()&&!this.speechSynthesis.busy())this.drainProactiveVoice();},{allowSignalWrites:true});effect(()=>{this.agent.timeline();if(this.followTimeline)this.scheduleTimelineScroll();else if(this.conversationActive())this.newResponseAvailable.set(true);},{allowSignalWrites:true});}
   ngOnInit(){void this.demo.loadFlag();void this.agent.initialize();void this.refreshAttention();this.stopContinuousAttention=this.alerts.startContinuousAttention(()=>this.afterAttentionRefresh());}
-  ngOnDestroy(){if(this.demo.active())this.demo.exit();this.stopContinuousAttention();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();}
+  ngOnDestroy(){if(this.demo.active())this.demo.pause();this.timelineResize?.disconnect();if(this.scrollFrame!==null)cancelAnimationFrame(this.scrollFrame);this.stopContinuousAttention();this.speechSynthesis.stop();this.speechRecognition.cancel();this.proactiveVoiceQueue.clear();}
 
   capabilityState(id:string):'inactive'|'active'|'success'|'warning'{
     if((id==='approvals'&&this.alerts.critical())||(id==='operations'&&this.alerts.high()))return 'warning';
@@ -77,8 +98,9 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
     if(id==='knowledge'&&this.snapshot()?.ragUsed)return 'success';if(id==='operations'&&this.snapshot()?.toolsUsed.length)return 'success';
     return this.activeCapability()===id?'active':'inactive';
   }
+  capabilityPrompt(id:string){const cap=this.capabilities.find(item=>item.id===id);if(id==='operations')return 'Show the current operational overview';if(id==='approvals')return 'Show pending approvals';return cap?.route?.startsWith('/sheet/')?`Show current records from ${cap.route.slice(7)}`:`Show current ${cap?.label.toLowerCase()??'HSE'} records`;}
   stageActive(stage:YvyWorkflowStage){return this.state().activeWorkflowStage===stage;}
-  async submit(){if(this.demo.active())return;const text=this.prompt.trim();if(!text)return;this.prompt='';if(this.agent.loading()){this.queuedPrompts.update(items=>[...items,text]);return;}await this.runTypedMessage(text);}
+  async submit(){if(this.demo.active())return;const text=this.prompt.trim();if(!text)return;this.beginConversation();this.followTimeline=true;this.newResponseAvailable.set(false);this.prompt='';if(this.promptElement)this.promptElement.nativeElement.style.height='auto';if(this.agent.loading()){this.queuedPrompts.update(items=>[...items,text]);return;}await this.runTypedMessage(text);}
   quickAction(message:string){this.prompt=message;void this.submit();}
   onTimelineScroll(){const el=this.timelineElement?.nativeElement;if(!el)return;this.followTimeline=el.scrollHeight-el.scrollTop-el.clientHeight<72;if(this.followTimeline)this.newResponseAvailable.set(false);}
   scrollToLatest(){this.followTimeline=true;this.newResponseAvailable.set(false);queueMicrotask(()=>this.timelineElement?.nativeElement.scrollTo({top:this.timelineElement.nativeElement.scrollHeight,behavior:'smooth'}));}
@@ -95,7 +117,7 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   }
   setAlertPreference(key:'criticalVoice'|'highVoice'|'routineReminders'|'desktopNotifications',value:boolean){this.alerts.setPreferences({...this.alerts.preferences(),[key]:value});}
   async startVoice(){if(this.demo.active())return;
-    if(this.voiceStatus()==='listening')return;if(this.voiceStatus()==='speaking'){this.speechSynthesis.stop();this.voiceStatus.set('interrupted');}
+    this.beginConversation();this.followTimeline=true;if(this.voiceStatus()==='listening')return;if(this.voiceStatus()==='speaking'){this.speechSynthesis.stop();this.voiceStatus.set('interrupted');}
     this.voiceError.set('');this.voiceStatus.set('requesting-permission');
     const voiceOwner=this.auth.user()?.userId;try{this.voiceStatus.set('listening');const result=await this.speechRecognition.listen();if(voiceOwner!==this.auth.user()?.userId)return;this.voiceStatus.set('transcribing');const metadata=this.speechRecognition.resolveMetadata(result);this.agent.voiceMetadata.set(metadata);this.voiceConversation.update(turns=>[...turns,this.turn('user',metadata.effectiveResponseLanguage,result.transcript)].slice(-20));this.prompt=result.transcript;this.voiceStatus.set('processing');const completed=await this.agent.send(result.transcript,metadata);if(voiceOwner!==this.auth.user()?.userId)return;const autoVoice=this.speechSynthesis.preference().voiceResponseMode!=='OFF'&&!this.muted();this.recordVoiceSession('VOICE',autoVoice);if(autoVoice)this.speakVerified();else this.voiceStatus.set(completed?'idle':'error');}
     catch(error){const code=error instanceof Error?error.message:'STT_FAILED';if(code==='CANCELLED'){this.voiceStatus.set('idle');return;}const language=this.agent.voiceMetadata()?.effectiveResponseLanguage??'en';this.voiceError.set(this.friendlyVoiceError(code,language));this.voiceStatus.set('error');}
@@ -115,7 +137,7 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   private mapLiveState():YvyVisualState{
     const runtime=this.agent.runtimeState(),snapshot=this.agent.latest(),approval=this.agent.approval()??snapshot?.approvalRequest;
     let agentState:YvyAgentVisualState='ready',activeWorkflowStage:YvyWorkflowStage=null,activeCapability:string|undefined;
-    if(this.voiceStatus()==='listening')agentState='listening';else if(this.voiceStatus()==='transcribing')agentState='transcribing';else if(this.voiceStatus()==='processing'&&runtime==='idle')agentState='understanding';else if((this.demo.active()&&this.speechSynthesis.busy())||this.voiceStatus()==='speaking')agentState='speaking';else if(this.voiceStatus()==='interrupted')agentState='interrupted';
+    if(this.voiceStatus()==='listening')agentState='listening';else if(this.voiceStatus()==='transcribing')agentState='transcribing';else if(this.voiceStatus()==='processing'&&runtime==='idle')agentState='understanding';else if(this.speechSynthesis.speaking())agentState='speaking';else if(this.voiceStatus()==='interrupted')agentState='interrupted';
     else if(runtime==='analysing'){agentState='analysing';activeWorkflowStage='guard';activeCapability='safety';}
     else if(runtime==='using-tool'){agentState='using-tool';activeWorkflowStage='tools';activeCapability='operations';}
     else if(runtime==='streaming'){agentState='analysing';}

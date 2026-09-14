@@ -114,7 +114,7 @@ export const SUGGESTED_PROMPTS = [
   standalone: true,
   imports: [ResponseEvidenceComponent, OperationalOverviewComponent, CommonModule, FormsModule, SafeMarkdownPipe],
   templateUrl: './ai-chat-widget.component.html',
-  styleUrl: './ai-chat-widget.component.scss',
+  styleUrls: ['./ai-chat-widget.component.scss', './ai-chat-widget.component.part2.scss', './ai-chat-widget.component.part3.scss', './ai-chat-widget.component.part4.scss'],
 })
 export class AiChatWidgetComponent implements OnInit, OnDestroy {
   /** UI chrome follows the app language; free-form conversation content is not rewritten. */

@@ -16,7 +16,7 @@ const agentEvidenceSchema = z.object({
   id: z.string(), sourceType: z.enum([EvidenceSourceType.TOOL, EvidenceSourceType.RAG]), source: z.string(),
   authority: z.enum([EvidenceAuthority.OPERATIONAL, EvidenceAuthority.APPROVED_KNOWLEDGE]),
   toolName: z.string().optional(), resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA', 'ERROR']).optional(),
-  recordCount: z.number().int().min(0).optional(), facts: z.array(evidenceFactSchema).max(80).optional(),
+  recordCount: z.number().int().min(0).optional(), facts: z.array(evidenceFactSchema).max(1000).optional(),
   rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string(),version:z.string().optional(),sourceUrl:z.string().optional(),sourceOrganization:z.string().optional() }).optional(),
 });
 const verificationResultSchema = z.object({

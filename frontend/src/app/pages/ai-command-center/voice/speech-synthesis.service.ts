@@ -10,7 +10,7 @@ export class SpeechSynthesisService {
   private generation=0;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
   get supported() { return typeof speechSynthesis!=='undefined' && typeof SpeechSynthesisUtterance!=='undefined'; }
-  speak(text:string,language:ConversationLanguage,onEnd?:()=>void,onError?:()=>void,settings?:{locale:string;rate:number}) {
+  speak(text:string,language:ConversationLanguage,onEnd?:()=>void,onError?:()=>void,settings?:{locale:string;rate:number;onStart?:()=>void}) {
     if(this.muted || !this.supported || !text.trim()) return false;
     this.stop();
     this.lastText=text;
@@ -29,6 +29,7 @@ export class SpeechSynthesisService {
       utterance.lang=lang;
       utterance.rate=settings?.rate??.96;
       utterance.pitch=1;
+      utterance.onstart=()=>{if(token===this.generation)settings?.onStart?.();};
       utterance.voice=voice;
       let settled=false;
       utterance.onend=()=> { if(settled) return; settled=true; next(); };

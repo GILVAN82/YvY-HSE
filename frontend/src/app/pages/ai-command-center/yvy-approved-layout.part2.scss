@@ -1,0 +1,19 @@
+@use '../../shared/ai-chat-widget/markdown-layout' as markdown;
+
+.timeline{scroll-behavior:auto;overscroll-behavior:contain;overflow-anchor:none;scrollbar-gutter:stable}.timeline-content{display:flow-root}.message-body{overflow-wrap:anywhere}.assistant-markdown ::ng-deep pre{max-width:100%;overflow:auto}
+.hero,.core,.cap{transition:height .4s ease,width .4s ease,transform .4s ease}
+.workspace.conversation-active{
+ grid-template-columns:300px minmax(0,1fr);grid-template-rows:70px minmax(0,1fr) auto;
+ .workspace-header{grid-column:1/-1;padding:0 24px}
+ .hero{grid-column:1;grid-row:2;width:100%;height:100%;min-height:0;display:flex;flex-direction:column;gap:14px;padding:20px 16px;overflow-y:auto;overflow-x:hidden;border-right:1px solid #21475c;background:linear-gradient(155deg,#0b2133,#07131f)}
+ .greeting{width:100%}.greeting h2{font-size:24px}.greeting p{margin:4px 0}.greeting i,.brand-message i{margin:8px 0}
+ .core-field{width:268px;height:auto;flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:18px 0;padding-top:205px}
+ .core{width:200px;top:0;left:50%;transform:translateX(-50%)}.core ::ng-deep .identity strong{font-size:44px}.core ::ng-deep .identity span{font-size:10px;margin-top:7px}.core ::ng-deep .identity small{font-size:7px;margin-top:9px;letter-spacing:.14em}.core ::ng-deep .identity lucide-icon{margin-bottom:3px}.connections{display:none}.cap{position:static;transform:none;min-width:0}
+ .cap ::ng-deep .node{width:100%;gap:6px}.cap ::ng-deep .node span{width:36px;height:36px}.cap ::ng-deep .node strong{font-size:8px;letter-spacing:0}.cap ::ng-deep lucide-icon svg{width:20px;height:20px}
+ .brand-message{display:block;width:100%;margin-top:auto}.brand-message h2{font-size:17px}.brand-message h2 br{display:contents}.brand-message h2 br::after{content:" "}.brand-message p{margin-bottom:0}
+ .timeline{grid-column:2;grid-row:2;width:100%;padding:24px clamp(16px,3vw,48px);animation:chat-arrive .4s ease}
+ .bottom-status{grid-column:1;grid-row:3;width:100%;margin:0;padding:12px;display:grid;gap:8px;border-right:1px solid #21475c}.ready-card{min-width:0;width:100%}
+ .composer{grid-column:2;grid-row:3;width:calc(100% - 32px);margin:8px auto}.composer textarea{min-width:0}
+ .quick-actions{gap:6px}.quick-actions button{padding:7px 9px;font-size:10px}.new-response{left:calc(50% + 150px);bottom:150px}
+}
+@keyframes chat-arrive{from{opacity:.4;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}

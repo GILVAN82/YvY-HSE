@@ -63,12 +63,17 @@ describe('YvY voice engine',()=>{
   it('falls back once for technical failure and preserves locale and speed',fakeAsync(()=>{
     flushMicrotasks();fetchSpy.and.resolveTo(({ok:false,status:503,json:()=>Promise.resolve({fallbackAllowed:true,fallbackReason:'UPSTREAM_429'})} as Response));
     engine.preference.set({...defaultVoicePreference(),languageLocale:'pt-PT',voiceId:'male',speed:.8});engine.speak('Olá.','pt');flushMicrotasks();
-    expect(browser.speak).toHaveBeenCalledTimes(1);expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-PT',rate:.8});expect(TestBed.inject(AgentInspectorService).voiceEngine()?.fallbackReason).toBe('UPSTREAM_429');
+    expect(browser.speak).toHaveBeenCalledTimes(1);expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-PT',rate:.8,onStart:jasmine.any(Function)});expect(TestBed.inject(AgentInspectorService).voiceEngine()?.fallbackReason).toBe('UPSTREAM_429');
   }));
   it('does not fallback for content rejection or send visual tables',fakeAsync(()=>{
     flushMicrotasks();engine.preference.set({...defaultVoicePreference(),voiceId:'male'});fetchSpy.and.resolveTo(({ok:false,status:422,json:()=>Promise.resolve({fallbackAllowed:false})} as Response));
     const failed=jasmine.createSpy('failed');engine.speak('Resumo.','pt',undefined,failed);flushMicrotasks();expect(browser.speak).not.toHaveBeenCalled();expect(failed).toHaveBeenCalledTimes(1);
     fetchSpy.calls.reset();engine.speak('| ID | Action |','pt',undefined,failed);flushMicrotasks();expect(fetchSpy).not.toHaveBeenCalled();
+  }));
+  it('animates only after browser playback starts and stops on completion or mute',fakeAsync(()=>{
+    flushMicrotasks();engine.available.set(false);engine.speak('Verified summary.','en');flushMicrotasks();
+    const args=browser.speak.calls.mostRecent().args;expect(engine.speaking()).toBeFalse();args[4]!.onStart!();expect(engine.speaking()).toBeTrue();args[2]!();expect(engine.speaking()).toBeFalse();
+    args[4]!.onStart!();expect(engine.speaking()).toBeFalse();
   }));
   it('mute prevents requests, previews and audio',fakeAsync(()=>{
     flushMicrotasks();fetchSpy.calls.reset();engine.setMuted(true);expect(engine.speak('Olá.','pt')).toBeFalse();expect(engine.preview(defaultVoicePreference())).toBeFalse();expect(fetchSpy).not.toHaveBeenCalled();expect(browser.setMuted).toHaveBeenCalledWith(true);
@@ -76,7 +81,7 @@ describe('YvY voice engine',()=>{
   it('preview uses draft preferences without changing normal replay',fakeAsync(()=>{
     flushMicrotasks();engine.available.set(false);engine.speak('Resposta verificada.','pt');flushMicrotasks();
     const draft={...defaultVoicePreference(),engine:'BROWSER' as const,languageLocale:'pt-BR' as const,speed:1.2};engine.preview(draft);flushMicrotasks();
-    expect(browser.speak.calls.mostRecent().args[0]).toContain('para suas interações');expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-BR',rate:1.2});
+    expect(browser.speak.calls.mostRecent().args[0]).toContain('para suas interações');expect(browser.speak.calls.mostRecent().args[4]).toEqual({locale:'pt-BR',rate:1.2,onStart:jasmine.any(Function)});
     engine.preference.set({...defaultVoicePreference(),speed:.9});engine.replay();flushMicrotasks();expect(browser.speak.calls.mostRecent().args[0]).toBe('Resposta verificada.');expect(browser.speak.calls.mostRecent().args[4]?.rate).toBe(.9);
   }));
   it('persists every draft field, confirms success and becomes clean',fakeAsync(()=>{

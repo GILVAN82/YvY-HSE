@@ -1,5 +1,5 @@
 <router-outlet *ngIf="isLoginPage()"></router-outlet>
-<div class="shell" *ngIf="!isLoginPage()">
+<div class="shell" [class.command-center-shell]="isCommandCenter()" *ngIf="!isLoginPage()">
   <app-sidebar></app-sidebar>
 
   <div class="main">

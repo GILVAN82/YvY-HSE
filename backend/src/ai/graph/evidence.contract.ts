@@ -50,7 +50,7 @@ export interface VerificationResult {
 }
 
 const SENSITIVE_FACT_KEY = /(?:responsible|person|name|email|phone|medical|witness|injured|description|content|password|secret|token)/i;
-const MAX_FACTS = 80;
+const MAX_FACTS = 1000;
 
 function collectFacts(value: unknown, path = 'data', output: EvidenceFact[] = []): EvidenceFact[] {
   if (output.length >= MAX_FACTS) return output;
@@ -89,7 +89,7 @@ export function toolResultEvidence(toolName: string, output: unknown, sequence: 
     toolName,
     ...(resultStatus ? { resultStatus } : {}),
     ...(recordCount !== undefined ? { recordCount } : {}),
-    facts: failed ? [] : collectFacts(value.data),
+    facts: failed ? [] : collectFacts(value.summary, 'summary').concat(collectFacts(value.data)).slice(0,MAX_FACTS),
   };
 }
 

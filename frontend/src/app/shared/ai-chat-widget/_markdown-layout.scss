@@ -1,0 +1,26 @@
+// Shared typography for both assistant conversation surfaces.
+@mixin organized-markdown {
+  :host ::ng-deep .assistant-markdown {
+    min-width:0;max-width:100%;font-size:14px;line-height:1.65;word-break:normal;overflow-wrap:anywhere;
+    > :first-child{margin-top:0} > :last-child{margin-bottom:0}
+    p{margin:0 0 12px}
+    h1,h2,h3,h4,h5,h6{margin:20px 0 10px;font-size:1.05em;line-height:1.4;font-weight:700;color:inherit}
+    h1{font-size:1.25em} h2{font-size:1.15em}
+    ul,ol{margin:10px 0 14px;padding-left:24px} li{margin:5px 0} li>p{margin:4px 0}
+    blockquote{margin:14px 0;padding:8px 14px;border-left:3px solid #35bdd0;background:#102535;color:#bad0df}
+    hr{border:0;border-top:1px solid #28485c;margin:18px 0}
+    pre{max-width:100%;overflow-x:auto;white-space:pre;overflow-wrap:normal;padding:14px;border:1px solid #28485c;border-radius:8px}
+    pre code{padding:0;background:transparent}
+    .markdown-table-scroll{display:block;max-width:100%;overflow-x:auto;margin:16px 0;border:1px solid #315269;border-radius:10px;scrollbar-width:thin;scrollbar-color:#416a83 #0b1b29;overscroll-behavior-x:contain}
+    .markdown-table-scroll:focus-visible{outline:2px solid #56dcec;outline-offset:3px}
+    table{width:100%;border-collapse:collapse;table-layout:auto;font-size:13px;line-height:1.5;overflow-wrap:normal;word-break:normal}
+    th,td{padding:12px 16px;text-align:left;vertical-align:top;border-bottom:1px solid #274356}
+    th{background:#153044;color:#dcf3fa;font-weight:700}
+    th+th,td+td{border-left:1px solid #203d50}
+    tbody tr:nth-child(even){background:#102331}
+    tbody tr:last-child td{border-bottom:0}
+    .markdown-compact-cell{white-space:nowrap}
+    .markdown-text-cell{min-width:240px;white-space:normal;overflow-wrap:anywhere}
+    @media(max-width:760px){font-size:13px;th,td{padding:10px 12px}.markdown-text-cell{min-width:210px}}
+  }
+}

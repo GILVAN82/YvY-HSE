@@ -1,0 +1,10 @@
+
+.command-center-shell{height:100dvh;min-height:0;overflow:hidden}
+.command-center-shell .main{min-height:0}
+.command-center-shell #topbar{flex-shrink:0}
+.command-center-shell #page{padding:0;min-height:0;overflow:hidden}
+@media(max-width:760px){
+ .command-center-shell #topbar .inner{height:60px;padding:8px 12px;gap:8px}
+ .command-center-shell .crumb-title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;font-size:10px}
+ .command-center-shell #crumb{display:none}
+}

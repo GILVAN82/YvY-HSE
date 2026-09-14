@@ -33,6 +33,10 @@ export function operationalPresentationSummary(tool:string,output:unknown,langua
   if(value.error===true)return ({en:'Temporarily unavailable',pt:'Temporariamente indisponível',es:'Temporalmente no disponible',fr:'Temporairement indisponible',de:'Vorübergehend nicht verfügbar'})[language];
   const count=typeof value.recordCount==='number'?value.recordCount:undefined;
   if(tool==='list_actions'&&count!==undefined)return ({en:`${count} pending action${count===1?'':'s'}`,pt:`${count} ${count===1?'ação pendente':'ações pendentes'}`,es:`${count} ${count===1?'acción pendiente':'acciones pendientes'}`,fr:`${count} action${count===1?' en attente':'s en attente'}`,de:`${count} offene Maßnahme${count===1?'':'n'}`})[language];
+  if(tool==='list_incidents'&&value.summary&&typeof value.summary==='object'){
+    const summary=value.summary as Record<string,number>;
+    if(typeof summary.totalCount==='number'&&typeof summary.openCount==='number')return language==='pt'?`${summary.totalCount} incidentes no total; ${summary.openCount} em aberto`:`${summary.totalCount} total incidents; ${summary.openCount} open`;
+  }
   if(tool==='list_incidents'&&count!==undefined)return count===0?({en:'No open incidents',pt:'Nenhum incidente em aberto',es:'Ningún incidente abierto',fr:'Aucun incident ouvert',de:'Keine offenen Vorfälle'})[language]:({en:`${count} incident${count===1?'':'s'} found`,pt:`${count} ${count===1?'incidente encontrado':'incidentes encontrados'}`,es:`${count} ${count===1?'incidente encontrado':'incidentes encontrados'}`,fr:`${count} incident${count===1?' trouvé':'s trouvés'}`,de:`${count} Vorfall${count===1?'':'fälle'} gefunden`})[language];
   if(tool==='get_projects'&&count!==undefined)return ({en:`${count} project${count===1?'':'s'} found`,pt:`${count} ${count===1?'projeto encontrado':'projetos encontrados'}`,es:`${count} ${count===1?'proyecto encontrado':'proyectos encontrados'}`,fr:`${count} projet${count===1?' trouvé':'s trouvés'}`,de:`${count} Projekt${count===1?'':'e'} gefunden`})[language];
   if(tool==='get_kpi'){
@@ -43,4 +47,18 @@ export function operationalPresentationSummary(tool:string,output:unknown,langua
     return parts.join(' · ')||({en:'Safety performance data available',pt:'Dados de desempenho disponíveis',es:'Datos de desempeño disponibles',fr:'Données de performance disponibles',de:'Daten zur Sicherheitsleistung verfügbar'})[language];
   }
   return undefined;
+}
+
+/** A minimal answer assembled only from the current incident query's counted facts. */
+export function incidentEvidenceSummary(evidence:AgentEvidence[],language:ResponseLanguage):string|undefined{
+  const item=[...evidence].reverse().find(e=>e.toolName==='list_incidents'&&e.resultStatus!=='ERROR');
+  if(!item)return undefined;
+  const value=(name:string)=>item.facts?.find(f=>f.path==='summary.'+name)?.value;
+  const total=value('totalCount'),open=value('openCount'),closed=value('closedCount');
+  if(typeof total!=='number'||typeof open!=='number'||typeof closed!=='number')return undefined;
+  if(language==='pt')return `O cadastro possui ${total} incidentes no escopo autorizado. Incidentes em aberto: ${open}. Incidentes encerrados: ${closed}. Consulte os registros em Ver incidentes.`;
+  if(language==='es')return `Total de incidentes: ${total}. Incidentes abiertos: ${open}. Incidentes cerrados: ${closed}.`;
+  if(language==='fr')return `Total des incidents : ${total}. Incidents ouverts : ${open}. Incidents clos : ${closed}.`;
+  if(language==='de')return `Vorfälle insgesamt: ${total}. Offene Vorfälle: ${open}. Abgeschlossene Vorfälle: ${closed}.`;
+  return `The authorized register contains ${total} incidents in total. Open incidents: ${open}. Closed incidents: ${closed}. See the records in View incidents.`;
 }

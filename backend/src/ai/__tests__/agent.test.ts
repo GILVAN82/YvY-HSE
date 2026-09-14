@@ -189,7 +189,7 @@ describe('7. list_actions uses the correct columns (P0-B defect)', () => {
 
     // Interpolating query structure is safe; interpolating a value is not.
     // Só estes três nomes podem aparecer dentro de um SELECT.
-    const STRUCTURAL = new Set(['params.length', 'where', 'whereSql', 'ACTION_OVERDUE_SQL']);
+    const STRUCTURAL = new Set(['params.length', 'where', 'whereSql', 'scopeWhere', 'ACTION_OVERDUE_SQL']);
     for (const query of src.match(/`\s*SELECT[\s\S]*?`/g) ?? []) {
       for (const [, expr] of query.matchAll(/\$\{([^}]+)\}/g)) {
         assert.ok(
@@ -477,7 +477,7 @@ describe('17b. controlled response language consistency', () => {
     await (tools.list_incidents as any).execute({open:true,limit:20},{});
     assert.match(calls[0].sql,/status IS DISTINCT FROM 'Closed'/);
     assert.match(calls[1].sql,/investigation_status IS DISTINCT FROM 'Closed'/);
-    assert.match(calls[1].sql,/SELECT project_code, date_of_incident, incident_type, severity, investigation_status/);
+    assert.match(calls[2].sql,/SELECT incident_id, project_code, date_of_incident, incident_type, severity, investigation_status/);
   });
 });
 
@@ -628,7 +628,7 @@ describe('20. controlled error-handling validation', () => {
     assert.equal(result.responseStatus, 'SUCCESS');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_WITH_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
-    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 incident found');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '1 total incidents; 1 open');
   });
 
   test('empty operational result is a valid no-data answer, not a system failure', async () => {
@@ -645,7 +645,7 @@ describe('20. controlled error-handling validation', () => {
     assert.equal(result.text, 'There are currently 0 incidents matching this query.');
     assert.match(JSON.stringify(model.callInputs()), /SUCCESS_NO_DATA/);
     assert.equal(result.executionTrace?.tools[0]?.status, 'COMPLETED');
-    assert.equal(result.executionTrace?.tools[0]?.resultSummary, 'No open incidents');
+    assert.equal(result.executionTrace?.tools[0]?.resultSummary, '0 total incidents; 0 open');
     assert.doesNotMatch(JSON.stringify(events), forbidden);
   });
 

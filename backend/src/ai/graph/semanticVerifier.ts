@@ -108,6 +108,11 @@ function operationalCheck(claim: string, evidence: AgentEvidence[]): { supported
   if (!tools.length) return { supported: false, contradicted: false, reason: 'Operational claim has no current tool evidence.' };
   if (tools.every((item) => item.resultStatus === 'ERROR')) return { supported: false, contradicted: true, reason: 'Operational claim relies on a failed tool result.' };
   const successful = tools.filter((item) => item.resultStatus !== 'ERROR');
+  if(expectedTool==='list_incidents'){
+    const countKey=/\b(total|totais|insgesamt)\b/.test(normalized)?'totalCount':/\b(closed|encerrad|fechad|cerrad|clos)\w*/.test(normalized)?'closedCount':/\b(open|abert|abiert|ouvert)\w*/.test(normalized)?'openCount':undefined;
+    const counted=countKey?successful.flatMap(item=>(item.facts??[]).filter(f=>f.path==='summary.'+countKey&&typeof f.value==='number')):[];
+    if(counted.length&&numbers(claim).length===1){return counted.some(f=>f.value===numbers(claim)[0])?{supported:true,contradicted:false}:{supported:false,contradicted:true,reason:'Incident count does not match the requested total/open/closed scope.'};}
+  }
   const noData = successful.length > 0 && successful.every((item) => item.resultStatus === 'SUCCESS_NO_DATA' || item.recordCount === 0);
   const structured = structuredClaim(claim, successful);
   if (structured.reason) return { supported: false, contradicted: true, reason: structured.reason };

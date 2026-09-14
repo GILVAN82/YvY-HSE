@@ -51,4 +51,18 @@ describe('SafeMarkdownPipe', () => {
     expect(safe.querySelector('a')?.getAttribute('href')).toBe('https://www.osha.gov/');
     expect(safe.querySelector('a')?.getAttribute('rel')).toBe('noopener noreferrer');
   });
+  it('keeps short data columns intact and wraps long descriptions in a keyboard-accessible table', () => {
+    const host = render('| ID | Priority | Status | Due date | Action |\n| --- | --- | --- | --- | --- |\n| DEMO-0001 | Critical | In Progress | 2026-06-23 | Example description that should wrap across lines without compressing identifiers. |');
+    const region = host.querySelector('.markdown-table-scroll');
+    expect(region?.getAttribute('tabindex')).toBe('0');
+    expect(region?.getAttribute('role')).toBe('region');
+    expect(region?.querySelectorAll('table').length).toBe(1);
+    const cells = host.querySelectorAll('tbody td');
+    expect(cells[0].classList.contains('markdown-compact-cell')).toBeTrue();
+    expect(cells[3].textContent).toBe('2026-06-23');
+    expect(cells[3].classList.contains('markdown-compact-cell')).toBeTrue();
+    expect(cells[4].classList.contains('markdown-text-cell')).toBeTrue();
+    expect(host.querySelector('th')?.getAttribute('scope')).toBe('col');
+  });
+
 });

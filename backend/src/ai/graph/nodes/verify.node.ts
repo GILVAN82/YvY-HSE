@@ -1,6 +1,7 @@
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
 import { AgentStatus, AgentErrorCode, type AgentRuntime } from '../hseAgent.types';
+import { incidentEvidenceSummary } from '../operationalOverview';
 import { MAX_AGENT_STEPS } from '../../config';
 import { VerificationStatus } from '../evidence.contract';
 import { verifyEvidenceContract } from '../semanticVerifier';
@@ -34,6 +35,13 @@ export async function verifyNode(state: HseAgentState, config?:LangGraphRunnable
     // Preserve the original verification verdict (including SAFETY_BLOCKED), but
     // never expose the rejected answer or confuse human review with verified safety.
     return {status:AgentStatus.PROCESSING,verificationResult,finalText:humanApprovalRequiredMessage(runtime?.responseLanguage),executedRoute};
+  }
+  // Unsupported generated details must not hide successfully counted records.
+  // Replace them with a separately verified, source-built summary; never approve the rejected claims.
+  if(verificationResult.status!==VerificationStatus.VERIFIED && verificationResult.status!==VerificationStatus.SAFETY_BLOCKED && state.evidence.every(e=>e.toolName==='list_incidents')){
+    const runtime=config?.configurable?.runtime as AgentRuntime|undefined;
+    const summary=incidentEvidenceSummary(state.evidence,runtime?.responseLanguage??'en');
+    if(summary){const checked=verifyEvidenceContract(summary,state.evidence);if(checked.status===VerificationStatus.VERIFIED)return {status:AgentStatus.VERIFIED,finalText:summary,verificationResult:{...checked,reasons:[...checked.reasons,'Generated details were replaced by a current database count summary.']},executedRoute};}
   }
   const hasUsableOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&(item.resultStatus==='SUCCESS_WITH_DATA'||item.resultStatus==='SUCCESS_NO_DATA'));
   const hasFailedOperationalEvidence=state.evidence.some(item=>item.sourceType==='TOOL'&&item.resultStatus==='ERROR');

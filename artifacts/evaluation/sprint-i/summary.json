@@ -294,7 +294,8 @@
   "firstGateFailure": {
     "category": "TEST_TYPECHECK",
     "detail": "HTTP test helper Response.json() was unknown; explicit Record<string,unknown> fixed the test type boundary. Runtime expectations unchanged.",
-    "archive": "C:/Users/Gil/AppData/Local/Temp/yvy-sprint-i-first-gates"
+    "archive": "LOCAL_ONLY_NOT_DISTRIBUTED",
+    "archiveNote": "Original first-gate logs were retained in a machine-local temporary directory; they are not a portable checkout dependency."
   },
   "freshReplay": {
     "passed": 44,

@@ -1,6 +1,6 @@
 import { observeFailure, logEvent } from './observability/context';
-import { createAppDataTools } from './appDataTools';
 import { tool } from 'ai';
+import { createAppDataTools } from './appDataTools';
 import { z } from 'zod';
 import type { RagRetriever } from './rag/retrieval.types';
 import type { MemoryService } from './memory/memory.types';
@@ -64,7 +64,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
   const scoped=principal && !hasPermission(principal,'ADMIN_ACCESS') ? principal.allowedProjectIds : null;
   const check=(project?:string)=>{if(principal&&project&&project!=='*')assertProjectAccess(principal,project);};
   return {
-    ...createAppDataTools(database,principal),
+  ...createAppDataTools(database, principal),
   get_kpi: tool({
     description:
       'Returns calculated HSE KPIs (TRIR, LTIFR, man-hours, open or overdue actions, training compliance, average audit score and active work permits) for a specific project or the entire portfolio, for a specific month or the full year. Use this tool whenever the user asks for KPI values.',
@@ -82,7 +82,7 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
 
   list_incidents: tool({
     description:
-      'Lists individual HSE incidents, accidents, occurrences or safety events (date, type, severity, investigation status and description), optionally filtered by project. Use open=true for open, pending, active or unresolved incident questions; this excludes the real terminal investigation status Closed.',
+      'Lists individual HSE incidents, accidents, occurrences or safety events (date, type, severity, investigation status and description), optionally filtered by project. The summary contains exact totalCount, openCount, closedCount and matchedCount independent of the row limit. Always distinguish the total register from open incidents and returned rows. Omit open for ALL/total incidents. Use open=true for open, pending, active or unresolved incident questions; this excludes the real terminal investigation status Closed.',
     inputSchema: z.object({
       project: z.string().optional().describe('Project code to filter by; omit for all projects'),
       open: z.boolean().optional().describe('true returns only incidents whose investigation status is not Closed'),
@@ -98,17 +98,22 @@ export function createHseTools(database:Pick<Pool,'query'>,computeKpi:ComputeKpi
         } else if(scoped){
           params.push(scoped); clauses.push(`project_code = ANY($${params.length}::text[])`);
         }
+        const scopeWhere=clauses.length?`WHERE ${clauses.join(' AND ')}`:'';
+        const counts=await database.query(`SELECT COUNT(*)::int AS total_count, COUNT(*) FILTER (WHERE investigation_status IS DISTINCT FROM 'Closed')::int AS open_count FROM incident_register ${scopeWhere}`,params);
         if (open === true) clauses.push(`investigation_status IS DISTINCT FROM 'Closed'`);
         const where=clauses.length?`WHERE ${clauses.join(' AND ')}`:'';
         params.push(limit);
         const r = await database.query(
-          `SELECT project_code, date_of_incident, incident_type, severity, investigation_status, description
+          `SELECT incident_id, project_code, date_of_incident, incident_type, severity, investigation_status, description
            FROM incident_register ${where}
            ORDER BY date_of_incident DESC NULLS LAST
            LIMIT $${params.length}`,
           params
         );
-        return operationalRows(r.rows);
+        const totalCount=Number(counts.rows[0]?.total_count ?? r.rows.length);
+        const openCount=Number(counts.rows[0]?.open_count ?? r.rows.length);
+        const matchedCount=open===true?openCount:totalCount;
+        return {...operationalResult(serializeToolRows(r.rows),matchedCount),summary:{totalCount,openCount,closedCount:totalCount-openCount,matchedCount,returnedCount:r.rows.length,openOnly:open===true},truncated:matchedCount>r.rows.length};
       }),
   }),
 

@@ -5,6 +5,7 @@ import { verifyEvidenceContract } from '../graph/semanticVerifier';
 import { resetGraphCache, runHseAgent } from '../graph/hseAgent.runner';
 import { AgentErrorCode, AgentStatus, type AgentEvent } from '../graph/hseAgent.types';
 import { createHermeticToolFactory, createMockModel } from './mockModel';
+import { createHseTools } from '../tools';
 
 const toolEvidence = (status: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA', recordCount: number, data: unknown = []) =>
   toolResultEvidence('list_actions', { status, recordCount, data }, 0);
@@ -13,6 +14,37 @@ const ragEvidence = (content = 'LOTO requires energy isolation and verification 
   ragResultEvidence({ chunkId:'chunk-1',documentId:'doc-1',content,score:0.9,sourceId:'loto-source',title:'LOTO',module:'LOTO',version:'1',citationLabel:label,sourceOrganization:'OSHA',jurisdiction:'US',sourceUrl:'https://example.test' });
 
 describe('semantic evidence contract', () => {
+  const datedActions = () => toolEvidence('SUCCESS_WITH_DATA', 2, [
+    { actionId: 'ACT-001', targetDate: '2026-06-23T00:00:00.000Z', daysOverdue: 76 },
+    { actionId: 'ACT-002', targetDate: '2026-06-30T00:00:00.000Z', daysOverdue: 69 },
+  ]);
+  test('dates and identifiers retain their structured evidence, including Portuguese date formatting', () => {
+    for (const date of ['2026-06-23', '23/06/2026', '23.06.2026', '2026-06-23T00:00:00.000Z']) {
+      const result = verifyEvidenceContract(`A ação ACT-001 tem prazo em ${date}, com 76 dias de atraso.`, [datedActions()]);
+      assert.equal(result.status, VerificationStatus.VERIFIED, JSON.stringify(result));
+    }
+  });
+  test('a numbered action list is not mistaken for additional operational quantities', () => {
+    const result = verifyEvidenceContract('1. A ação ACT-001 venceu em 23/06/2026.\n2. A ação ACT-002 venceu em 30/06/2026.', [datedActions()]);
+    assert.equal(result.status, VerificationStatus.VERIFIED);
+  });
+  test('fabricated dates, identifiers and dates borrowed from another record remain blocked', () => {
+    for (const text of [
+      'A ação ACT-001 venceu em 2026-06-24.',
+      'A ação ACT-001 venceu em 30/06/2026.',
+      'A ação ACT-999 venceu em 23/06/2026.',
+      'A ação ACT-001 venceu em 31/02/2026.',
+      'A ação ACT-001 venceu em 2026-06-23T12:00:00.000Z.',
+    ]) assert.equal(verifyEvidenceContract(text, [datedActions()]).status, VerificationStatus.CONTRADICTED, text);
+  });
+  test('date components and identifier digits cannot authorize invented counts', () => {
+    for (const count of [2026, 23, 999]) {
+      assert.equal(verifyEvidenceContract(`There are ${count} overdue actions.`, [datedActions()]).status, VerificationStatus.CONTRADICTED);
+    }
+  });
+  test('structured records cannot be asserted when the tool returned no data', () => {
+    assert.equal(verifyEvidenceContract('A ação ACT-001 venceu em 23/06/2026.', [toolEvidence('SUCCESS_NO_DATA', 0)]).status, VerificationStatus.CONTRADICTED);
+  });
   test('tool says zero and answer says zero is verified', () => {
     const result=verifyEvidenceContract('No overdue actions were found. There are 0 overdue actions.',[toolEvidence('SUCCESS_NO_DATA',0)]);
     assert.equal(result.status,VerificationStatus.VERIFIED); assert.equal(result.unsupportedClaims,0);
@@ -70,6 +102,22 @@ describe('semantic evidence contract', () => {
 });
 
 describe('verify node fail-closed integration', () => {
+  test('Portuguese overdue action response with dates completes the real tool and graph flow', async () => {
+    const events: AgentEvent[] = [];
+    const answer = '1. A ação ACT-001 venceu em 23/06/2026, com 76 dias de atraso.';
+    const database = { query: async () => ({ rows: [{ action_id: 'ACT-001', action_description: 'Synthetic inspection',
+      target_date: new Date('2026-06-23T00:00:00.000Z'), days_overdue: 76, status: 'Open', priority: 'High', source_module: 'Synthetic' }], rowCount: 1 }) };
+    const result = await runHseAgent({
+      message: 'Quais ações estão atrasadas?', locale: 'pt',
+      model: createMockModel([{ toolCall: { name: 'list_actions', input: '{"overdue":true}' } }, { text: answer }]),
+      tools: createHseTools(database as any, async () => ({}), { retrieve: async () => ({ status: 'NO_RELEVANT_EVIDENCE', evidence: [] }) }),
+      emit: event => events.push(event),
+    });
+    assert.equal(result.status, AgentStatus.COMPLETED);
+    assert.equal(result.executionTrace!.verification.status, VerificationStatus.VERIFIED);
+    assert.deepEqual(result.toolsUsed, ['list_actions']);
+    assert.equal(events.filter(event => event.type === 'text').map(event => event.text).join(''), answer);
+  });
   test('unsupported evidence result is serializable and contains no reasoning trace', () => {
     const evidence:AgentEvidence[]=[toolEvidence('SUCCESS_NO_DATA',0)];
     const result=verifyEvidenceContract('There are 2 incidents.',evidence);

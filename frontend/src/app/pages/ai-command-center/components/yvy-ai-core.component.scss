@@ -32,3 +32,5 @@
   .core-light{background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,180,91,.18) 58%,transparent 72%)}
   .identity{color:#0b3976;text-shadow:0 1px 0 #fff,0 0 13px rgba(244,123,32,.25)}.identity strong{color:#ef731d}.identity span{color:#124d8c}.identity small{color:#1769e0}
 }
+
+.core[data-state="speaking"]{animation:voice-pulse .85s ease-in-out infinite;transform-origin:center}.core[data-state="speaking"] .core-light{animation:breathe .55s ease-in-out infinite}@keyframes voice-pulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 15px #14bcd8)}35%{transform:scale(1.055);filter:drop-shadow(0 0 28px #43e6ff)}65%{transform:scale(1.02)}}@media(prefers-reduced-motion:reduce){.core[data-state="speaking"]{animation:none;filter:drop-shadow(0 0 22px #43e6ff)}}
