@@ -79,7 +79,7 @@ export class AgentInspectorService {
   record(payload: unknown) {
     if (!payload || typeof payload !== 'object') return;
     const value = sanitizeSnapshot(payload as AgentInspectorSnapshot);
-    if (!value.runId || !value.threadId || value.status === undefined) return;
+    if (!value) return;
     this.latest.set(value);
     try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* Demo trace remains in memory. */ }
   }
@@ -115,9 +115,15 @@ export class AgentInspectorService {
 }
 
 /** Store only Inspector fields; never carry draft payloads, prompts or request bodies. */
-export function sanitizeSnapshot(value: AgentInspectorSnapshot): AgentInspectorSnapshot {
+export function sanitizeSnapshot(value: AgentInspectorSnapshot): AgentInspectorSnapshot | null {
+  // Legacy snapshots may omit collections, but malformed supplied data is not a
+  // successful empty result. Reject it instead of manufacturing a valid trace.
+  if (!value || ['runId','threadId','status'].some(key => typeof (value as any)[key] !== 'string' || !(value as any)[key].trim())) return null;
+  if (value.toolsUsed !== undefined && (!Array.isArray(value.toolsUsed) || value.toolsUsed.some(tool => typeof tool !== 'string'))) return null;
+  if (value.citations !== undefined && !Array.isArray(value.citations)) return null;
+  if (value.executionTrace && (!Array.isArray(value.executionTrace.tools ?? []) || !Array.isArray(value.executionTrace.route ?? []))) return null;
   const trace=value.executionTrace;
-  return { runId:value.runId,threadId:value.threadId,status:value.status,responseStatus:value.responseStatus,stepCount:value.stepCount,toolsUsed:value.toolsUsed,ragUsed:value.ragUsed,citations:value.citations,errorCode:value.errorCode,orchestrator:value.orchestrator,
+  return { runId:value.runId,threadId:value.threadId,status:value.status,responseStatus:value.responseStatus,stepCount:value.stepCount,toolsUsed:[...(value.toolsUsed ?? [])],ragUsed:value.ragUsed,citations:value.citations ?? [],errorCode:value.errorCode,orchestrator:value.orchestrator,
     approvalRequest:value.approvalRequest ? {...value.approvalRequest,resolutionNote:undefined} : undefined,
     executionTrace:trace ? {timestamp:trace.timestamp,responseLanguage:trace.responseLanguage,route:trace.route,rag:trace.rag,conversation:trace.conversation,memory:trace.memory,guardrail:trace.guardrail,verification:trace.verification,error:trace.error,observability:trace.observability,intent:trace.intent ? {...trace.intent,input:'',normalizedQuery:''}:undefined,
       tools:(trace.tools ?? []).map<AgentToolTrace>(tool=>({name:tool.name,status:tool.status,resultStatus:tool.resultStatus,resultSummary:tool.resultSummary,arguments:tool.name==='list_pending_approvals'&&typeof tool.arguments?.['scope']==='string'?({scope:tool.arguments['scope'].slice(0,160)} as Record<string,string>):tool.name==='get_attention_alert'&&typeof tool.arguments?.['alertId']==='string'&&/^[a-f0-9]{8}-[a-f0-9-]{27}$/i.test(tool.arguments['alertId'])?({alertId:tool.arguments['alertId']} as Record<string,string>):undefined})),

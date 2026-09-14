@@ -58,3 +58,22 @@ describe('AgentInspectorService', () => {
     expect(sessionStorage.getItem('yvy-hse-agent-inspector-latest')).not.toContain('PRIVATE_');
   });
 });
+
+
+describe('Inspector snapshot compatibility', () => {
+  afterEach(() => sessionStorage.clear());
+  it('normalizes an incomplete pending-approval snapshot on record and reload', () => {
+    const first = new AgentInspectorService();
+    first.record({runId:'legacy',threadId:'thread',status:'COMPLETED'});
+    expect(first.latest()?.toolsUsed).toEqual([]);
+    expect(new AgentInspectorService().latest()?.toolsUsed).toEqual([]);
+  });
+  it('rejects malformed supplied tools and missing identity instead of inventing success', () => {
+    for (const payload of [{runId:'r'}, {runId:'r',threadId:'t',status:'COMPLETED',toolsUsed:'bad'}, {runId:'r',threadId:'t',status:'COMPLETED',toolsUsed:[42]}]) {
+      sessionStorage.setItem('yvy-hse-agent-inspector-latest',JSON.stringify(payload));
+      expect(new AgentInspectorService().latest()).toBeNull();
+      const service = new AgentInspectorService(); service.record(payload);
+      expect(service.latest()).toBeNull();
+    }
+  });
+});

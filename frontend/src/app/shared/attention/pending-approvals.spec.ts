@@ -1,3 +1,4 @@
+import { YvyAiCommandCenterComponent } from '../../pages/ai-command-center/yvy-ai-command-center.component';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -24,5 +25,20 @@ describe('Canonical pending approval cards',()=>{
  it('Inspector retains scope and count but excludes unrelated tool arguments',()=>{
   const inspector=TestBed.inject(AgentInspectorService);inspector.record({runId:'r',threadId:'t',status:'COMPLETED',executionTrace:{tools:[{name:'list_pending_approvals',status:'COMPLETED',arguments:{scope:'P1',raw:'secret'},resultSummary:'2 pending approval(s)'}]}});
   expect(inspector.latest()?.executionTrace?.tools[0].arguments).toEqual({scope:'P1'});expect(inspector.latest()?.executionTrace?.tools[0].resultSummary).toBe('2 pending approval(s)');
+ });
+});
+
+
+describe('Pending approvals followed by Command Center', () => {
+ afterEach(() => { TestBed.resetTestingModule(); sessionStorage.clear(); });
+ it('loads the workspace after an incomplete approval snapshot survives a suite boundary', async () => {
+  TestBed.configureTestingModule({});
+  TestBed.inject(AgentInspectorService).record({runId:'approval-run',threadId:'approval-thread',status:'COMPLETED'});
+  TestBed.resetTestingModule();
+  await TestBed.configureTestingModule({imports:[YvyAiCommandCenterComponent],providers:[provideHttpClient(),provideRouter([])]}).compileComponents();
+  const fixture=TestBed.createComponent(YvyAiCommandCenterComponent);
+  expect(() => fixture.detectChanges()).not.toThrow();
+  expect(fixture.componentInstance.agent.latest()?.toolsUsed).toEqual([]);
+  fixture.destroy();
  });
 });
