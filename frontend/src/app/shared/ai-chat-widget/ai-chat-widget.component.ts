@@ -1,3 +1,5 @@
+import { OperationalOverviewComponent } from '../operational-overview/operational-overview.component';
+import type { AgentInspectorSnapshot } from '../../core/agent-inspector.service';
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +12,7 @@ import { SafeMarkdownPipe } from './safe-markdown.pipe';
 type MessageStatus = 'consulting' | 'streaming' | 'done';
 
 interface ChatMessage {
+  snapshot?: AgentInspectorSnapshot;
   role: 'user' | 'assistant';
   content: string;
   status?: MessageStatus;
@@ -108,7 +111,7 @@ export const SUGGESTED_PROMPTS = [
 @Component({
   selector: 'app-ai-chat-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule, SafeMarkdownPipe],
+  imports: [OperationalOverviewComponent, CommonModule, FormsModule, SafeMarkdownPipe],
   templateUrl: './ai-chat-widget.component.html',
   styleUrl: './ai-chat-widget.component.scss',
 })
@@ -328,6 +331,7 @@ export class AiChatWidgetComponent implements OnInit, OnDestroy {
             this.appendToLast(`\n${this.i18n.t(safeChatErrorMessage(payload.code))}`);
           } else if (payload.type === 'done') {
             this.agentInspector.record(payload);
+            this.messages.update(messages=>messages.map((message,index)=>index===messages.length-1 ? {...message,snapshot:payload} : message));
             if (payload.approvalRequest?.status === 'PENDING') this.approval.set(payload.approvalRequest);
             const returnedThreadId = payload.threadId || payload.conversationId;
             if (typeof returnedThreadId === 'string' && returnedThreadId) {

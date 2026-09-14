@@ -70,6 +70,7 @@
           <div *ngIf="m.role === 'assistant'; else plainUserMessage"
                class="assistant-markdown"
                [innerHTML]="m.content | safeMarkdown"></div>
+          <app-operational-overview *ngIf="m.role==='assistant'" [snapshot]="m.snapshot" [language]="i18n.lang()"></app-operational-overview>
           <ng-template #plainUserMessage>{{ m.content }}</ng-template>
         </ng-container>
       </div>

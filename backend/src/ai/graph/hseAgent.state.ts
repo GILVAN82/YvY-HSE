@@ -1,3 +1,4 @@
+import { operationalPresentationFactsSchema } from './operationalPresentationFacts';
 import { z } from 'zod';
 import { AgentStatus, AgentErrorCode, RefusalCode } from './hseAgent.types';
 import { MAX_HISTORY_TURNS } from '../config';
@@ -67,6 +68,7 @@ export const hseAgentStateSchema = z.object({
     status: z.enum(['COMPLETED', 'ERROR', 'NOT_OBSERVABLE']),
     arguments: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
     resultSummary: z.string().optional(),
+    presentationFacts: operationalPresentationFactsSchema.optional(),
     resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA']).optional(),
   })).default([]),
   ragUsed: z.boolean().default(false),

@@ -66,6 +66,7 @@ export type AgentEvent =
 export type EmitFn = (event: AgentEvent) => void;
 
 export interface AgentToolTrace {
+  presentationFacts?: import('./operationalPresentationFacts').OperationalPresentationFacts;
   name: string;
   status: 'COMPLETED' | 'ERROR' | 'NOT_OBSERVABLE';
   arguments?: Record<string, string | number | boolean | null>;

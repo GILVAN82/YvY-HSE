@@ -1,3 +1,6 @@
+import { OperationalOverviewComponent } from '../../shared/operational-overview/operational-overview.component';
+import { operationalCopy } from '../../shared/operational-overview/operational-copy';
+import { I18nService } from '../../core/i18n.service';
 import { TuringDemoService } from './demo/turing-demo.service';
 import { TuringDemoControllerComponent } from './demo/turing-demo-controller.component';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
@@ -28,11 +31,13 @@ import { SafeMarkdownPipe } from '../../shared/ai-chat-widget/safe-markdown.pipe
 
 @Component({
   selector: 'app-yvy-ai-command-center', standalone: true,
-  imports: [TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
+  imports: [OperationalOverviewComponent, TuringDemoControllerComponent, VoiceSettingsComponent, SafeMarkdownPipe, CommonModule, FormsModule, RouterLink, LucideAngularModule, YvyAiCoreComponent, YvyCapabilityNodeComponent, YvyHudPanelComponent, YvyWorkflowComponent, YvyResponsePanelComponent, YvyDetailsDrawerComponent],
   templateUrl: './yvy-ai-command-center.component.html', styleUrls: ['./yvy-ai-command-center.component.scss','./yvy-approved-layout.scss','./demo/turing-demo-workspace.scss'],
 })
 export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   @ViewChild('timeline') private timelineElement?:ElementRef<HTMLElement>;
+  readonly i18n=inject(I18nService);
+  readonly operationalCopy=operationalCopy;
   readonly demo=inject(TuringDemoService);
   readonly agent=inject(YvyCommandCenterAgentService);readonly auth=inject(AuthService);readonly speechRecognition=inject(SpeechRecognitionService);readonly speechSynthesis=inject(VoiceEngineService);readonly spokenFormatter=inject(SpokenResponseFormatterService);readonly alerts=inject(YvyAlertService);private readonly inspector=inject(AgentInspectorService);private readonly proactiveVoiceQueue=new ProactiveVoiceQueue();private stopContinuousAttention:()=>void=()=>{};
   readonly sendIcon = Send;
@@ -75,19 +80,7 @@ export class YvyAiCommandCenterComponent implements OnInit,OnDestroy {
   onTimelineScroll(){const el=this.timelineElement?.nativeElement;if(!el)return;this.followTimeline=el.scrollHeight-el.scrollTop-el.clientHeight<72;if(this.followTimeline)this.newResponseAvailable.set(false);}
   scrollToLatest(){this.followTimeline=true;this.newResponseAvailable.set(false);queueMicrotask(()=>this.timelineElement?.nativeElement.scrollTo({top:this.timelineElement.nativeElement.scrollHeight,behavior:'smooth'}));}
   verificationLabel(item:ConversationItem){const status=item.snapshot?.executionTrace?.verification?.status;if(status==='VERIFIED')return 'Verified';if(status==='PARTIALLY_VERIFIED')return 'Partially verified';if(status==='INSUFFICIENT_EVIDENCE'||status==='CONTRADICTED'||status==='SAFETY_BLOCKED')return 'Needs confirmation';return item.status==='STREAMING'?'Working…':'';}
-  operationalTitle(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'Actions':tool==='list_incidents'?'Incidents':tool==='get_projects'?'Projects':tool==='get_kpi'?'Safety performance':null;}
-  operationalRoute(item:ConversationItem){const tool=item.snapshot?.toolsUsed?.[0];return tool==='list_actions'?'/sheet/Action Log':tool==='list_incidents'?'/sheet/Incident Register':tool==='get_projects'?'/projects':tool==='get_kpi'?'/portfolio':null;}
-  operationalTools(item:ConversationItem){const supported=new Set(['list_actions','list_incidents','get_projects','get_kpi']);return (item.snapshot?.executionTrace?.tools??[]).filter(tool=>supported.has(tool.name));}
-  operationalLanguage(item:ConversationItem){return (item.snapshot?.executionTrace?.responseLanguage||item.language||'en') as VoiceConversationTurn['language'];}
-  operationalLabel(tool:string,item?:ConversationItem){const language=item?this.operationalLanguage(item):'en',labels:any={en:{list_actions:'Actions',list_incidents:'Incidents',get_projects:'Projects',get_kpi:'Safety performance'},pt:{list_actions:'Ações',list_incidents:'Incidentes',get_projects:'Projetos',get_kpi:'Desempenho de segurança'},es:{list_actions:'Acciones',list_incidents:'Incidentes',get_projects:'Proyectos',get_kpi:'Desempeño de seguridad'},fr:{list_actions:'Actions',list_incidents:'Incidents',get_projects:'Projets',get_kpi:'Performance sécurité'},de:{list_actions:'Maßnahmen',list_incidents:'Vorfälle',get_projects:'Projekte',get_kpi:'Sicherheitsleistung'}};return labels[language]?.[tool]??'Operational data';}
-  operationalAction(tool:string,item:ConversationItem){const language=this.operationalLanguage(item),names:any={en:'View',pt:'Ver',es:'Ver',fr:'Voir',de:'Anzeigen'};return `${names[language]} ${this.operationalLabel(tool,item).toLocaleLowerCase()}`;}
-  evidenceAction(item:ConversationItem){return ({en:'View evidence',pt:'Ver evidências',es:'Ver evidencias',fr:'Voir les preuves',de:'Nachweise anzeigen'})[this.operationalLanguage(item)];}
-  noDataLabel(tool:string,item:ConversationItem){const language=this.operationalLanguage(item),labels:any={en:{list_incidents:'No open incidents',list_actions:'No pending actions',get_kpi:'No matching performance indicators'},pt:{list_incidents:'Nenhum incidente em aberto',list_actions:'Nenhuma ação pendente',get_kpi:'Nenhum indicador correspondente disponível'},es:{list_incidents:'Ningún incidente abierto',list_actions:'Ninguna acción pendiente',get_kpi:'No hay indicadores correspondientes'},fr:{list_incidents:'Aucun incident ouvert',list_actions:'Aucune action en attente',get_kpi:'Aucun indicateur correspondant'},de:{list_incidents:'Keine offenen Vorfälle',list_actions:'Keine offenen Maßnahmen',get_kpi:'Keine passenden Leistungskennzahlen'}};return labels[language]?.[tool]??'';}
-  overviewLabel(item:ConversationItem){return ({en:'Operational overview',pt:'Resumo operacional',es:'Resumen operativo',fr:'Vue opérationnelle',de:'Betriebsübersicht'})[this.operationalLanguage(item)];}
-  operationalToolRoute(tool:string){return tool==='list_actions'?'/sheet/Action Log':tool==='list_incidents'?'/sheet/Incident Register':tool==='get_projects'?'/projects':'/portfolio';}
-  isOperationalOverview(item:ConversationItem){return item.snapshot?.executionTrace?.intent?.intent==='OPERATIONAL_OVERVIEW';}
-  evidenceCount(item:ConversationItem){return item.snapshot?.executionTrace?.verification?.evidenceItemsConsidered??0;}
-  evidenceSources(item:ConversationItem){return (item.snapshot?.executionTrace?.verification?.sources??[]).map(source=>this.operationalLabel(source,item));}
+  operationalLanguage(item:ConversationItem){return this.i18n.lang();}
   async copyMessage(item:ConversationItem){try{await navigator.clipboard.writeText(item.text);}catch{/* Clipboard availability does not affect the conversation. */}}
   replayMessage(item:ConversationItem){const language=(item.language as VoiceConversationTurn['language'])||'en',response=this.spokenFormatter.format(item.text,language);if(this.speechSynthesis.speak(response.spokenResponse,language,()=>this.voiceStatus.set('idle'),()=>this.voiceStatus.set('idle')))this.voiceStatus.set('speaking');}
   askAboutAlert(alert:YvyAlert){

@@ -1,3 +1,4 @@
+import { operationalPresentationFacts } from '../operationalPresentationFacts';
 import { stepCountIs, type ModelMessage } from 'ai';
 import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
@@ -178,6 +179,7 @@ export async function agentNode(
           const pendingTrace = [...toolTrace].reverse().find((item) => item.name === toolPart.toolName && item.status === 'NOT_OBSERVABLE');
           if (pendingTrace) {
             pendingTrace.status = output && typeof output === 'object' && output.error === true ? 'ERROR' : 'COMPLETED';
+            pendingTrace.presentationFacts = operationalPresentationFacts(pendingTrace.name, output, pendingTrace.arguments);
             pendingTrace.resultSummary = safeResultSummary(toolPart.toolName ?? pendingTrace.name, output, runtime.responseLanguage??'en');
             if (outputRecord?.status === 'SUCCESS_WITH_DATA' || outputRecord?.status === 'SUCCESS_NO_DATA') pendingTrace.resultStatus = outputRecord.status;
           }
