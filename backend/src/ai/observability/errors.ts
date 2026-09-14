@@ -1,6 +1,6 @@
 import { classifyModelFailure } from '../modelFailure';
 export type ErrorCategory = 'AUTHENTICATION' | 'AUTHORIZATION' | 'VALIDATION' | 'MODEL' | 'RETRIEVAL' | 'TOOL' | 'DATABASE' | 'HITL' | 'VOICE' | 'INTERNAL';
-export type ModelErrorCode = 'MODEL_EMPTY_RESPONSE' | 'MODEL_INVALID_RESPONSE' | 'MODEL_SCHEMA_ERROR' | 'MODEL_TIMEOUT' | 'MODEL_RATE_LIMIT' | 'MODEL_AUTH_ERROR' | 'MODEL_PROVIDER_UNAVAILABLE';
+export type ModelErrorCode = 'MODEL_EMPTY_RESPONSE' | 'MODEL_INVALID_RESPONSE' | 'MODEL_SCHEMA_ERROR' | 'MODEL_TIMEOUT' | 'MODEL_RATE_LIMIT' | 'MODEL_QUOTA_EXHAUSTED' | 'MODEL_AUTH_ERROR' | 'MODEL_PROVIDER_UNAVAILABLE';
 export class DomainError extends Error {
   readonly cause?: unknown;
   constructor(public readonly category: ErrorCategory, public readonly code: string, public readonly recoverable: boolean, options?: { cause?: unknown }) {
@@ -18,7 +18,8 @@ export function providerFailure(error: unknown): DomainError {
   const classification = classifyModelFailure(error);
   if (error instanceof TypeError && classification === 'OTHER') return new DomainError('INTERNAL', 'PROGRAMMING_ERROR', false, { cause: error });
   const code: ModelErrorCode = classification === 'TIMEOUT' ? 'MODEL_TIMEOUT'
-    : classification === 'RATE_LIMIT' || classification === 'QUOTA_OR_BILLING_ERROR' ? 'MODEL_RATE_LIMIT'
+    : classification === 'QUOTA_OR_BILLING_ERROR' ? 'MODEL_QUOTA_EXHAUSTED'
+    : classification === 'RATE_LIMIT' ? 'MODEL_RATE_LIMIT'
     : classification === 'AUTHENTICATION_ERROR' ? 'MODEL_AUTH_ERROR'
     : classification === 'TOOL_SCHEMA_ERROR' ? 'MODEL_SCHEMA_ERROR'
     : ['INVALID_REQUEST','MESSAGE_FORMAT_ERROR','STREAMING_ERROR'].includes(classification) ? 'MODEL_INVALID_RESPONSE' : 'MODEL_PROVIDER_UNAVAILABLE';

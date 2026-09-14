@@ -37,6 +37,14 @@ describe('Turing presentation sequence, not an agent',()=>{
   it('pauses and resumes without replaying a completed request',async()=>{await start();demo.pause();expect(demo.state()).toBe('PAUSED');await demo.continue();expect(demo.state()).toBe('INTRODUCTION');expect(agent.send).not.toHaveBeenCalled();});
   it('skip records a skipped step, not successful evidence',async()=>{await start();await demo.skip();expect(demo.outcomes()['INTRODUCTION']).toBe('SKIPPED');expect(demo.index()).toBe(1);});
   it('agent failure is visible and Retry uses the actual agent service again',async()=>{await start();agent.send.and.resolveTo(false);await demo.continue();expect(demo.state()).toBe('FAILED_STEP');await demo.retry();expect(agent.send.calls.count()).toBe(2);});
+  it('Retry accepts a new successful attempt after explicit recoverable failures without resolving HITL',async()=>{
+    await start();let attempt=0;
+    agent.send.and.callFake(async()=>{attempt++;agent.latest.set({runId:`retry-${attempt}`,threadId:pending.threadId,status:attempt<3?'FAILED':'COMPLETED',toolsUsed:attempt<3?[]:['list_actions'],executionTrace:{intent:{intent:'OPERATIONAL_OVERVIEW'},tools:attempt<3?[]:[{status:'COMPLETED'}],verification:{status:attempt<3?'INSUFFICIENT_EVIDENCE':'VERIFIED'},observability:{error:attempt<3?{code:'MODEL_PROVIDER_UNAVAILABLE',recoverable:true}:undefined}}});return attempt>=3;});
+    await demo.continue();const failed=agent.latest();expect(demo.state()).toBe('FAILED_STEP');
+    await demo.retry();expect(demo.state()).toBe('FAILED_STEP');expect(attempt).toBe(2);
+    await demo.retry();expect(demo.completed()).toBeTrue();expect(agent.latest().runId).not.toBe(failed.runId);expect(failed.status).toBe('FAILED');
+    expect(attempt).toBe(3);expect(agent.resolveApproval).not.toHaveBeenCalled();expect(agent.beginPresentation.calls.count()).toBe(1);
+  });
   it('a successful boolean without a new real snapshot cannot complete a step',async()=>{await start();agent.send.and.resolveTo(true);await demo.continue();expect(demo.state()).toBe('FAILED_STEP');expect(demo.outcomes()['TOOL_CALLING']).toBe('FAILED');});
   it('RAG missing corpus never invents citations or a tool execution',async()=>{await start();demo.index.set(2);preflight={...ready,rag:false};await (demo as any).execute();expect(agent.send).not.toHaveBeenCalled();expect(demo.state()).toBe('FAILED_STEP');});
   it('RAG requires actual citations and verified evidence',async()=>{await start();demo.index.set(2);await (demo as any).execute();expect(demo.completed()).toBeTrue();expect(agent.latest().citations.length).toBe(1);});

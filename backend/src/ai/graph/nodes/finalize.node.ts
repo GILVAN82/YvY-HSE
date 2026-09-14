@@ -2,8 +2,10 @@ import type { LangGraphRunnableConfig } from '@langchain/langgraph';
 import type { HseAgentState } from '../hseAgent.state';
 import { AgentStatus, AgentErrorCode, type AgentRuntime } from '../hseAgent.types';
 import { localized, type ResponseLanguage } from '../../responseLanguage';
+import { currentExecution } from '../../observability/context';
 
 const FAILURE_MESSAGES: Record<string, Record<ResponseLanguage, string>> = {
+  MODEL_QUOTA_EXHAUSTED: { en:'The AI service has no available credits. An administrator must restore provider credits before you retry.',pt:'O serviço de IA está sem créditos disponíveis. Um administrador precisa repor os créditos do provedor antes de tentar novamente.',es:'El servicio de IA no tiene créditos disponibles. Un administrador debe reponer los créditos del proveedor antes de reintentar.',fr:'Le service d’IA ne dispose plus de crédits. Un administrateur doit rétablir les crédits du fournisseur avant de réessayer.',de:'Der KI-Dienst hat kein verfügbares Guthaben. Ein Administrator muss das Anbieterguthaben vor einem erneuten Versuch aufladen.' },
   [AgentErrorCode.EMPTY_ANSWER]: { en:'I could not produce an answer for this question.',pt:'Não consegui produzir uma resposta para esta pergunta.',es:'No pude producir una respuesta para esta pregunta.',fr:"Je n’ai pas pu produire de réponse à cette question.",de:'Ich konnte für diese Frage keine Antwort erstellen.' },
   [AgentErrorCode.STEP_LIMIT]: { en:'The query became too complex. Try a more specific question.',pt:'A consulta ficou complexa demais. Tente uma pergunta mais específica.',es:'La consulta resultó demasiado compleja. Intente una pregunta más específica.',fr:'La requête est devenue trop complexe. Essayez une question plus précise.',de:'Die Anfrage wurde zu komplex. Versuchen Sie eine spezifischere Frage.' },
   [AgentErrorCode.TOOL_FAILURE]: { en:'I could not query the system data right now.',pt:'Não consegui consultar os dados do sistema agora.',es:'No pude consultar los datos del sistema en este momento.',fr:"Je n’ai pas pu consulter les données du système pour le moment.",de:'Ich konnte die Systemdaten derzeit nicht abfragen.' },
@@ -25,7 +27,8 @@ export async function finalizeFailureNode(state: HseAgentState, config: LangGrap
   const runtime = config.configurable?.runtime as AgentRuntime | undefined;
   const code = state.errorCode ?? AgentErrorCode.MODEL_ERROR;
   const language = runtime?.responseLanguage ?? 'en';
-  const templates = FAILURE_MESSAGES[code] ?? FAILURE_MESSAGES[AgentErrorCode.MODEL_ERROR];
+  const providerCode = currentExecution()?.observation.error?.code;
+  const templates = (code === AgentErrorCode.MODEL_ERROR && providerCode === 'MODEL_QUOTA_EXHAUSTED' ? FAILURE_MESSAGES.MODEL_QUOTA_EXHAUSTED : FAILURE_MESSAGES[code]) ?? FAILURE_MESSAGES[AgentErrorCode.MODEL_ERROR];
   const message = localized(templates, language);
   if (code === AgentErrorCode.SEMANTIC_VERIFICATION) runtime?.emit({ type:'text', text:message });
   else runtime?.emit({ type: 'error', message, code });

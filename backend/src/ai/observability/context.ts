@@ -1,9 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
+import { fingerprintModelFailure } from '../modelFailure';
 import { failureDescriptor, type ErrorCategory } from './errors';
 export interface ExecutionContext { runId: string; threadId: string; userId?: string; startedAt: number; locale?: string }
-export interface SafeEvent { timestamp: string; level: 'info' | 'warn' | 'error'; event: string; runId: string | null; threadId: string | null; stage: string; promptVersion?: string; promptFingerprint?: string; userIdHash?: string; provider?: string; model?: string; tool?: string; durationMs?: number; errorCategory?: ErrorCategory; errorCode?: string; recoverable?: boolean }
+export interface SafeEvent { httpStatus?: number; failureCategory?: string; providerFailureCode?: string; timestamp: string; level: 'info' | 'warn' | 'error'; event: string; runId: string | null; threadId: string | null; stage: string; promptVersion?: string; promptFingerprint?: string; userIdHash?: string; provider?: string; model?: string; tool?: string; durationMs?: number; errorCategory?: ErrorCategory; errorCode?: string; recoverable?: boolean }
 export interface RunObservation { stages: Array<{ stage: string; durationMs: number }>; prompt?: { version: string; fingerprint: string }; provider?: string; model?: string; usage: { status: 'AVAILABLE' | 'NOT_AVAILABLE'; inputTokens?: number; outputTokens?: number; totalTokens?: number }; cost: 'NOT_AVAILABLE'; error?: { category: ErrorCategory; code: string; recoverable: boolean }; }
 type Store = { context: Readonly<ExecutionContext>; observation: RunObservation; sink: (event: SafeEvent) => void };
 const storage = new AsyncLocalStorage<Store>();
@@ -21,13 +22,16 @@ export function logEvent(event: string, stage: string, fields: Partial<SafeEvent
     promptVersion: identifier(store?.observation.prompt?.version), promptFingerprint: /^[a-f0-9]{64}$/.test(store?.observation.prompt?.fingerprint ?? '') ? store?.observation.prompt?.fingerprint : undefined,
     provider: identifier(fields.provider ?? store?.observation.provider), model: identifier(fields.model ?? store?.observation.model), tool: identifier(fields.tool ?? (stage.startsWith('tool.') ? stage.slice(5) : undefined)),
     durationMs: Number.isFinite(fields.durationMs) ? Math.max(0, fields.durationMs!) : undefined,
+    httpStatus: Number.isInteger(fields.httpStatus) && fields.httpStatus! >= 100 && fields.httpStatus! <= 599 ? fields.httpStatus : undefined,
+    failureCategory: identifier(fields.failureCategory), providerFailureCode: ['credit_balance_exhausted','insufficient_quota','rate_limit_exceeded'].includes(fields.providerFailureCode ?? '') ? fields.providerFailureCode : undefined,
     errorCategory: ['AUTHENTICATION','AUTHORIZATION','VALIDATION','MODEL','RETRIEVAL','TOOL','DATABASE','HITL','VOICE','INTERNAL'].includes(fields.errorCategory ?? '') ? fields.errorCategory : undefined, errorCode: identifier(fields.errorCode), recoverable: fields.recoverable };
   store?.sink(output);
 }
 export function observeFailure(error: unknown, stage: string, fallback: ErrorCategory = 'INTERNAL') {
   const failure = failureDescriptor(error, fallback), store = storage.getStore();
+  const fingerprint = stage === 'provider' ? fingerprintModelFailure(failure.cause ?? error) : undefined;
   if (store) store.observation.error ??= { category: failure.category, code: failure.code, recoverable: failure.recoverable };
-  logEvent('stage_failed', stage, { level: 'error', errorCategory: failure.category, errorCode: failure.code, recoverable: failure.recoverable });
+  logEvent('stage_failed', stage, { httpStatus: fingerprint?.httpStatus ?? undefined, failureCategory: fingerprint?.category, providerFailureCode: fingerprint?.providerCode ?? undefined, level: 'error', errorCategory: failure.category, errorCode: failure.code, recoverable: failure.recoverable });
   return failure;
 }
 export async function timed<T>(stage: string, action: () => Promise<T>, fallback: ErrorCategory = 'INTERNAL'): Promise<T> {
