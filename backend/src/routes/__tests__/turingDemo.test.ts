@@ -28,3 +28,26 @@ test('safe database still requires explicit operator attestation and project sco
   assert.equal((await productionDemoProbe(db)(principal,{...configured,safeDataDeclared:false})).operational,false);
   assert.equal((await productionDemoProbe(db)({...principal,allowedProjectIds:[]},configured)).operational,false);
 });
+
+test('stale dispatch marker can discover pending approval in another owned project thread, then authorizes the resource',async()=>{
+  const stale='22222222-2222-4222-8222-222222222222',pendingThread='33333333-3333-4333-8333-333333333333';
+  const queries:Array<{sql:string;args:any[]}>=[];
+  const db:any={query:async(sql:string,args:any[]=[])=>{queries.push({sql,args});
+    if(sql.includes('current_database'))return{rows:[{name:'hse_app_demo'}]};
+    if(sql.startsWith('SELECT code FROM projects'))return{rows:[{code:'PRJ-001'}]};
+    if(sql.includes('rag_documents'))return{rows:[{available:true}]};
+    if(sql.startsWith('SELECT id FROM agent_human_approval'))return{rows:[{id:'approval-pending'}]};
+    return{rowCount:1,rows:[{id:'approval-pending',thread_id:pendingThread,status:'PENDING',scope_projects:['PRJ-001'],created_at:new Date()}]};
+  }};
+  const result=await productionDemoProbe(db)(principal,configured,stale);
+  assert.equal((result.approval as any).threadId,pendingThread);assert.equal((result.approval as any).status,'PENDING');
+  const select=queries.find(q=>q.sql.startsWith('SELECT id FROM agent_human_approval'))!;
+  assert.deepEqual(select.args,[principal.userId,stale,'PRJ-001']);
+  assert.match(select.sql,/status='PENDING' OR thread_id=\$2/);assert.match(select.sql,/ORDER BY \(thread_id=\$2::uuid\) DESC NULLS LAST/);
+  assert.ok(queries.some(q=>q.sql.includes('SELECT a.*')&&q.args[1]===principal.userId));assert.ok(queries.every(q=>q.sql.startsWith('SELECT')));
+});
+
+test('preflight never exposes a fallback approval rejected by canonical ownership authorization',async()=>{
+  const db:any={query:async(sql:string)=>sql.includes('current_database')?{rows:[{name:'hse_app_demo'}]}:sql.startsWith('SELECT a.*')?{rowCount:0,rows:[]}:sql.startsWith('SELECT id FROM agent_human_approval')?{rows:[{id:'inaccessible'}]}:{rows:[{code:'PRJ-001',available:true}]}};
+  assert.equal((await productionDemoProbe(db)(principal,configured,'22222222-2222-4222-8222-222222222222')).approval,null);
+});

@@ -21,9 +21,13 @@ export function productionDemoProbe(db: Pick<Pool, 'query'>) {
     const rag = await db.query('SELECT EXISTS(SELECT 1 FROM rag_documents d JOIN rag_chunks c ON c.document_id=d.id) AS available');
     let approval = null;
     if (safe && projects.rows.length) {
+      // A retained dispatch marker can outlive a failed request. Prefer its real
+      // resource (including resolved decisions), then an existing pending resource
+      // for this owner/project. Never create or resolve an approval in preflight.
       const candidates = await db.query(`SELECT id FROM agent_human_approval WHERE requested_by=$1
-        AND ($2::uuid IS NULL AND status='PENDING' OR thread_id=$2::uuid)
-        AND $3=ANY(scope_projects) ORDER BY created_at DESC LIMIT 1`, [principal.userId, threadId ?? null, config.project]);
+        AND (status='PENDING' OR thread_id=$2::uuid)
+        AND $3=ANY(scope_projects)
+        ORDER BY (thread_id=$2::uuid) DESC NULLS LAST, created_at DESC LIMIT 1`, [principal.userId, threadId ?? null, config.project]);
       if (candidates.rows[0]) {
         const item = await new PostgresApprovalService(db, principal).get(candidates.rows[0].id);
         if (item) { const { resolutionNote, summary, reason, ...safeItem } = item; approval = safeItem; }
