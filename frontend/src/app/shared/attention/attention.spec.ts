@@ -59,3 +59,16 @@ describe('Canonical operational attention',()=>{
    alerts.applyApprovalStatus('approval','REJECTED');expect(alerts.active().length).toBe(0);expect(alerts.alerts()[0].businessStatus).toBe('REJECTED');
  });
 });
+
+describe('Operational attention priority',()=>{
+ for(const [count,critical,high,priority] of [[0,1,1,'neutral'],[2,0,0,'notice'],[3,0,2,'high'],[1,1,0,'critical'],[5,1,2,'critical']] as const)it(`maps ${count}/${critical}/${high} to ${priority}`,()=>{
+  const f=TestBed.createComponent(AttentionSummaryComponent);Object.assign(f.componentInstance,{count,critical,high});f.detectChanges();expect(f.componentInstance.priority).toBe(priority);
+  const button=f.nativeElement.querySelector('button');if(!count){expect(button).toBeNull();}else{expect(button.dataset.priority).toBe(priority);expect(button.querySelector('.count-badge').textContent).toBe(String(count));expect(button.querySelector('svg')).not.toBeNull();expect(button.textContent.includes('critical')).toBe(critical>0);expect(button.textContent.includes('high')).toBe(high>0);}f.destroy();
+ });
+ for(const theme of ['light','dark'])it(`has readable theme colors and reduces severity when critical clears in ${theme}`,()=>{
+  document.documentElement.setAttribute('data-theme',theme);const f=TestBed.createComponent(AttentionSummaryComponent);Object.assign(f.componentInstance,{count:5,critical:1,high:2});f.detectChanges();
+  const button=f.nativeElement.querySelector('button');expect(getComputedStyle(button).getPropertyValue('--attention-accent').trim()).toBe(theme==='light'?'#a04d08':'#ffb642');
+  Object.assign(f.componentInstance,{count:4,critical:0});f.detectChanges();expect(button.dataset.priority).toBe('high');expect(button.textContent).not.toContain('critical');f.componentInstance.high=0;f.detectChanges();expect(button.dataset.priority).toBe('notice');f.componentInstance.count=0;f.detectChanges();expect(f.nativeElement.querySelector('button')).toBeNull();f.destroy();document.documentElement.removeAttribute('data-theme');
+ });
+ it('uses notice for future active attention types without inspecting their text',()=>{const f=TestBed.createComponent(AttentionSummaryComponent);f.componentInstance.count=7;f.detectChanges();expect(f.componentInstance.priority).toBe('notice');expect(f.nativeElement.querySelector('.count-badge').textContent).toBe('7');f.destroy();});
+});
