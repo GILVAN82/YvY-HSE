@@ -1,0 +1,93 @@
+<h2 class="pagetitle">{{ i18n.lang()==='en' ? sheetName : i18n.t(sheetName) }}</h2>
+<p class="pagedesc">{{ meta ? (i18n.lang()==='en' ? meta.desc : i18n.t(meta.desc)) : '' }}</p>
+
+<ng-container *ngFor="let t of meta?.tables; let ti = index">
+<div class="kpis sheet-kpis" *ngIf="tableStates[ti]?.stats as s">
+  <div class="kpi" [ngClass]="c.tone || ''" *ngFor="let c of s.cards">
+    <label>{{ i18n.t(c.label) }}</label>
+    <div class="v">{{ fmtStat(c) }}</div>
+    <small *ngIf="c.hint">{{ i18n.t(c.hint) }}<ng-container *ngIf="c.hintNum !== undefined">: {{ c.hintNum | number:'1.0-0':i18n.locale() }}</ng-container></small>
+  </div>
+</div>
+
+<div class="card">
+  <header>
+    <h3>{{ i18n.lang()==='en' ? (t.title || sheetName) : i18n.t(t.title || sheetName) }}</h3>
+    <div class="toolbar" *ngIf="ti===0; else countOnly">
+      <input type="search" [placeholder]="i18n.t('Search…')" [(ngModel)]="tableStates[ti].q" (ngModelChange)="onFilterChange(ti)">
+      <select *ngIf="projectColumn(t)" [(ngModel)]="tableStates[ti].projectFilter" (ngModelChange)="onFilterChange(ti)">
+        <option value="">{{ i18n.t('All projects') }}</option>
+        <option *ngFor="let p of projects" [value]="p.code">{{ p.code }}</option>
+      </select>
+      <select *ngIf="statusColumn(t)" [(ngModel)]="tableStates[ti].statusFilter" (ngModelChange)="onFilterChange(ti)">
+        <option value="">{{ i18n.t('All statuses') }}</option>
+        <option *ngFor="let s of distinctStatuses(ti, t)" [value]="s">{{ i18n.t(s) }}</option>
+      </select>
+      <button class="btn primary" (click)="openAdd(ti)">{{ i18n.t('＋ Add record') }}</button>
+      <button class="btn" (click)="exportCSV(ti)">{{ i18n.t('Export CSV') }}</button>
+      <span class="count" *ngIf="tableStates[ti].result">{{ tableStates[ti].result!.total }} {{ i18n.t('records') }}</span>
+    </div>
+    <ng-template #countOnly>
+      <span class="count" *ngIf="tableStates[ti].result">{{ tableStates[ti].result!.total }} {{ i18n.t('records') }}</span>
+    </ng-template>
+  </header>
+  <div class="tblwrap" *ngIf="tableStates[ti].result as result">
+    <table class="data">
+      <thead>
+        <tr>
+          <th *ngFor="let c of t.columns">{{ i18n.t(c.header) }}</th>
+          <th *ngIf="ti===0"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of result.rows">
+          <td *ngFor="let c of t.columns" [class.num]="isNumericCol(t, c.name)">
+            <span class="badge" [ngClass]="badgeClass(row[c.name])" *ngIf="isBadgeColumn(t, c.name) && row[c.name]; else plainCell">
+              {{ fmtCell(row[c.name], t, c.name) }}
+            </span>
+            <ng-template #plainCell>{{ fmtCell(row[c.name], t, c.name) }}</ng-template>
+          </td>
+          <td *ngIf="ti===0"><button class="btn" (click)="remove(ti, row.id)">✕</button></td>
+        </tr>
+        <tr *ngIf="!result.rows.length">
+          <td [attr.colspan]="t.columns.length + (ti===0 ? 1 : 0)" class="note empty-cell">{{ i18n.t('No records match the current filters.') }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</ng-container>
+
+<div class="modalback" *ngIf="showModal" (click)="$event.target===$event.currentTarget && closeModal()">
+  <div class="modal">
+    <h3>{{ i18n.t('＋ Add record') }} — {{ i18n.lang()==='en' ? (meta?.tables?.[modalTableIndex]?.title || sheetName) : i18n.t(meta?.tables?.[modalTableIndex]?.title || sheetName) }}</h3>
+    <div class="fields">
+      <ng-container *ngFor="let c of meta?.tables?.[modalTableIndex]?.columns">
+        <div class="f" [ngSwitch]="fieldKind(c.header, c.type, c.name)">
+          <label>{{ i18n.t(c.header) }}</label>
+          <select *ngSwitchCase="'project'" [(ngModel)]="newRow[c.name]">
+            <option value=""></option>
+            <option *ngFor="let p of projects" [value]="p.code">{{ p.code }}</option>
+          </select>
+          <input *ngSwitchCase="'date'" type="date" [(ngModel)]="newRow[c.name]">
+          <select *ngSwitchCase="'severity'" [(ngModel)]="newRow[c.name]">
+            <option value=""></option>
+            <option *ngFor="let o of severityOptions()" [value]="o">{{ i18n.t(o) }}</option>
+          </select>
+          <select *ngSwitchCase="'status'" [(ngModel)]="newRow[c.name]">
+            <option value=""></option>
+            <option *ngFor="let o of statusListOptions()" [value]="o">{{ i18n.t(o) }}</option>
+          </select>
+          <textarea *ngSwitchCase="'textarea'" rows="2" [(ngModel)]="newRow[c.name]"></textarea>
+          <input *ngSwitchCase="'number'" type="number" step="any" [(ngModel)]="newRow[c.name]">
+          <input *ngSwitchDefault type="text" [(ngModel)]="newRow[c.name]">
+        </div>
+      </ng-container>
+    </div>
+    <p class="note db-note">{{ i18n.t('This record will be saved to the PostgreSQL database.') }}</p>
+    <div class="actions">
+      <button class="btn" (click)="closeModal()">{{ i18n.t('Cancel') }}</button>
+      <button class="btn primary" (click)="save()">{{ i18n.t('Save record') }}</button>
+    </div>
+  </div>
+</div>

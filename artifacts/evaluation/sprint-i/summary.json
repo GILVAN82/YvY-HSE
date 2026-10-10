@@ -1,0 +1,307 @@
+{
+  "baseCommit": "4e8f52b48ccd6179e214a12c18382658e37b9adb",
+  "isolatedAgentArtifact": "2026-09-09T21-44-05-137Z-4e8f52b48ccd-offline.json",
+  "reproduction": {
+    "patch": "2026-09-09T21-44-05-137Z-4e8f52b48ccd-offline.patch",
+    "sha256": "b88404ee7ade5a754b1ffe6c9fe2f411b6b43ccacb0e5da96098e732f096e77e",
+    "baseCommit": "4e8f52b48ccd6179e214a12c18382658e37b9adb"
+  },
+  "isolatedSourceFingerprint": "c49661b8e4ccb5cc8d80a0742d45ceed445e8ccf32a6e3709dca61b50aad3402",
+  "integratedSourceFingerprint": "07a057aa215698cc7c3d25264c692b694d1e804461db7ae83a519e205ec3345f",
+  "backend": {
+    "isolated": 380,
+    "integrated": 398
+  },
+  "frontend": {
+    "isolated": 144,
+    "integrated": 150
+  },
+  "agent": {
+    "passed": 44,
+    "total": 44,
+    "supplementaryPassed": 3,
+    "intentPassed": 134,
+    "intentTotal": 134,
+    "hermetic": "SOCKETS_AND_FETCH_BLOCKED"
+  },
+  "retrieval": {
+    "sampleSize": 24,
+    "en": 16,
+    "pt": 8,
+    "threshold": 0.45,
+    "corpusFingerprint": "cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1",
+    "unchangedFromH": true,
+    "modes": [
+      {
+        "fusion": "SEMANTIC_ONLY",
+        "metrics": {
+          "requiredSourceRecall": 0.6666666666666666,
+          "relevantRecallAtK": 0.6666666666666666,
+          "irrelevantRetrievalRate": 0,
+          "mrr": 0.6363636363636364,
+          "top1SourceAccuracy": 0.6363636363636364,
+          "falseAbstentions": 8,
+          "falseRetrievalsOnNegativeQueries": 0
+        }
+      },
+      {
+        "fusion": "RRF",
+        "metrics": {
+          "requiredSourceRecall": 1,
+          "relevantRecallAtK": 1,
+          "irrelevantRetrievalRate": 0,
+          "mrr": 1,
+          "top1SourceAccuracy": 1,
+          "falseAbstentions": 0,
+          "falseRetrievalsOnNegativeQueries": 0
+        }
+      }
+    ]
+  },
+  "gates": [
+    {
+      "profile": "isolated",
+      "check": "backend-tests",
+      "command": "npm.cmd test",
+      "exitCode": 0,
+      "seconds": 10.18,
+      "log": "isolated-backend-tests.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "backend-typecheck",
+      "command": "npm.cmd run typecheck",
+      "exitCode": 0,
+      "seconds": 4.16,
+      "log": "isolated-backend-typecheck.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "backend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 3.77,
+      "log": "isolated-backend-build.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "frontend-tests",
+      "command": "npm.cmd run test:ci",
+      "exitCode": 0,
+      "seconds": 11.79,
+      "log": "isolated-frontend-tests.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "frontend-app-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.92,
+      "log": "isolated-frontend-app-typecheck.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "frontend-spec-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.85,
+      "log": "isolated-frontend-spec-typecheck.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "frontend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 8.46,
+      "log": "isolated-frontend-build.log"
+    },
+    {
+      "profile": "isolated",
+      "check": "agent-evaluation",
+      "command": "npm.cmd run eval:offline",
+      "exitCode": 0,
+      "seconds": 2.32,
+      "log": "isolated-agent-evaluation.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-tests",
+      "command": "npm.cmd test",
+      "exitCode": 0,
+      "seconds": 9.49,
+      "log": "integrated-backend-tests.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-typecheck",
+      "command": "npm.cmd run typecheck",
+      "exitCode": 0,
+      "seconds": 4.06,
+      "log": "integrated-backend-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "backend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 4.04,
+      "log": "integrated-backend-build.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-tests",
+      "command": "npm.cmd run test:ci",
+      "exitCode": 0,
+      "seconds": 11.09,
+      "log": "integrated-frontend-tests.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-app-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.app.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.91,
+      "log": "integrated-frontend-app-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-spec-typecheck",
+      "command": "npx.cmd tsc -p tsconfig.spec.json --noEmit",
+      "exitCode": 0,
+      "seconds": 3.95,
+      "log": "integrated-frontend-spec-typecheck.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "frontend-build",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "seconds": 9.25,
+      "log": "integrated-frontend-build.log"
+    },
+    {
+      "profile": "integrated",
+      "check": "agent-evaluation",
+      "command": "npm.cmd run eval:offline",
+      "exitCode": 0,
+      "seconds": 2.3,
+      "log": "integrated-agent-evaluation.log"
+    }
+  ],
+  "rawLogsDirectory": "C:\\Users\\Gil\\AppData\\Local\\Temp\\yvy-sprint-i-diagnostics-s97wd6zd",
+  "rawLogs": [
+    {
+      "file": "integrated-agent-evaluation.log",
+      "sha256": "72aea7d2b6cd3dabd009aa6bb77475100896e3f5a973a8dd2bb0ee4f5b5ea1fb",
+      "bytes": 187077
+    },
+    {
+      "file": "integrated-backend-build.log",
+      "sha256": "a0324e85980fa6f6a0cfa0359c9ed4169aac177da09f64f44c619232a8c657cf",
+      "bytes": 61
+    },
+    {
+      "file": "integrated-backend-tests.log",
+      "sha256": "bf983375b8637fa01677ddbd15e19e2677cd585b46af6efcc5755251434c6c80",
+      "bytes": 876627
+    },
+    {
+      "file": "integrated-backend-typecheck.log",
+      "sha256": "1b2d551abf04bb054d74b66abb793af0042ffc718f20d8d643696bba8980296e",
+      "bytes": 56
+    },
+    {
+      "file": "integrated-frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integrated-frontend-build.log",
+      "sha256": "da254dba4b9d1928f40aac3dce5e2a86dad059efa5a558fefec0b6e0ba72206e",
+      "bytes": 1053
+    },
+    {
+      "file": "integrated-frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integrated-frontend-tests.log",
+      "sha256": "235288cf0946ec003e71c668f4438768a438efe2e11cdcb8cae83af37a7e4dbc",
+      "bytes": 17261
+    },
+    {
+      "file": "integrated-retrieval.log",
+      "sha256": "72dcec307e486389bc1e02f9d859b312f7533ea9cb6715905098703ec124d83e",
+      "bytes": 61412
+    },
+    {
+      "file": "isolated-agent-evaluation.log",
+      "sha256": "153a867c9a84e59c0eb2b74ce63b00826859c253e7a135c505fc870bafe85f68",
+      "bytes": 186285
+    },
+    {
+      "file": "isolated-backend-build.log",
+      "sha256": "a0324e85980fa6f6a0cfa0359c9ed4169aac177da09f64f44c619232a8c657cf",
+      "bytes": 61
+    },
+    {
+      "file": "isolated-backend-tests.log",
+      "sha256": "5cb162c7f23ea6388c55d9a4c3f88f74c62715f27d95650aa6e743d7e4e90183",
+      "bytes": 859284
+    },
+    {
+      "file": "isolated-backend-typecheck.log",
+      "sha256": "1b2d551abf04bb054d74b66abb793af0042ffc718f20d8d643696bba8980296e",
+      "bytes": 56
+    },
+    {
+      "file": "isolated-frontend-app-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "isolated-frontend-build.log",
+      "sha256": "f75541ac04796097f4a29b9361c6272a872d9fb3bd55c10ebb2be21d1926921b",
+      "bytes": 1064
+    },
+    {
+      "file": "isolated-frontend-spec-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "isolated-frontend-tests.log",
+      "sha256": "384587c76f5b93f70d360a505d076fbd804dcfd759f763358b717e01ecc35eda",
+      "bytes": 16617
+    },
+    {
+      "file": "isolated-reproduction.log",
+      "sha256": "ae5f13ca674c009f2eeeb0b063fa1e45114ef2f5dfde88de06584e0352def26f",
+      "bytes": 374356
+    },
+    {
+      "file": "isolated-retrieval.log",
+      "sha256": "5c94e2f5ef7943d2a5d0b0ef290202c472388964a8225ce7ef68bb7fb4cbce7a",
+      "bytes": 61416
+    },
+    {
+      "file": "replay-agent.log",
+      "sha256": "aa2c6a74df11ca51dc70c954dc911b8366863edd7ddace38172d7eadc6674108",
+      "bytes": 186279
+    }
+  ],
+  "firstGateFailure": {
+    "category": "TEST_TYPECHECK",
+    "detail": "HTTP test helper Response.json() was unknown; explicit Record<string,unknown> fixed the test type boundary. Runtime expectations unchanged.",
+    "archive": "LOCAL_ONLY_NOT_DISTRIBUTED",
+    "archiveNote": "Original first-gate logs were retained in a machine-local temporary directory; they are not a portable checkout dependency."
+  },
+  "freshReplay": {
+    "passed": 44,
+    "total": 44,
+    "intentPassed": 134,
+    "sourceFingerprintMatches": true,
+    "exitCode": 0
+  }
+}

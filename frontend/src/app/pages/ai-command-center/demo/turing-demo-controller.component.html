@@ -1,0 +1,33 @@
+<button *ngIf="demo.enabled() && !demo.active()" type="button" class="demo-entry" (click)="demo.open()" [disabled]="demo.agent.loading()" aria-label="Start presentation" title="Start presentation"><span aria-hidden="true">&#9654;</span></button>
+<section *ngIf="demo.active()" class="demo-controller" aria-label="YvY HSE Demo">
+  <header><strong>YvY HSE Demo</strong><span *ngIf="demo.state()!=='COMPLETED'">Step {{demo.index()+1}} of {{demo.steps.length}} &middot; {{time()}}</span><span *ngIf="demo.state()==='COMPLETED'">Elapsed time: {{time()}}</span><button type="button" (click)="demo.exit()">Exit Demo</button></header>
+  <ol *ngIf="demo.state()!=='COMPLETED'" class="progress"><li *ngFor="let step of demo.steps;let i=index" [class.current]="i===demo.index()" [attr.aria-current]="i===demo.index()?'step':null"><span>{{demo.outcomes()[step.id]==='COMPLETED'?'✓':demo.outcomes()[step.id]==='SKIPPED'?'–':['FAILED','WARNING'].includes(demo.outcomes()[step.id])?'!':i===demo.index()?'●':'○'}}</span> {{step.title}}</li></ol>
+  <ol *ngIf="demo.state()==='COMPLETED'" class="completion-summary" aria-label="Presentation summary"><li *ngFor="let item of demo.summary()">{{item.title}} &mdash; {{outcomeLabel(item.status)}}</li></ol>
+  <p *ngIf="demo.notice()" role="status">{{demo.notice()}}</p>
+  <p role="status">{{demo.message()}} <span *ngIf="demo.voiceDegraded()">Voice degraded · text available</span></p>
+  <div *ngIf="demo.state()==='PREFLIGHT' && demo.preflight() as p" class="checks">
+    <strong>{{p.status}}</strong><span>Authenticated: {{p.authenticated?'Yes':'No'}}</span><span>Agent: {{p.agent?'Configured':'Unavailable'}}</span><span>Routes: {{p.routes?'Available':'Unavailable'}}</span><span>RAG corpus: {{p.rag?'Present':'Unavailable'}}</span><span>Operational demo context: {{p.operational?'Declared safe':'Unavailable'}}</span><span>Voice: {{p.voice}}</span><span>Inspector: {{p.inspector?'Available':'Unavailable'}}</span>
+  </div>
+  <div class="controls">
+    <button *ngIf="demo.state()!=='COMPLETED'" type="button" (click)="demo.pause()" [disabled]="demo.navigating() || ['PREFLIGHT','PAUSED','COMPLETED'].includes(demo.state())">Pause</button>
+    <button *ngIf="demo.state()!=='COMPLETED'" type="button" (click)="demo.continue()" [disabled]="demo.navigating() || (demo.busy() && demo.state()!=='PAUSED') || demo.state()==='WAITING_FOR_HUMAN' || demo.state()==='COMPLETED' || (demo.state()==='PREFLIGHT' && (!demo.preflight() || demo.preflight()?.status==='BLOCKED'))">{{demo.finalStepReady()?'Finish presentation':'Continue'}}</button>
+    <button *ngIf="demo.state()!=='COMPLETED'" type="button" (click)="demo.skip()" [disabled]="demo.navigating() || demo.state()==='PREFLIGHT' || demo.state()==='COMPLETED' || demo.approvalBusy()">Skip</button>
+    <button *ngIf="demo.state()==='FAILED_STEP'" type="button" (click)="demo.retry()">Retry</button>
+    <button type="button" (click)="demo.restart()" [disabled]="demo.navigating() || demo.state()==='PREFLIGHT'">Restart</button>
+    <button *ngIf="demo.state()!=='COMPLETED' && (demo.agent.latest() || demo.agent.approval())" type="button" (click)="demo.showEvidence()">Show technical evidence</button>
+    <details *ngIf="demo.state()!=='COMPLETED'"><summary>Presenter notes · screen-visible</summary><p>{{demo.step().cue}}</p><small>These notes are not narrated. Close before projecting the public narrative.</small></details>
+  </div>
+  <div *ngIf="demo.state()==='WAITING_FOR_HUMAN'" class="human">
+    <strong>HUMAN DECISION REQUIRED</strong><span>LOTO request · {{demo.humanContext()?.projectId}}</span>
+    <p *ngIf="demo.previousDecision() as previous">Previous decision: {{previous.status}}. This request requires a new human decision.</p>
+    <dl><dt>Why approval is required</dt><dd>This request involves a safety-critical LOTO decision.</dd>
+      <dt>What YvY verified</dt><dd>{{demo.knowledgeBasis()?'Approved LOTO guidance was retrieved in this presentation.':'No approved guidance was verified in this presentation.'}}</dd>
+      <dt>What YvY cannot verify</dt><dd>Physical isolation and safe field conditions. YvY cannot authorize the work.</dd></dl>
+    <span>Decision</span>
+    <button type="button" (click)="demo.decide('reject')" [disabled]="!demo.preflight()?.canApprove || demo.approvalBusy()">Reject</button>
+    <button type="button" (click)="demo.decide('approve')" [disabled]="!demo.preflight()?.canApprove || demo.approvalBusy()">Approve</button>
+    <small *ngIf="!demo.preflight()?.canApprove">The current user cannot resolve this decision. Skip or exit; no automatic approval.</small>
+    <details class="decision-evidence" *ngIf="demo.decisionEvidence().length"><summary>Decision basis · View evidence</summary><app-evidence-view *ngFor="let evidence of demo.decisionEvidence()" [model]="evidence" language="en"></app-evidence-view></details>
+  </div>
+  <section *ngIf="demo.technical()" class="technical" aria-label="Technical evidence"><button type="button" (click)="demo.technical.set(false)">Close evidence</button><app-agent-inspector></app-agent-inspector></section>
+</section>

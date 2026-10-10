@@ -1,0 +1,1040 @@
+{
+  "manpower_log": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project_code"
+    },
+    "allowedForModel": [
+      "date",
+      "project_code",
+      "contractorcompany",
+      "tradediscipline",
+      "number_of_workers",
+      "hours_per_worker",
+      "total_manhours",
+      "month",
+      "cumulative_manhours_project"
+    ],
+    "requiredForEvidence": [
+      "project_code",
+      "date"
+    ],
+    "blocked": []
+  },
+  "dashboard_data_engine": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project_code"
+    },
+    "allowedForModel": [
+      "project_code",
+      "month",
+      "month_label",
+      "manhours",
+      "near_misses",
+      "recordable_incidents",
+      "lost_time_injuries",
+      "open_actions",
+      "overdue_actions",
+      "training_compliance",
+      "audit_score_avg",
+      "observations_safe",
+      "observations_unsafe",
+      "permits_active"
+    ],
+    "requiredForEvidence": [
+      "project_code",
+      "project_code"
+    ],
+    "blocked": [
+      "lost_days"
+    ]
+  },
+  "incident_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project_code"
+    },
+    "allowedForModel": [
+      "incident_id",
+      "project_code",
+      "date_of_incident",
+      "time",
+      "locationarea",
+      "incident_type",
+      "severity",
+      "description",
+      "investigation_status",
+      "linked_investigation_id",
+      "linked_action_ids",
+      "reportable_to_authority",
+      "days_open",
+      "closed_date"
+    ],
+    "requiredForEvidence": [
+      "project_code",
+      "incident_id"
+    ],
+    "blocked": [
+      "injured_person_name",
+      "employeecontractor",
+      "departmenttrade",
+      "body_part_affected",
+      "immediate_cause",
+      "lost_days",
+      "medical_treatment_required"
+    ]
+  },
+  "investigation_rca": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "investigation_id",
+      "linked_incident_id",
+      "project",
+      "investigation_date",
+      "methodology",
+      "root_cause_man",
+      "root_cause_machine",
+      "root_cause_method",
+      "root_cause_material",
+      "root_cause_environment",
+      "findings_summary",
+      "recommendations",
+      "target_completion",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "investigation_id"
+    ],
+    "blocked": [
+      "investigation_team",
+      "immediate_cause",
+      "responsible_person",
+      "signoff_investigator",
+      "signoff_hse_manager"
+    ]
+  },
+  "action_tracker_capa": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "action_id",
+      "source_module",
+      "source_reference",
+      "project",
+      "action_description",
+      "priority",
+      "target_date",
+      "status",
+      "computed_status",
+      "days_remainingoverdue",
+      "closure_date",
+      "evidence_of_closure",
+      "comments"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "action_id"
+    ],
+    "blocked": [
+      "responsible_person",
+      "verified_by"
+    ]
+  },
+  "hira_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "hira_id",
+      "project",
+      "activitytask",
+      "location",
+      "date_assessed",
+      "hazard_description",
+      "hazard_category",
+      "existing_controls",
+      "likelihood",
+      "consequence",
+      "risk_rating",
+      "risk_level",
+      "additional_controls_required",
+      "residual_likelihood",
+      "residual_consequence",
+      "residual_risk_rating",
+      "residual_risk_level",
+      "review_date",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "hira_id"
+    ],
+    "blocked": [
+      "assessed_by",
+      "action_owner"
+    ]
+  },
+  "jsa_log": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "jsa_id",
+      "project",
+      "taskactivity",
+      "date",
+      "number_of_steps",
+      "permit_required",
+      "linked_permit_no",
+      "crew_briefed",
+      "briefing_date",
+      "revision_number",
+      "valid_until",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "jsa_id"
+    ],
+    "blocked": [
+      "prepared_by",
+      "approved_by"
+    ]
+  },
+  "jsa_steps_detail": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DERIVED",
+      "parent": "jsa_log",
+      "key": "jsa_id",
+      "parentKey": "jsa_id",
+      "projectColumn": "project"
+    },
+    "allowedForModel": [
+      "jsa_id",
+      "step_number",
+      "job_step_description",
+      "potential_hazards",
+      "control_measures",
+      "ppe_required_this_step"
+    ],
+    "requiredForEvidence": [
+      "jsa_id"
+    ],
+    "blocked": []
+  },
+  "permit_to_work_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "permit_no",
+      "project",
+      "permit_type",
+      "work_description",
+      "location",
+      "linked_jsa_id",
+      "isolationloto_reference",
+      "gas_test_required",
+      "gas_test_reading",
+      "issue_datetime",
+      "valid_from",
+      "valid_to",
+      "status",
+      "closed_date",
+      "remarks"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "permit_no"
+    ],
+    "blocked": [
+      "requested_by",
+      "issued_by_authorized_person",
+      "closed_by"
+    ]
+  },
+  "safety_observations_bbs": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "observation_id",
+      "project",
+      "date",
+      "area",
+      "observation_type",
+      "category",
+      "description",
+      "immediate_action_taken",
+      "risk_level",
+      "action_required",
+      "linked_action_id",
+      "status",
+      "closure_date"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "observation_id"
+    ],
+    "blocked": [
+      "observer_name",
+      "observed_personcrew"
+    ]
+  },
+  "toolbox_talks": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "tbt_id",
+      "project",
+      "date",
+      "topic",
+      "duration_minutes",
+      "number_of_attendees",
+      "key_points_discussed",
+      "location",
+      "questions_raised",
+      "next_topic_planned"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "tbt_id"
+    ],
+    "blocked": [
+      "conducted_by",
+      "photoattendance_reference"
+    ]
+  },
+  "training_competency": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "training_id",
+      "project",
+      "traderole",
+      "coursetraining_name",
+      "training_provider",
+      "date_completed",
+      "validity_months",
+      "expiry_date",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "training_id"
+    ],
+    "blocked": [
+      "employee_name",
+      "employee_id",
+      "certificate_no",
+      "trainer",
+      "scoreresult"
+    ]
+  },
+  "ppe_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "issue_id",
+      "project",
+      "ppe_item",
+      "size",
+      "quantity",
+      "issue_date",
+      "expected_lifespan_months",
+      "replacement_due",
+      "status",
+      "condition_at_issue"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "issue_id"
+    ],
+    "blocked": [
+      "employee_name",
+      "acknowledged_signature"
+    ]
+  },
+  "contractor_management": {
+    "scope": {
+      "kind": "UNAVAILABLE_TO_AGENT"
+    },
+    "allowedForModel": [],
+    "requiredForEvidence": [],
+    "blocked": [
+      "contractor_id",
+      "contractor_name",
+      "projects",
+      "hse_policy_on_file",
+      "prequalification_score",
+      "approved",
+      "approval_date",
+      "reviewexpiry_date",
+      "status",
+      "manhours_this_month",
+      "incidents_this_contractor",
+      "observations_this_contractor",
+      "overall_rating"
+    ]
+  },
+  "site_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "date",
+      "area_inspected",
+      "housekeeping",
+      "walkwaysaccess_clear",
+      "signage_adequate",
+      "ppe_compliance_observed",
+      "barricadingexclusion_zones",
+      "waste_segregation",
+      "electrical_cablespanels_safe",
+      "lighting_adequate",
+      "emergency_exits_clear",
+      "fire_equipment_accessible",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "scaffold_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "scaffold_tag_nolocation",
+      "date",
+      "scaffold_type",
+      "base_platessole_boards_sound",
+      "standards_plumb",
+      "tiesbracing_adequate",
+      "platform_boards_fully_decked",
+      "guardrails_toe_boards_fitted",
+      "access_ladder_secure",
+      "load_rating_tag_displayed",
+      "overloading_signs",
+      "weathercorrosion_damage",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "lifting_equipment_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "equipment_id",
+      "equipment_type",
+      "date",
+      "thirdparty_certifying_body",
+      "structuralvisual_condition",
+      "load_chartswl_marking_legible",
+      "hookslatches_functional",
+      "wire_ropechain_condition",
+      "certification_current",
+      "load_test_current",
+      "operator_certification_current",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "fire_equipment_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "extinguisherequipment_id",
+      "location",
+      "type",
+      "date",
+      "pressure_gauge_in_green_zone",
+      "pinseal_intact",
+      "no_physical_damage",
+      "signagelocation_visible",
+      "access_not_obstructed",
+      "service_tag_current",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "vehicle_plant_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "vehicleplant_id",
+      "date",
+      "odometerhourmeter_reading",
+      "tirestracks_condition",
+      "brakes_functional",
+      "lightsindicatorsreverse_alarm",
+      "mirrorsvisibility",
+      "seatbelt_functional",
+      "fire_extinguisher_on_board",
+      "leaks_oilfuelhydraulic",
+      "horn_functional",
+      "load_securing_equipment",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "driveroperator"
+    ]
+  },
+  "ladder_inspection": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "ladder_idtag",
+      "type",
+      "date",
+      "rungssteps_intact",
+      "feetnonslip_base_present",
+      "locking_mechanism_functional",
+      "no_crackscorrosionbends",
+      "duty_rating_label_legible",
+      "stored_correctly",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "first_aid_emergency_equip": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "inspection_id",
+      "project",
+      "equipment_type",
+      "location",
+      "date",
+      "contents_complete_vs_checklist",
+      "no_expired_items",
+      "boxcabinet_in_good_condition",
+      "location_signposted",
+      "access_clear",
+      "score",
+      "overall_result",
+      "action_required",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "inspection_id"
+    ],
+    "blocked": [
+      "inspector"
+    ]
+  },
+  "equipment_plant_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "equipment_id",
+      "project",
+      "equipment_type",
+      "makemodel",
+      "serial_no",
+      "ownership",
+      "last_calibrationcertification",
+      "certifying_body",
+      "certificate_expiry",
+      "status",
+      "next_maintenance_due",
+      "inservice_status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "equipment_id"
+    ],
+    "blocked": [
+      "operator_assigned"
+    ]
+  },
+  "waste_management_log": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "waste_id",
+      "project",
+      "date",
+      "waste_type",
+      "description",
+      "quantity",
+      "unit",
+      "disposal_method",
+      "disposal_company",
+      "manifestwaste_transfer_note_no",
+      "disposal_date",
+      "certificate_reference"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "waste_id"
+    ],
+    "blocked": []
+  },
+  "chemical_inventory_msds": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "chemical_id",
+      "chemical_name",
+      "project",
+      "location_stored",
+      "quantity_on_site",
+      "unit",
+      "ghs_hazard_class",
+      "msds_on_file",
+      "msds_last_updated",
+      "msds_review_due",
+      "storage_conditions",
+      "handling_precautions",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "chemical_id"
+    ],
+    "blocked": []
+  },
+  "spill_environmental_incident": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "spill_id",
+      "project",
+      "datetime",
+      "substance",
+      "quantity_spilled",
+      "unit",
+      "location",
+      "cause",
+      "immediate_response_taken",
+      "reported_to_authority",
+      "linked_action_id",
+      "status"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "spill_id"
+    ],
+    "blocked": []
+  },
+  "environmental_monitoring": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "monitoring_id",
+      "project",
+      "parameter",
+      "date",
+      "location",
+      "measured_value",
+      "permissible_limit",
+      "result",
+      "corrective_action_if_exceedance",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "monitoring_id"
+    ],
+    "blocked": []
+  },
+  "audit_tracker": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "audit_id",
+      "project",
+      "audit_type",
+      "audit_date",
+      "scope",
+      "standardreference",
+      "number_of_findings",
+      "overall_audit_score",
+      "next_audit_due"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "audit_id"
+    ],
+    "blocked": [
+      "auditors"
+    ]
+  },
+  "audit_tracker__audit_findings_detail_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DERIVED",
+      "parent": "audit_tracker",
+      "key": "audit_id",
+      "parentKey": "audit_id",
+      "projectColumn": "project"
+    },
+    "allowedForModel": [
+      "finding_id",
+      "audit_id",
+      "clause_reference",
+      "finding_description",
+      "classification",
+      "target_close_date",
+      "status",
+      "evidencelink",
+      "linked_action_id"
+    ],
+    "requiredForEvidence": [
+      "finding_id"
+    ],
+    "blocked": [
+      "responsible_person"
+    ]
+  },
+  "legal_compliance_register": {
+    "scope": {
+      "kind": "GLOBAL"
+    },
+    "allowedForModel": [
+      "requirement_id",
+      "applicability",
+      "regulationstandard_name",
+      "authorityjurisdiction",
+      "requirement_description",
+      "applicable_clause",
+      "compliance_status",
+      "evidence_of_compliance",
+      "review_frequency_months",
+      "last_review_date",
+      "next_review_date",
+      "comments"
+    ],
+    "requiredForEvidence": [
+      "requirement_id"
+    ],
+    "blocked": [
+      "responsible_person"
+    ]
+  },
+  "management_of_change": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "moc_id",
+      "project",
+      "change_description",
+      "change_type",
+      "date_initiated",
+      "risk_assessment_required",
+      "linked_hira_id",
+      "approval_level_required",
+      "approval_date",
+      "implementation_date",
+      "status",
+      "review_date",
+      "days_since_initiated",
+      "risk_assessment_flag",
+      "comments"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "moc_id"
+    ],
+    "blocked": [
+      "initiated_by",
+      "approved_by"
+    ]
+  },
+  "document_control": {
+    "scope": {
+      "kind": "UNAVAILABLE_TO_AGENT"
+    },
+    "allowedForModel": [],
+    "requiredForEvidence": [],
+    "blocked": [
+      "document_id",
+      "document_name",
+      "category",
+      "applicability",
+      "version_no",
+      "prepared_by",
+      "reviewed_by",
+      "approved_by",
+      "issue_date",
+      "review_frequency_months",
+      "next_review_due",
+      "status",
+      "file_locationlink"
+    ]
+  },
+  "meeting_minutes": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "meeting_id",
+      "project",
+      "meeting_type",
+      "date",
+      "agenda_items",
+      "key_discussion_points",
+      "actions_raised",
+      "next_meeting_date"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "meeting_id"
+    ],
+    "blocked": [
+      "attendees"
+    ]
+  },
+  "kpi_statistics_engine": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project_code"
+    },
+    "allowedForModel": [
+      "project_code",
+      "month",
+      "manhours",
+      "recordable_incidents",
+      "lost_time_injuries",
+      "near_misses",
+      "trir",
+      "ltifr",
+      "severity_rate",
+      "near_miss_ratio",
+      "training_compliance",
+      "audit_score_avg",
+      "observations_safe",
+      "observations_unsafe"
+    ],
+    "requiredForEvidence": [
+      "project_code",
+      "project_code"
+    ],
+    "blocked": [
+      "lost_days"
+    ]
+  },
+  "annual_hse_calendar": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "activity",
+      "project",
+      "planned_month",
+      "planned_date",
+      "status",
+      "actual_date",
+      "remarks"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "activity"
+    ],
+    "blocked": [
+      "responsible_person"
+    ]
+  },
+  "annual_hse_calendar__12month_project_activity_matrix": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "project",
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "project"
+    ],
+    "blocked": []
+  },
+  "change_log": {
+    "scope": {
+      "kind": "UNAVAILABLE_TO_AGENT"
+    },
+    "allowedForModel": [],
+    "requiredForEvidence": [],
+    "blocked": [
+      "version_no",
+      "date",
+      "changed_by",
+      "description_of_change",
+      "sheets_affected"
+    ]
+  },
+  "emergency_preparedness": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [],
+    "requiredForEvidence": [],
+    "blocked": [
+      "name",
+      "role",
+      "project",
+      "phone_primary",
+      "phone_alternate",
+      "available_247"
+    ]
+  },
+  "emergency_preparedness__emergency_response_plan_summary": {
+    "scope": {
+      "kind": "GLOBAL"
+    },
+    "allowedForModel": [
+      "scenario",
+      "immediate_actions",
+      "assemblymuster_point",
+      "responsible_team",
+      "reference_document"
+    ],
+    "requiredForEvidence": [
+      "scenario"
+    ],
+    "blocked": []
+  },
+  "emergency_preparedness__emergency_drill_register": {
+    "scope": {
+      "kind": "PROJECT_SCOPED_DIRECT",
+      "column": "project"
+    },
+    "allowedForModel": [
+      "drill_id",
+      "project",
+      "drill_type",
+      "date",
+      "participants_count",
+      "evacuationresponse_time_minutes",
+      "observations",
+      "improvement_actions",
+      "next_drill_due"
+    ],
+    "requiredForEvidence": [
+      "project",
+      "drill_id"
+    ],
+    "blocked": []
+  }
+}

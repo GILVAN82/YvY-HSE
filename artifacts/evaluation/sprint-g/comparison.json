@@ -1,0 +1,477 @@
+{
+  "baselineCommit": "8b0e987",
+  "sameF2CorpusDatasetVectorsConfigMetricsSources": true,
+  "backendPatchReplaySourceAndPromptFingerprintsMatch": true,
+  "profiles": {
+    "integrated": {
+      "sourceFingerprint": "efb9278c361a82bf32b19f7a9213eee65a68ee99e8ab4a820841b6543739df01",
+      "promptRegistry": {
+        "agent": {
+          "version": "agent-g-v1",
+          "mode": "MODULAR_POLICY",
+          "fingerprint": "b7cc47ab6e138ac539804faa6f8e6ffd007e5f693b428455ce90859c087ef0ef"
+        },
+        "queryPlan": {
+          "version": "controlled-hse-pt-en-v1",
+          "mode": "DETERMINISTIC_SCHEMA_NOT_LLM_PROMPT"
+        },
+        "verification": {
+          "version": "semantic-verifier-e1",
+          "mode": "DETERMINISTIC_CONTRACT_NOT_LLM_PROMPT"
+        }
+      },
+      "retrieval": [
+        {
+          "fusion": "SEMANTIC_ONLY",
+          "configFingerprint": "f424d37a8110b5f218579b24ef8b924e8cf4ef80dc34a0ec477afaf3cc4c3f1d",
+          "metrics": {
+            "requiredSourceRecall": 0.6666666666666666,
+            "relevantRecallAtK": 0.6666666666666666,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 0.6363636363636364,
+            "top1SourceAccuracy": 0.6363636363636364,
+            "falseAbstentions": 8,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 0.9375,
+                "relevantRecallAtK": 0.9375,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.9285714285714286,
+                "top1SourceAccuracy": 0.9285714285714286,
+                "falseAbstentions": 1,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 0.125,
+                "relevantRecallAtK": 0.125,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.125,
+                "top1SourceAccuracy": 0.125,
+                "falseAbstentions": 7,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        },
+        {
+          "fusion": "RRF",
+          "configFingerprint": "5271169dc89a6166585808371bd6bb1362d6903fe49cb039040bc7f8cf82e320",
+          "metrics": {
+            "requiredSourceRecall": 1,
+            "relevantRecallAtK": 1,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 1,
+            "top1SourceAccuracy": 1,
+            "falseAbstentions": 0,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "isolated": {
+      "sourceFingerprint": "5f74f7e90367d8f215bfc21003b243a7054f26555d77f58a6b56f6588160bcf4",
+      "promptRegistry": {
+        "agent": {
+          "version": "agent-g-v1",
+          "mode": "MODULAR_POLICY",
+          "fingerprint": "155e74e593fbbe6e47b1ce43110e4f57f567a004839119c31bbee386fb6a3c6c"
+        },
+        "queryPlan": {
+          "version": "controlled-hse-pt-en-v1",
+          "mode": "DETERMINISTIC_SCHEMA_NOT_LLM_PROMPT"
+        },
+        "verification": {
+          "version": "semantic-verifier-e1",
+          "mode": "DETERMINISTIC_CONTRACT_NOT_LLM_PROMPT"
+        }
+      },
+      "retrieval": [
+        {
+          "fusion": "SEMANTIC_ONLY",
+          "configFingerprint": "f424d37a8110b5f218579b24ef8b924e8cf4ef80dc34a0ec477afaf3cc4c3f1d",
+          "metrics": {
+            "requiredSourceRecall": 0.6666666666666666,
+            "relevantRecallAtK": 0.6666666666666666,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 0.6363636363636364,
+            "top1SourceAccuracy": 0.6363636363636364,
+            "falseAbstentions": 8,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 0.9375,
+                "relevantRecallAtK": 0.9375,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.9285714285714286,
+                "top1SourceAccuracy": 0.9285714285714286,
+                "falseAbstentions": 1,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 0.125,
+                "relevantRecallAtK": 0.125,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.125,
+                "top1SourceAccuracy": 0.125,
+                "falseAbstentions": 7,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        },
+        {
+          "fusion": "RRF",
+          "configFingerprint": "5271169dc89a6166585808371bd6bb1362d6903fe49cb039040bc7f8cf82e320",
+          "metrics": {
+            "requiredSourceRecall": 1,
+            "relevantRecallAtK": 1,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 1,
+            "top1SourceAccuracy": 1,
+            "falseAbstentions": 0,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "replay": {
+      "sourceFingerprint": "5f74f7e90367d8f215bfc21003b243a7054f26555d77f58a6b56f6588160bcf4",
+      "promptRegistry": {
+        "agent": {
+          "version": "agent-g-v1",
+          "mode": "MODULAR_POLICY",
+          "fingerprint": "155e74e593fbbe6e47b1ce43110e4f57f567a004839119c31bbee386fb6a3c6c"
+        },
+        "queryPlan": {
+          "version": "controlled-hse-pt-en-v1",
+          "mode": "DETERMINISTIC_SCHEMA_NOT_LLM_PROMPT"
+        },
+        "verification": {
+          "version": "semantic-verifier-e1",
+          "mode": "DETERMINISTIC_CONTRACT_NOT_LLM_PROMPT"
+        }
+      },
+      "retrieval": [
+        {
+          "fusion": "SEMANTIC_ONLY",
+          "configFingerprint": "f424d37a8110b5f218579b24ef8b924e8cf4ef80dc34a0ec477afaf3cc4c3f1d",
+          "metrics": {
+            "requiredSourceRecall": 0.6666666666666666,
+            "relevantRecallAtK": 0.6666666666666666,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 0.6363636363636364,
+            "top1SourceAccuracy": 0.6363636363636364,
+            "falseAbstentions": 8,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 0.9375,
+                "relevantRecallAtK": 0.9375,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.9285714285714286,
+                "top1SourceAccuracy": 0.9285714285714286,
+                "falseAbstentions": 1,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 0.125,
+                "relevantRecallAtK": 0.125,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 0.125,
+                "top1SourceAccuracy": 0.125,
+                "falseAbstentions": 7,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        },
+        {
+          "fusion": "RRF",
+          "configFingerprint": "5271169dc89a6166585808371bd6bb1362d6903fe49cb039040bc7f8cf82e320",
+          "metrics": {
+            "requiredSourceRecall": 1,
+            "relevantRecallAtK": 1,
+            "irrelevantRetrievalRate": 0,
+            "mrr": 1,
+            "top1SourceAccuracy": 1,
+            "falseAbstentions": 0,
+            "falseRetrievalsOnNegativeQueries": 0
+          },
+          "byLanguage": [
+            {
+              "language": "en",
+              "sampleSize": 16,
+              "positiveQueries": 14,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            },
+            {
+              "language": "pt",
+              "sampleSize": 8,
+              "positiveQueries": 8,
+              "metrics": {
+                "requiredSourceRecall": 1,
+                "relevantRecallAtK": 1,
+                "irrelevantRetrievalRate": 0,
+                "mrr": 1,
+                "top1SourceAccuracy": 1,
+                "falseAbstentions": 0,
+                "falseRetrievalsOnNegativeQueries": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "agent": {
+    "passed": 44,
+    "total": 44,
+    "intentPassed": 134,
+    "intentTotal": 134,
+    "supplementaryPassed": 3,
+    "supplementaryTotal": 3
+  },
+  "reproduction": {
+    "patch": "2026-09-09T18-01-06-090Z-8b0e987b5d4c-offline.patch",
+    "sha256": "2354cc6ab91392631d7da237c2cbb29ddf3573248f909514c1507e6133d33c56",
+    "baseCommit": "8b0e987b5d4cb7fa1a08808c7b4959eaaa8f599e"
+  },
+  "gates": {
+    "integrated": {
+      "backend": [
+        389,
+        389
+      ],
+      "frontend": [
+        118,
+        118
+      ],
+      "backendTypecheck": 0,
+      "backendBuild": 0,
+      "frontendAppTypecheck": 0,
+      "frontendSpecTypecheck": 0,
+      "frontendBuild": 0
+    },
+    "isolated": {
+      "backend": [
+        371,
+        371
+      ],
+      "frontend": [
+        112,
+        112
+      ],
+      "backendTypecheck": 0,
+      "backendBuild": 0,
+      "frontendAppTypecheck": 0,
+      "frontendSpecTypecheck": 0,
+      "frontendBuild": 0
+    },
+    "hermeticAgent": "PASS; sockets and fetch blocked",
+    "realRetrieval": "PASS; read-only PostgreSQL, retained real vectors, HTTP blocked",
+    "newProviderApiCalls": 0,
+    "buildWarnings": "Existing non-fatal Angular budget warnings",
+    "rawLogArchive": "C:\\Users\\Gil\\AppData\\Local\\Temp\\yvy-sprint-g-diagnostics",
+    "logs": [
+      {
+        "name": "integrated-agent.log",
+        "sha256": "95912edef9ec5330079b3ac97ddd590fc8b172521fd70283b7dbd627be829ab3",
+        "bytes": 375922
+      },
+      {
+        "name": "integrated-backend-build.log",
+        "sha256": "f8eb7e9987935fef7846afb9a62cffde166403d908a7a099fe31b233f87cfa7c",
+        "bytes": 132
+      },
+      {
+        "name": "integrated-backend-tests.log",
+        "sha256": "700c97a104f020230b4b04d18e49b4f09417030dfdeb4aaacf74d9f3939bd3d8",
+        "bytes": 1755674
+      },
+      {
+        "name": "integrated-backend-typecheck.log",
+        "sha256": "882e4e99f14ce6a1888f7c840f5aa9753265446d1c7cdf1bb422b3897e8a7797",
+        "bytes": 122
+      },
+      {
+        "name": "integrated-frontend-app-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "name": "integrated-frontend-build.log",
+        "sha256": "12032acc8768d19dc905b60aab25a65a25045c68e49d2ce83b636f3656692cca",
+        "bytes": 2830
+      },
+      {
+        "name": "integrated-frontend-spec-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "name": "integrated-frontend-tests.log",
+        "sha256": "85ae99794996770855f7fc41280ff0ea8bc826c6da661ec3dfcc912ed9dab9f5",
+        "bytes": 28562
+      },
+      {
+        "name": "integrated-rag.log",
+        "sha256": "aa1392a070e1bb9ebcc2741c9ad29e3634d6355ed1a8f699b521f74823b6c0c8",
+        "bytes": 61428
+      },
+      {
+        "name": "isolated-agent.log",
+        "sha256": "0c1de8ee0dd46be1120ee52011c847bed6154730042bf1957c925a946f039058",
+        "bytes": 374376
+      },
+      {
+        "name": "isolated-backend-build.log",
+        "sha256": "f8eb7e9987935fef7846afb9a62cffde166403d908a7a099fe31b233f87cfa7c",
+        "bytes": 132
+      },
+      {
+        "name": "isolated-backend-tests.log",
+        "sha256": "6bf56382bc18319ecd37fae8075bcb8e361127899c9101fbeec23f315ad20fb5",
+        "bytes": 1720678
+      },
+      {
+        "name": "isolated-backend-typecheck.log",
+        "sha256": "882e4e99f14ce6a1888f7c840f5aa9753265446d1c7cdf1bb422b3897e8a7797",
+        "bytes": 122
+      },
+      {
+        "name": "isolated-frontend-app-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "name": "isolated-frontend-build.log",
+        "sha256": "3eb7b2e0dd6d9b2d7e7a0969e340907b269c78974f29b72d0eb270bdf2cdeda7",
+        "bytes": 2852
+      },
+      {
+        "name": "isolated-frontend-spec-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "name": "isolated-frontend-tests.log",
+        "sha256": "6b215219bfdced6d33e8154ab5b182ffd6b3c5bfd3edbf100a7dcd170a4abe64",
+        "bytes": 27254
+      },
+      {
+        "name": "isolated-rag.log",
+        "sha256": "3394ab69260b4b33388a95e3db3afb27f0cbae857752e208cf91ffb7f5a40937",
+        "bytes": 61420
+      },
+      {
+        "name": "replay-agent.log",
+        "sha256": "55e88889deb11e06b5333b869c59c37fb2bc84117201e6fd0603f080b6e9544e",
+        "bytes": 374328
+      },
+      {
+        "name": "replay-rag.log",
+        "sha256": "202161533144e3e554fef2b6b858e105d9bc9218d6c40a87bb147c685bda809d",
+        "bytes": 61408
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+@use '../../shared/ai-chat-widget/markdown-layout' as markdown;
+
+@media(max-width:760px){
+ :host{height:calc(100dvh - 60px)}
+ .workspace.conversation-active{grid-template-columns:90px minmax(0,1fr);
+ .workspace-header{padding:0 10px}.identity{gap:6px}.identity span{font-size:9px}.mark{width:28px;height:28px}.header-actions{gap:4px}.conversation-toggle{font-size:10px;padding:7px}
+ .hero{padding:12px 5px;gap:10px;grid-row:2/4}.greeting{display:block;text-align:center}.greeting span,.greeting p,.greeting i{display:none}.greeting h2{font-size:14px}
+ .core-field{width:78px;padding-top:85px;grid-template-columns:1fr;gap:16px}.core{width:68px}.core ::ng-deep .identity strong{font-size:22px}.core ::ng-deep .identity span,.core ::ng-deep .identity small,.core ::ng-deep .identity lucide-icon{display:none}.cap{transform:none}.brand-message{display:none}
+ .bottom-status{display:none}.timeline{padding:16px 10px}.message{max-width:100%;gap:6px}.avatar{display:none}.message-body>p,.assistant-markdown{padding:10px}
+ .composer{width:calc(100% - 12px)}.composer-box{gap:2px;padding:4px}.composer textarea{padding:8px 4px}.composer-action,.send{width:32px;flex-shrink:0}.quick-actions{flex-wrap:nowrap;justify-content:flex-start;overflow:auto}.quick-actions button{white-space:nowrap}.new-response{left:calc(50% + 45px)}
+ }
+}
+@media(prefers-reduced-motion:reduce){.hero,.core,.cap{transition:none}.workspace.conversation-active .timeline{animation:none}}
+
+:host{height:100%;margin:0}
+@media(max-width:760px){
+ .workspace-header{gap:6px;min-width:0}.workspace-header>.identity{display:none}.header-actions{width:100%;justify-content:flex-end;min-width:0}
+ .header-actions ::ng-deep .settings>summary{font-size:10px;padding:8px;white-space:nowrap}
+ .workspace.conversation-active{grid-template-columns:76px minmax(0,1fr)}
+ .workspace.conversation-active .core-field{width:64px;margin:0}
+ .workspace.conversation-active .new-response{left:calc(50% + 38px);max-width:calc(100% - 100px)}
+ .workspace.conversation-active .composer textarea{font-size:14px}
+}
+@media(max-width:760px){
+ .workspace.conversation-active .hero{scrollbar-width:thin;padding-inline:4px}
+ .workspace.conversation-active .core-field{width:100%;min-width:0}
+ .workspace.conversation-active .cap ::ng-deep .node strong{max-width:100%;overflow-wrap:anywhere;font-size:7px}
+ .workspace.conversation-active .composer textarea{scrollbar-width:thin;overflow-y:auto}
+ .workspace.conversation-active .quick-actions{scrollbar-width:thin}
+}
+
+@include markdown.organized-markdown;
+
+// Plain demo narration and Markdown replies share the same chat typography.
+.message-body > p{font-size:14px;line-height:1.65}
+@media(max-width:760px){.message-body > p{font-size:13px}}
+
+// Keep the original animated globe beside the conversation without its text overlay.
+.workspace.conversation-active .core ::ng-deep .identity,
+.workspace.demo-active .core ::ng-deep .identity{display:none}

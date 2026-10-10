@@ -1,0 +1,153 @@
+// Sidebar surface tokens, derived from the global YvY palette in styles.scss.
+:host {
+  --sb-rail-w: 80px;
+  --sb-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --sb-rail-bg: var(--brand-white);
+  --sb-panel-bg: var(--brand-white);
+  --sb-border: var(--brand-gray-200);
+  --sb-icon: #64748b;
+  --sb-text: #334155;
+  --sb-heading: var(--brand-graphite-900);
+  --sb-muted: var(--brand-graphite-600);
+  --sb-accent: var(--brand-teal-700);
+  --sb-focus: var(--brand-blue-700);
+  --sb-rail-hover: #eef6fa;
+  --sb-rail-active: #e7f5f3;
+  --sb-item-hover: #f0f7fa;
+  --sb-item-active: #ddf3ef;
+  --sb-item-active-text: var(--brand-blue-900);
+  --sb-badge-bg: #fff2de;
+  --sb-badge-text: #b45309;
+  --sb-tip-bg: var(--brand-graphite-900);
+  --sb-tip-text: var(--brand-white);
+}
+
+:host-context(:root[data-theme='dark']) {
+  --sb-rail-bg: #07111f;
+  --sb-panel-bg: #0d1a2b;
+  --sb-border: #233952;
+  --sb-icon: #b7c3d1;
+  --sb-text: #b7c3d1;
+  --sb-heading: #f4f7fb;
+  --sb-muted: #8ea0b4;
+  --sb-accent: #2dd4bf;
+  --sb-focus: #4f8dff;
+  --sb-rail-hover: #122238;
+  --sb-rail-active: rgba(18, 169, 162, 0.16);
+  --sb-item-hover: #122238;
+  --sb-item-active: rgba(18, 169, 162, 0.16);
+  --sb-item-active-text: #f4f7fb;
+  --sb-badge-bg: rgba(249, 115, 22, 0.18);
+  --sb-badge-text: #fdba74;
+  --sb-tip-bg: #122238;
+  --sb-tip-text: #f4f7fb;
+}
+
+.sb-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  // Only the panel column animates; the rail keeps its width.
+  transition: transform 200ms var(--sb-ease);
+}
+
+// Vertical rule separating the rail from the panel — same gradient-and-glow
+// language as the horizontal divider, lit with the orange from the mark.
+// Identical in both themes; only the glow strength differs.
+.sb-vrule {
+  position: relative;
+  flex: 0 0 1px;
+  width: 1px;
+  align-self: stretch;
+  // At rest it is just the neutral separator — the orange only appears on hover.
+  // Flat fill so the line is identical along its whole length.
+  background: var(--sb-border);
+  filter: none;
+  transition: background-color var(--yvy-ease), filter var(--yvy-ease);
+}
+
+// A 1px line is impossible to point at, so an invisible strip widens the target
+// without taking any layout width. It sits inside the neighbours' padding.
+.sb-vrule::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  right: -5px;
+}
+
+// Hover: the rule lights up and breathes.
+.sb-vrule:hover {
+  background: var(--yvy-vrule-color-hot);
+  filter: var(--yvy-vrule-glow-hot);
+  animation: vrule-alive 1.7s ease-in-out infinite;
+}
+
+@keyframes vrule-alive {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.58; }
+}
+
+// The panel is a sliding column: width + opacity, nothing else.
+.sb-panel-slot {
+  overflow: hidden;
+  animation: sb-panel-in 200ms var(--sb-ease);
+}
+
+@keyframes sb-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Tablet: the panel floats above the page rather than pushing it.
+.sb-shell.is-overlay .sb-panel-slot {
+  box-shadow: 10px 0 30px -16px rgba(8, 42, 94, 0.4);
+}
+
+// Mobile: rail + panel travel together as one drawer.
+.sb-shell.is-mobile {
+  transform: translateX(calc(-1 * var(--sb-rail-w)));
+
+  &.is-panel-open {
+    transform: translateX(0);
+    box-shadow: 10px 0 34px -18px rgba(8, 42, 94, 0.55);
+  }
+
+  .sb-panel-slot {
+    width: min(calc(86vw - var(--sb-rail-w)), 320px) !important;
+  }
+}
+
+.sb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(8, 42, 94, 0.42);
+  animation: sb-fade 180ms var(--sb-ease);
+}
+
+@keyframes sb-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-shell,
+  .sb-vrule { transition: none; }
+  .sb-panel-slot,
+  .sb-backdrop,
+  // The rule still brightens on hover; only the breathing stops.
+  .sb-vrule:hover { animation: none; }
+}

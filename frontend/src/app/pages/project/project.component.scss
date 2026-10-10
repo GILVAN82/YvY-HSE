@@ -1,0 +1,39 @@
+.infotbl {
+  margin-bottom: 18px;
+}
+
+.actions-body {
+  padding-top: 6px;
+}
+
+.actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eef1f2;
+    font-size: 12.5px;
+  }
+
+  .id {
+    font-family: var(--mono);
+    color: var(--blue);
+  }
+}
+
+.due-note {
+  color: var(--muted);
+}
+
+.id-cell {
+  font-family: var(--mono);
+  color: var(--blue);
+}
+
+.empty-cell {
+  padding: 16px;
+}

@@ -1,0 +1,104 @@
+@use './markdown-layout' as markdown;
+:host {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+// Dark pill with a blue -> teal gradient *border*, per the AI agent reference.
+// The two-layer background paints the dark fill inside the padding box and the
+// gradient inside the border box, so the border itself carries the gradient.
+.fab {
+  height: 52px;
+  padding: 0 20px 0 12px;
+  gap: 10px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(#0b1622, #0b1622) padding-box,
+    linear-gradient(90deg, #2b7fff 0%, #22d3b8 100%) border-box;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(43, 127, 255, 0.22), 0 10px 28px rgba(8, 42, 94, 0.35);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+// Same glow language as the sidebar containers, one step brighter on hover.
+.fab:hover {
+  box-shadow: 0 0 0 1px rgba(18, 169, 162, 0.6), 0 0 18px rgba(18, 169, 162, 0.28),
+    0 12px 32px rgba(8, 42, 94, 0.35);
+}
+.fab .fab-mark {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  // The artwork ships its own colours — never recolour it.
+  filter: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+.fab .fab-label {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.fab:focus-visible {
+  outline: 2px solid #22d3b8;
+  outline-offset: 3px;
+}
+// Open: collapses to a round close button so it does not shadow the panel.
+.fab.open {
+  width: 52px;
+  padding: 0;
+  gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab { transition: none; }
+}
+
+@media (max-width: 480px) {
+  .fab .fab-label { display: none; }
+  .fab { width: 52px; padding: 0; gap: 0; }
+}
+
+.panel {
+  position: absolute;
+  right: 0;
+  bottom: 70px;
+  width: min(440px, calc(100vw - 32px));
+  height: min(680px, 78vh);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  will-change: transform;
+}
+
+.panel header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 14px 14px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.panel.dragging { box-shadow: 0 24px 60px -10px rgba(0, 0, 0, 0.42); }
+.panel.dragging header { cursor: grabbing; }
+.panel header button { cursor: pointer; }
+// Circular brand avatar. The source PNG has no alpha channel, so the circle
+
+@include markdown.organized-markdown;

@@ -1,0 +1,671 @@
+{
+  "corpusFingerprint": "cd19ac92e204c7f9e7ee59bec8af925ad8cbd898b271a765d782a32a3dc4f6a1",
+  "documentLanguages": [
+    {
+      "sourceId": "yvy-kb-loto-osha-1910-147",
+      "language": "en"
+    },
+    {
+      "sourceId": "yvy-kb-ptw-hse-hsg250",
+      "language": "en"
+    },
+    {
+      "sourceId": "yvy-kb-risk-assessment-hse",
+      "language": "en"
+    },
+    {
+      "sourceId": "yvy-kb-emergency-procedures-hse",
+      "language": "en"
+    }
+  ],
+  "cases": [
+    {
+      "originalQuery": "Como controlar a energia residual e verificar o isolamento antes da manutenção?",
+      "normalizedQuery": "como controlar a energia residual e verificar o isolamento antes da manutencao",
+      "plan": {
+        "originalQuery": "Como controlar a energia residual e verificar o isolamento antes da manutenção?",
+        "semanticQuery": "Como controlar a energia residual e verificar o isolamento antes da manutenção?",
+        "lexicalQuery": "Como controlar a energia residual e verificar o isolamento antes da manutenção?",
+        "exactTerms": [],
+        "acronyms": []
+      },
+      "requiredSources": [
+        "yvy-kb-loto-osha-1910-147"
+      ],
+      "semanticCandidates": [
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.3661934647430434,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "accepted": false
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.19837371305302187,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "accepted": false
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.19226790368631352,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "accepted": false
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.18083173511368522,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "accepted": false
+        }
+      ],
+      "lexicalCandidates": [
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.1,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "coverage": 0.1111111111111111
+        }
+      ],
+      "rawRrf": [
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.3661934647430434,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "fusionScore": 0.03278688524590164,
+          "semanticRank": 1,
+          "lexicalRank": 1
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.19837371305302187,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "fusionScore": 0.016129032258064516,
+          "semanticRank": 2
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.19226790368631352,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "fusionScore": 0.015873015873015872,
+          "semanticRank": 3
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.18083173511368522,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "fusionScore": 0.015625,
+          "semanticRank": 4
+        }
+      ],
+      "finalResult": {
+        "status": "NO_RELEVANT_EVIDENCE",
+        "evidence": [],
+        "diagnostics": {
+          "retrievalMode": "HYBRID",
+          "relevanceState": "NO_RELEVANT_EVIDENCE",
+          "reformulationStatus": "DETERMINISTIC",
+          "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+        }
+      },
+      "causes": [
+        "LANGUAGE MISMATCH",
+        "DOCUMENT LANGUAGE",
+        "QUERY PLAN",
+        "LEXICAL TOKENIZATION",
+        "THRESHOLD"
+      ],
+      "normalizationCorruption": false,
+      "jurisdictionRejected": false
+    },
+    {
+      "originalQuery": "Uma permissão de trabalho torna a tarefa segura por si só?",
+      "normalizedQuery": "uma permissao de trabalho torna a tarefa segura por si so",
+      "plan": {
+        "originalQuery": "Uma permissão de trabalho torna a tarefa segura por si só?",
+        "semanticQuery": "Uma permissão de trabalho torna a tarefa segura por si só?",
+        "lexicalQuery": "Uma permissão de trabalho torna a tarefa segura por si só?",
+        "exactTerms": [],
+        "acronyms": []
+      },
+      "requiredSources": [
+        "yvy-kb-ptw-hse-hsg250"
+      ],
+      "semanticCandidates": [
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.3484118266699887,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "accepted": false
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.19796954246533083,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "accepted": false
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.18910396839911825,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "accepted": false
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.12702039511246055,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "accepted": false
+        }
+      ],
+      "lexicalCandidates": [],
+      "rawRrf": [
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.3484118266699887,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "fusionScore": 0.01639344262295082,
+          "semanticRank": 1
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.19796954246533083,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "fusionScore": 0.016129032258064516,
+          "semanticRank": 2
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.18910396839911825,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "fusionScore": 0.015873015873015872,
+          "semanticRank": 3
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.12702039511246055,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "fusionScore": 0.015625,
+          "semanticRank": 4
+        }
+      ],
+      "finalResult": {
+        "status": "NO_RELEVANT_EVIDENCE",
+        "evidence": [],
+        "diagnostics": {
+          "retrievalMode": "HYBRID",
+          "relevanceState": "NO_RELEVANT_EVIDENCE",
+          "reformulationStatus": "DETERMINISTIC",
+          "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+        }
+      },
+      "causes": [
+        "LANGUAGE MISMATCH",
+        "DOCUMENT LANGUAGE",
+        "QUERY PLAN",
+        "LEXICAL TOKENIZATION",
+        "THRESHOLD"
+      ],
+      "normalizationCorruption": false,
+      "jurisdictionRejected": false
+    },
+    {
+      "originalQuery": "Quando devemos revisar a avaliação de riscos após mudanças no trabalho ou quase acidentes?",
+      "normalizedQuery": "quando devemos revisar a avaliacao de riscos apos mudancas no trabalho ou quase acidentes",
+      "plan": {
+        "originalQuery": "Quando devemos revisar a avaliação de riscos após mudanças no trabalho ou quase acidentes?",
+        "semanticQuery": "Quando devemos revisar a avaliação de riscos após mudanças no trabalho ou quase acidentes?",
+        "lexicalQuery": "Quando devemos revisar a avaliação de riscos após mudanças no trabalho ou quase acidentes?",
+        "exactTerms": [],
+        "acronyms": []
+      },
+      "requiredSources": [
+        "yvy-kb-risk-assessment-hse"
+      ],
+      "semanticCandidates": [
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.4433233426707395,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "accepted": false
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.28222969100164064,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "accepted": false
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.2791839775929652,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "accepted": false
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.27051272720850883,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "accepted": false
+        }
+      ],
+      "lexicalCandidates": [
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.1,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "coverage": 0.07692307692307693
+        }
+      ],
+      "rawRrf": [
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.4433233426707395,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "fusionScore": 0.03278688524590164,
+          "semanticRank": 1,
+          "lexicalRank": 1
+        },
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.28222969100164064,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "fusionScore": 0.016129032258064516,
+          "semanticRank": 2
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.2791839775929652,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "fusionScore": 0.015873015873015872,
+          "semanticRank": 3
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.27051272720850883,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "fusionScore": 0.015625,
+          "semanticRank": 4
+        }
+      ],
+      "finalResult": {
+        "status": "NO_RELEVANT_EVIDENCE",
+        "evidence": [],
+        "diagnostics": {
+          "retrievalMode": "HYBRID",
+          "relevanceState": "NO_RELEVANT_EVIDENCE",
+          "reformulationStatus": "DETERMINISTIC",
+          "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+        }
+      },
+      "causes": [
+        "LANGUAGE MISMATCH",
+        "DOCUMENT LANGUAGE",
+        "QUERY PLAN",
+        "LEXICAL TOKENIZATION",
+        "THRESHOLD"
+      ],
+      "normalizationCorruption": false,
+      "jurisdictionRejected": false
+    },
+    {
+      "originalQuery": "Como planejar evacuação, alarmes e apoio a trabalhadores que precisam de assistência adicional?",
+      "normalizedQuery": "como planejar evacuacao alarmes e apoio a trabalhadores que precisam de assistencia adicional",
+      "plan": {
+        "originalQuery": "Como planejar evacuação, alarmes e apoio a trabalhadores que precisam de assistência adicional?",
+        "semanticQuery": "Como planejar evacuação, alarmes e apoio a trabalhadores que precisam de assistência adicional?",
+        "lexicalQuery": "Como planejar evacuação, alarmes e apoio a trabalhadores que precisam de assistência adicional?",
+        "exactTerms": [],
+        "acronyms": []
+      },
+      "requiredSources": [
+        "yvy-kb-emergency-procedures-hse"
+      ],
+      "semanticCandidates": [
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.39153180060606085,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "accepted": false
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.26626042031983754,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "accepted": false
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.23363377171408672,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "accepted": false
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.20092703746836005,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "accepted": false
+        }
+      ],
+      "lexicalCandidates": [],
+      "rawRrf": [
+        {
+          "chunkId": "7b559d27594ada05b9fb5fa7a1cf92f265251eabddbdc4f74886ecb79a52d4bc",
+          "documentId": "10",
+          "score": 0.39153180060606085,
+          "sourceId": "yvy-kb-emergency-procedures-hse",
+          "title": "Emergency Procedures - Curated Reference Summary",
+          "module": "Emergency Preparedness and Response",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Emergency Procedures",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/workplace-health/emergency-procedures.htm",
+          "fusionScore": 0.01639344262295082,
+          "semanticRank": 1
+        },
+        {
+          "chunkId": "b3f36fecaee791ba61bb9a6134907da57c4072affec30d6acfbef03b5d05b131",
+          "documentId": "9",
+          "score": 0.26626042031983754,
+          "sourceId": "yvy-kb-risk-assessment-hse",
+          "title": "Managing Risks and Risk Assessment at Work - Curated Reference Summary",
+          "module": "HIRA / Risk Assessment",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE - Managing Risks and Risk Assessment at Work",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/risk/",
+          "fusionScore": 0.016129032258064516,
+          "semanticRank": 2
+        },
+        {
+          "chunkId": "de68ad64379ff409920ff55f3cde2f18a3b6dc10ab25c6e831cc48889bf155c2",
+          "documentId": "7",
+          "score": 0.23363377171408672,
+          "sourceId": "yvy-kb-loto-osha-1910-147",
+          "title": "Control of Hazardous Energy (Lockout/Tagout) - Curated Reference Summary",
+          "module": "LOTO",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "OSHA 29 CFR 1910.147 - LOTO",
+          "sourceOrganization": "Occupational Safety and Health Administration (OSHA)",
+          "jurisdiction": "United States - Federal General Industry",
+          "sourceUrl": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147",
+          "fusionScore": 0.015873015873015872,
+          "semanticRank": 3
+        },
+        {
+          "chunkId": "e83a3e693ca7bda16d0c59ff165ad5a1786d58df20deaa84197d96ffd92a4253",
+          "documentId": "8",
+          "score": 0.20092703746836005,
+          "sourceId": "yvy-kb-ptw-hse-hsg250",
+          "title": "Permit-to-Work Systems - Curated Reference Summary",
+          "module": "Permit to Work",
+          "version": "YvY-curated-summary-v1.0",
+          "citationLabel": "HSE HSG250 - Permit-to-Work Systems",
+          "sourceOrganization": "UK Health and Safety Executive (HSE)",
+          "jurisdiction": "United Kingdom",
+          "sourceUrl": "https://www.hse.gov.uk/pubns/books/hsg250.htm",
+          "fusionScore": 0.015625,
+          "semanticRank": 4
+        }
+      ],
+      "finalResult": {
+        "status": "NO_RELEVANT_EVIDENCE",
+        "evidence": [],
+        "diagnostics": {
+          "retrievalMode": "HYBRID",
+          "relevanceState": "NO_RELEVANT_EVIDENCE",
+          "reformulationStatus": "DETERMINISTIC",
+          "configFingerprint": "5824e17941c1f254b79c1b975197f8c5effb2bbf0ef1b6a91ee827a66675b9b3"
+        }
+      },
+      "causes": [
+        "LANGUAGE MISMATCH",
+        "DOCUMENT LANGUAGE",
+        "QUERY PLAN",
+        "LEXICAL TOKENIZATION",
+        "THRESHOLD"
+      ],
+      "normalizationCorruption": false,
+      "jurisdictionRejected": false
+    }
+  ]
+}

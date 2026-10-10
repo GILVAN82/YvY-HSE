@@ -1,0 +1,172 @@
+<section *ngIf="inspector.demoHumanContext() as context" class="inspector-page" aria-label="Demo human decision correlation">
+  <h2>Human decision correlation</h2><dl><dt>Demo session</dt><dd>{{context.demoSessionId}}</dd>
+    <dt>Request instance</dt><dd>{{context.requestInstanceId}}</dd><dt>Approval ID</dt><dd>{{context.approvalId}}</dd>
+    <dt>Project</dt><dd>{{context.projectId}}</dd><dt>Status</dt><dd>{{context.status}}</dd>
+    <dt>Decision source</dt><dd>{{context.decisionMadeDuringCurrentDemo?'HUMAN':'NONE'}}</dd></dl>
+</section>
+<section *ngIf="inspector.demoPreset()" class="inspector-page demo-preset" aria-label="Compact real execution evidence">
+  <header class="page-head"><h2>Technical evidence</h2><button type="button" (click)="inspector.demoPreset.set(false)">Full Inspector</button></header>
+  <dl *ngIf="snapshot() as run">
+    <dt>Run</dt><dd><code>{{run.runId}}</code></dd>
+    <dt>Intent</dt><dd>{{trace()?.intent?.intent || 'Not observed'}}</dd>
+    <dt>Route</dt><dd>{{trace()?.route?.join(' / ') || 'Not observed'}}</dd>
+    <dt>Tools used</dt><dd>{{run.toolsUsed.join(', ') || 'None observed'}}</dd>
+    <dt>Retrieval / evidence</dt><dd>{{trace()?.rag?.diagnostics?.retrievalMode || trace()?.rag?.status || 'Not observed'}} / {{trace()?.verification?.evidenceItemsConsidered ?? 0}} evidence items</dd>
+    <dd *ngFor="let citation of run.citations">{{citation.citationLabel}} / {{citation.jurisdiction}}</dd>
+    <dt>Verification</dt><dd>{{trace()?.verification?.status || 'Not observed'}}</dd>
+    <dt>HITL</dt><dd>{{(inspector.demoApproval() || run.approvalRequest)?.status || 'Not required / not observed'}}</dd>
+    <dt>Prompt version</dt><dd>{{trace()?.observability?.prompt?.version || 'Not observed'}}</dd>
+  </dl>
+  <p *ngIf="!snapshot()">No execution snapshot available.</p><p *ngIf="inspector.demoApproval() as approval">Persisted human decision: {{approval.status}}. Authenticated server resolution; no identity is projected.</p>
+</section>
+<ng-container *ngIf="!inspector.demoPreset()">
+<main class="inspector-page">
+  <section *ngIf="inspector.voiceEngine() as voice"><h2>Voice Engine</h2><p>Requested: {{voice.requestedEngine}} · Effective: {{voice.effectiveEngine}}</p><p *ngIf="voice.voiceName">Voice: {{voice.voiceName}}</p><p *ngIf="voice.fallbackReason">Fallback: {{voice.fallbackReason}}</p></section>
+  <header class="page-head">
+    <div>
+      <span class="eyebrow">YvY HSE — Demo Mode</span>
+      <h1>Agent Inspector</h1>
+      <p>Real execution metadata from the most recent YVY HSE Agent request.</p>
+    </div>
+    <div class="head-actions">
+      <span class="live-badge">OBSERVABILITY ONLY</span>
+      <button type="button" class="clear-button" (click)="inspector.clear()" [disabled]="!snapshot()">Clear Inspector</button>
+    </div>
+  </header>
+
+  <section class="empty-state" *ngIf="!snapshot()">
+    <h2>No execution recorded</h2>
+    <p>No execution recorded. Run a request using the AI Agent to inspect its execution.</p>
+  </section>
+
+  <ng-container *ngIf="snapshot() as run">
+    <section class="summary-grid">
+      <article class="metric"><span>Response</span><strong [class.error]="run.responseStatus === 'ERROR'">{{ semanticLabel(run.responseStatus) }}</strong></article>
+      <article class="metric"><span>Technical Status</span><strong [class.error]="run.status === 'FAILED'">{{ run.status }}</strong></article>
+      <article class="metric"><span>Step Count</span><strong>{{ run.stepCount }}</strong></article>
+      <article class="metric wide"><span>Thread ID</span><code>{{ run.threadId }}</code></article>
+      <article class="metric"><span>Timestamp</span><strong>{{ trace()?.timestamp ? (trace()!.timestamp | date:'medium') : 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Response Language</span><strong>{{ trace()?.responseLanguage || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Authenticated user</span><strong>{{ trace()?.authenticatedUser || inspector.voiceSession()?.authenticatedUser || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Voice response mode</span><strong>{{ inspector.voiceSession()?.voiceResponseMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Input mode</span><strong>{{ inspector.voiceSession()?.inputMode || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Auto voice</span><strong>{{ inspector.voiceSession()?.autoVoice ? 'YES' : 'NO' }}</strong></article>
+      <article class="metric"><span>Spoken policy</span><strong>{{ inspector.voiceSession()?.spokenPolicy || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+      <article class="metric"><span>Voice verification</span><strong>{{ inspector.voiceSession()?.verificationStatus || 'NOT CURRENTLY OBSERVABLE' }}</strong></article>
+    </section>
+
+    <section class="card route-card">
+      <div class="card-head"><div><span class="section-number">01</span><h2>LangGraph Route</h2></div><span>{{ run.orchestrator }}</span></div>
+      <div class="route" *ngIf="trace()?.route?.length; else noRoute">
+        <ng-container *ngFor="let node of trace()!.route; let last = last">
+          <span class="node">{{ title(node) }}</span><span class="arrow" *ngIf="!last">↓</span>
+        </ng-container>
+      </div>
+      <ng-template #noRoute><p class="not-observable">NOT CURRENTLY OBSERVABLE</p></ng-template>
+    </section>
+
+    <section class="card" *ngIf="trace()?.observability as observation">
+      <div class="card-head"><h2>Prompt and Execution Diagnostics</h2></div>
+      <div class="kv"><span>Prompt version</span><code>{{ observation.prompt?.version || 'NOT_AVAILABLE' }}</code></div>
+      <div class="kv"><span>Prompt fingerprint</span><code>{{ observation.prompt?.fingerprint || 'NOT_AVAILABLE' }}</code></div>
+      <div class="kv"><span>Provider / model</span><strong>{{ observation.provider || 'NOT_AVAILABLE' }} / {{ observation.model || 'NOT_AVAILABLE' }}</strong></div>
+      <div class="kv" *ngFor="let timing of observation.stages"><span>{{ timing.stage }}</span><strong>{{ timing.durationMs }} ms</strong></div>
+      <div class="kv"><span>Token usage</span><strong>{{ observation.usage.status }} ? {{ observation.usage.inputTokens ?? '?' }} in / {{ observation.usage.outputTokens ?? '?' }} out / {{ observation.usage.totalTokens ?? '?' }} total</strong></div>
+      <div class="kv"><span>Cost</span><strong>{{ observation.cost }}</strong></div>
+      <div class="kv" *ngIf="observation.error as failure"><span>{{ failure.category }} / {{ failure.code }}</span><strong>Recoverable: {{ label(failure.recoverable) }}</strong></div>
+    </section>
+
+    <div class="content-grid">
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">02</span><h2>Tools Used</h2></div><span>{{ trace()?.tools?.length || 0 }}</span></div>
+        <p class="none" *ngIf="!trace()?.tools?.length">None</p>
+        <article class="tool" *ngFor="let tool of trace()?.tools">
+          <div class="tool-title"><code>{{ tool.name }}</code><span class="status" [class.error]="tool.status === 'ERROR'">{{ tool.status }}</span></div>
+          <div class="kv" *ngFor="let item of entries(tool.arguments)"><span>{{ item.key }}</span><code>{{ label(item.value) }}</code></div>
+          <p>{{ tool.resultSummary || 'Result summary not currently observable' }}</p>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">03</span><h2>Knowledge Retrieval</h2></div></div>
+        <div class="kv"><span>RAG Used</span><strong>{{ label(trace()?.rag?.used ?? run.ragUsed) }}</strong></div>
+        <div class="kv"><span>Retrieval mode</span><strong>{{ trace()?.rag?.diagnostics?.retrievalMode || 'NOT_AVAILABLE' }}</strong></div>
+        <div class="kv"><span>Retrieval Status</span><strong>{{ trace()?.rag?.status || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Chunks Retrieved</span><strong>{{ trace()?.rag?.chunksRetrieved ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="source" *ngFor="let citation of run.citations"><strong>{{ citation.citationLabel }}</strong><span>{{ citation.jurisdiction }}</span></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">04</span><h2>Conversation State</h2></div></div>
+        <div class="kv"><span>State Active</span><strong>{{ label(trace()?.conversation?.stateActive) }}</strong></div>
+        <div class="kv"><span>Messages in Thread</span><strong>{{ trace()?.conversation?.messageCount ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Thread ID</span><code>{{ run.threadId }}</code></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">05</span><h2>Long-Term Memory</h2></div></div>
+        <div class="kv"><span>Used</span><strong>{{ label(trace()?.memory?.used) }}</strong></div>
+        <div class="kv"><span>Operation</span><strong>{{ trace()?.memory?.operation || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Status</span><strong>{{ trace()?.memory?.status || 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Categories</span><strong>{{ trace()?.memory?.categories?.join(', ') || 'None' }}</strong></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">06</span><h2>Human-in-the-Loop</h2></div></div>
+        <ng-container *ngIf="run.approvalRequest as approval; else noApproval">
+          <div class="approval">{{ approval.status === 'PENDING' ? 'HUMAN APPROVAL REQUIRED' : 'HUMAN DECISION RECORDED' }}</div>
+          <div class="kv" *ngIf="approval.status !== 'PENDING'"><span>Decision</span><strong>{{ approval.status }}</strong></div>
+          <div class="kv"><span>Approval ID</span><code>{{approval.approvalId}}</code></div><div class="kv"><span>Approval thread</span><code>{{approval.threadId}}</code></div>
+          <div class="kv"><span>Operation</span><strong>{{ approval.actionType }}</strong></div>
+          <div class="kv"><span>Risk</span><strong>{{ approval.riskLevel }}</strong></div>
+          <div class="kv"><span>Status</span><strong>{{ approval.status }}</strong></div>
+          <div class="kv" *ngIf="approval.resolvedAt"><span>Resolved At</span><strong>{{ approval.resolvedAt | date:'medium' }}</strong></div>
+        </ng-container>
+        <ng-template #noApproval><p class="none">Not Required</p></ng-template>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">07</span><h2>Guardrail</h2></div></div>
+        <div class="guard" [class.blocked]="trace()?.guardrail?.status !== 'PASS'">{{ trace()?.guardrail?.status || 'NOT CURRENTLY OBSERVABLE' }}</div>
+        <div class="kv" *ngIf="trace()?.guardrail?.reason"><span>Reason</span><strong>{{ title(trace()!.guardrail.reason!) }}</strong></div>
+      </section>
+
+      <section class="card" *ngIf="trace()?.intent as intent">
+        <div class="card-head"><div><span class="section-number">07A</span><h2>Intent Routing</h2></div></div>
+
+        <div class="kv"><span>Normalized intent</span><strong>{{ intent.intent }}</strong></div>
+        <div class="kv"><span>Scope</span><strong>{{ intent.scope }}</strong></div>
+        <div class="kv"><span>Confidence band</span><strong>{{ intent.confidence }}</strong></div>
+        <div class="kv"><span>Candidate tool</span><strong>{{ intent.candidateTools.join(', ') || 'None' }}</strong></div>
+        <div class="kv"><span>Selected tool</span><strong>{{ intent.selectedTool || 'None' }}</strong></div>
+        <div class="kv"><span>Clarification required</span><strong>{{ label(intent.clarificationRequired) }}</strong></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><span class="section-number">08</span><h2>Semantic Verification</h2></div></div>
+        <div class="guard" [class.blocked]="trace()?.verification?.status !== 'VERIFIED'">{{ trace()?.verification?.status || 'NOT CURRENTLY OBSERVABLE' }}</div>
+        <div class="kv"><span>Evidence Items</span><strong>{{ trace()?.verification?.evidenceItemsConsidered ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Claims Checked</span><strong>{{ trace()?.verification?.claimsConsidered ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Unsupported Claims</span><strong>{{ trace()?.verification?.unsupportedClaims ?? 'NOT CURRENTLY OBSERVABLE' }}</strong></div>
+        <div class="kv"><span>Evidence Types</span><strong>{{ trace()?.verification?.evidenceSourceTypes?.join(', ') || 'None' }}</strong></div>
+        <p *ngFor="let reason of trace()?.verification?.reasons">{{ reason }}</p>
+      </section>
+
+      <section class="card error-card" *ngIf="trace()?.error as error">
+        <div class="card-head"><div><span class="section-number">09</span><h2>Execution Error</h2></div></div>
+        <div class="kv"><span>Category</span><strong>{{ error.category }}</strong></div>
+        <div class="kv"><span>Node</span><strong>{{ error.node }}</strong></div>
+        <div class="kv"><span>Recoverable</span><strong>{{ label(error.recoverable) }}</strong></div>
+      </section>
+    </div>
+  </ng-container>
+  <section class="card" *ngIf="inspector.alertEvents().length">
+    <div class="card-head"><div><span class="section-number">10</span><h2>Proactive Alert Events</h2></div><span>{{inspector.alertEvents().length}}</span></div>
+    <article class="tool" *ngFor="let event of inspector.alertEvents() | slice:0:20"><div class="tool-title"><code>{{event.eventType}}</code><span class="status">{{event.severity}}</span></div><div class="kv"><span>Category / rule</span><code>{{event.category}} · {{event.ruleId}}</code></div><div class="kv"><span>Evidence</span><strong>{{event.evidenceCount}}</strong></div><div class="kv"><span>Timestamp</span><strong>{{event.createdAt | date:'medium'}}</strong></div></article>
+  </section>
+  <section class="card" *ngIf="inspector.attentionScheduler() as scheduler">
+    <div class="card-head"><div><span class="section-number">11</span><h2>Operational Attention</h2></div><span>{{scheduler.status}}</span></div><div class="kv"><span>Scheduler</span><strong>{{scheduler.enabled?'ACTIVE':'DISABLED'}}</strong></div><div class="kv"><span>Last run</span><strong>{{scheduler.lastRunAt?(scheduler.lastRunAt|date:'medium'):'NOT CURRENTLY OBSERVABLE'}}</strong></div><div class="kv"><span>Last success</span><strong>{{scheduler.lastSuccessfulRunAt?(scheduler.lastSuccessfulRunAt|date:'medium'):'NOT CURRENTLY OBSERVABLE'}}</strong></div><ng-container *ngIf="scheduler.lastRun as run"><div class="kv"><span>Run status</span><strong>{{run.status}}</strong></div><div class="kv"><span>Scopes</span><strong>{{run.scopesEvaluated}}</strong></div><div class="kv"><span>Created / updated / resolved</span><strong>{{run.alertsCreated}} / {{run.alertsUpdated}} / {{run.alertsResolved}}</strong></div></ng-container>
+  </section>
+</main>
+
+</ng-container>

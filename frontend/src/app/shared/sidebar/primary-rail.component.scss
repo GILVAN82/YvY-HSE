@@ -1,0 +1,186 @@
+:host {
+  display: contents;
+}
+
+.rail {
+  width: var(--sb-rail-w);
+  flex: 0 0 var(--sb-rail-w);
+  height: 100%;
+  background: var(--sb-rail-bg);
+  // The separator is the lit .sb-vrule element in the shell, not a border here.
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+// Clickable container carries the lit border; the image is never touched.
+.rail-brand {
+  position: relative;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 6px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--yvy-ease), box-shadow var(--yvy-ease), transform var(--yvy-ease);
+
+  img {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    // The artwork ships its own colours — never recolour it.
+    filter: none;
+    opacity: 1;
+    mix-blend-mode: normal;
+  }
+
+  // Gradient hairline drawn with a masked ring, so no plate sits behind the mark.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--yvy-glow-gradient);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--yvy-ease);
+  }
+
+  &:hover {
+    background: var(--yvy-glow-wash);
+    box-shadow: var(--yvy-glow-soft);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--yvy-glow-focus);
+  }
+
+  &:hover::before,
+  &:focus-visible::before {
+    opacity: 1;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.rail-btn {
+  position: relative;
+  flex: 0 0 auto;
+  // Well above the 44px minimum touch target — the icons carry the rail.
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--sb-icon);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 160ms var(--sb-ease), color 160ms var(--sb-ease);
+
+  &:hover {
+    background: var(--sb-rail-hover);
+    color: var(--sb-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sb-focus);
+    outline-offset: 2px;
+  }
+
+  // Hover on a module: soft glow only, one step below the active module.
+  &:hover:not(.is-active) {
+    box-shadow: var(--yvy-glow-soft);
+  }
+
+  // Active module: the most perceptible state in the rail.
+  &.is-active {
+    background: var(--sb-rail-active);
+    color: var(--sb-accent);
+    box-shadow: var(--yvy-glow-soft);
+
+    // Vertical indicator on the outer edge of the rail.
+    &::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      background: var(--sb-accent);
+      border-radius: 0 4px 4px 0;
+    }
+  }
+}
+
+// Pushes the utility group to the foot of the rail and marks the split.
+.rail-divider {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 1px;
+  margin: auto 0 8px;
+  background: var(--sb-border);
+}
+
+.rail-util {
+  color: var(--sb-icon);
+
+  // No destination in the app yet: visibly inert, and the tooltip says why.
+  &.is-pending {
+    opacity: 0.42;
+    cursor: default;
+  }
+
+  &.is-pending:hover {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.rail-tip {
+  position: fixed;
+  z-index: 80;
+  transform: translateY(-50%);
+  background: var(--sb-tip-bg);
+  color: var(--sb-tip-text);
+  padding: 7px 11px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 10px 24px -10px rgba(8, 42, 94, 0.45);
+  animation: rail-tip-in 150ms var(--sb-ease);
+}
+
+@keyframes rail-tip-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-btn,
+  .rail-brand,
+  .rail-brand::before { transition: none; }
+  .rail-brand:active { transform: none; }
+  .rail-tip { animation: none; }
+}

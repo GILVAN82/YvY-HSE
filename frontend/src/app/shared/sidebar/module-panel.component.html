@@ -1,0 +1,59 @@
+<div class="panel"
+     id="module-panel"
+     *ngIf="state.activeModule() as m"
+     [attr.aria-label]="label(m.label)">
+
+  <!-- Horizontal lockup, swapped by theme. Both variants keep the blue/teal mark;
+       only the wordmark colour differs. No CSS filter is ever applied. -->
+  <div class="panel-brand">
+    <a class="panel-brand-btn"
+       [routerLink]="brandRoute"
+       title="YVY HSE"
+       aria-label="YVY HSE">
+      <img class="panel-lockup light-only"
+           src="branding/yvy-hse/logo-horizontal.png"
+           alt="YVY HSE — Health, Safety, Environment">
+      <img class="panel-lockup dark-only"
+           src="branding/yvy-hse/logo-horizontal-dark.png"
+           alt=""
+           aria-hidden="true">
+    </a>
+    <button type="button"
+            class="panel-close"
+            (click)="state.closePanel()"
+            [title]="i18n.t('Close panel')"
+            [attr.aria-label]="i18n.t('Close panel')"
+            aria-controls="module-panel">
+      <lucide-icon [img]="closeIcon" [size]="18"></lucide-icon>
+    </button>
+  </div>
+
+  <hr class="sb-divider" aria-hidden="true">
+
+  <header class="panel-head">
+    <span class="panel-ic"><lucide-icon [img]="m.icon" [size]="20"></lucide-icon></span>
+    <div class="panel-title">
+      <h2>{{ label(m.label) }}</h2>
+      <p *ngIf="m.description">{{ i18n.t(m.description) }}</p>
+    </div>
+  </header>
+
+  <nav class="panel-nav" [attr.aria-label]="label(m.label)">
+    <a *ngFor="let item of m.items"
+       class="panel-item"
+       [routerLink]="item.disabled ? null : itemLink(item)"
+       routerLinkActive="is-active"
+       [routerLinkActiveOptions]="{ exact: true }"
+       [class.is-disabled]="item.disabled"
+       [attr.tabindex]="item.disabled ? -1 : null"
+       [attr.aria-disabled]="item.disabled ? 'true' : null"
+       [attr.aria-current]="state.isItemActive(item) ? 'page' : null"
+       (click)="onItemClick(item, $event)">
+      <span class="panel-item-ic" *ngIf="item.icon">
+        <lucide-icon [img]="item.icon" [size]="18"></lucide-icon>
+      </span>
+      <span class="panel-item-label">{{ label(item.label) }}</span>
+      <span class="panel-badge" *ngIf="item.badge">{{ i18n.t(item.badge) }}</span>
+    </a>
+  </nav>
+</div>

@@ -1,0 +1,284 @@
+:host {
+  display: contents;
+}
+
+.panel {
+  width: 100%;
+  height: 100%;
+  background: var(--sb-panel-bg);
+  border-right: 1px solid var(--sb-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ------------------------------------------------------------------- header
+
+// Brand row, vertically aligned with the rail's logo so the two form one lockup.
+.panel-brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 10px 8px;
+}
+
+// Clickable container carries the lit border; the images are never touched.
+.panel-brand-btn {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-height: 56px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-decoration: none;
+  transition: background-color var(--yvy-ease), box-shadow var(--yvy-ease);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--yvy-glow-gradient);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--yvy-ease);
+  }
+
+  &:hover {
+    background: var(--yvy-glow-wash-soft);
+    box-shadow: var(--yvy-glow-soft);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--yvy-glow-focus);
+  }
+
+  &:hover::before,
+  &:focus-visible::before {
+    opacity: 1;
+  }
+}
+
+// Sized by width so the wordmark inside the artwork stays legible.
+.panel-lockup {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+  // The artwork ships its own colours — never recolour it.
+  filter: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+
+// Only one lockup variant renders per theme.
+.dark-only { display: none; }
+:host-context(:root[data-theme='dark']) {
+  .light-only { display: none; }
+  .dark-only { display: block; }
+}
+
+// The active module's header — the most perceptible division in the panel.
+.panel-head {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 0 10px 8px;
+  padding: 10px 10px 12px;
+  border: 1px solid rgba(18, 169, 162, 0.58);
+  border-radius: 12px;
+  background: rgba(18, 169, 162, 0.07);
+  box-shadow: var(--yvy-glow-medium);
+  transition: border-color var(--yvy-ease), background-color var(--yvy-ease), box-shadow var(--yvy-ease);
+}
+
+// Lit divider between the brand block and the active module — decorative, so a
+// filter is fine here (never on the logos).
+.sb-divider {
+  flex: 0 0 auto;
+  margin: 2px 12px 10px;
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(23, 105, 224, 0.45) 20%,
+    rgba(18, 169, 162, 0.65) 50%,
+    rgba(25, 169, 116, 0.45) 80%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  transition: opacity var(--yvy-ease), filter var(--yvy-ease);
+}
+
+.panel-brand:hover ~ .sb-divider,
+.panel-brand:focus-within ~ .sb-divider {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(18, 169, 162, 0.3));
+}
+
+.panel-ic {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--sb-item-active);
+  color: var(--sb-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-title {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--sb-heading);
+  }
+
+  p {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--sb-muted);
+  }
+}
+
+.panel-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--sb-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--sb-item-hover);
+    color: var(--sb-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sb-focus);
+    outline-offset: 2px;
+  }
+}
+
+// --------------------------------------------------------------------- items
+
+.panel-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.panel-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  margin: 1px 0;
+  border-radius: 10px;
+  color: var(--sb-text);
+  text-decoration: none;
+  font-size: 12.5px;
+  transition: background-color 160ms var(--sb-ease), color 160ms var(--sb-ease);
+
+  &:hover {
+    background: var(--sb-item-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sb-focus);
+    outline-offset: -2px;
+  }
+
+  &.is-active {
+    background: var(--sb-item-active);
+    color: var(--sb-item-active-text);
+    font-weight: 600;
+
+    .panel-item-ic {
+      color: var(--sb-accent);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      background: var(--sb-accent);
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  &.is-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+}
+
+.panel-item-ic {
+  flex: 0 0 22px;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sb-icon);
+}
+
+.panel-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--sb-badge-bg);
+  color: var(--sb-badge-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-item,
+  .panel-brand-btn,
+  .panel-brand-btn::before,
+  .panel-head,
+  .sb-divider { transition: none; }
+}

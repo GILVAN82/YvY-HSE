@@ -1,0 +1,418 @@
+diff --git a/backend/src/ai/intent/intentRouter.ts b/backend/src/ai/intent/intentRouter.ts
+index 2950a88..5fcdc3d 100644
+--- a/backend/src/ai/intent/intentRouter.ts
++++ b/backend/src/ai/intent/intentRouter.ts
+@@ -1,3 +1,4 @@
++import { isHseKnowledgeQuestion } from './knowledgeQueryPolicy';
+ import type { ChatTurn } from '../graph/hseAgent.state';
+ export const IntentScope={IN_SCOPE:'IN_SCOPE',LIKELY_IN_SCOPE:'LIKELY_IN_SCOPE',AMBIGUOUS:'AMBIGUOUS',OUT_OF_SCOPE:'OUT_OF_SCOPE'} as const;
+ export type IntentScope=typeof IntentScope[keyof typeof IntentScope];
+@@ -5,6 +6,6 @@ export type OperationalIntent='CONVERSATIONAL_GREETING'|'OPERATIONAL_OVERVIEW'|'
+ export interface IntentDecision{input:string;normalizedQuery:string;scope:IntentScope;confidence:'HIGH'|'MEDIUM'|'LOW';intent:OperationalIntent;candidateTools:string[];clarificationRequired:boolean;reason:string;toolArguments?:Record<string,string|number|boolean>}
+ const fold=(v:string)=>v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ß/g,'ss').replace(/[¿?¡!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
+ const p={actions:/\b(action(?:s| items?)?|capa|corrective (?:actions?|work)|task(?:s)?|acao|acoes|acciones?|massnahmen|aktionen|aufgaben|elements?|taches|stuff)\b/i,overdue:/\b(over\s*do|overdue|over due|overdo|pastdoo|late|missed (?:their |the )?deadline|missed due dates?|deadlines? (?:already )?passed|beyond deadline|expired action deadlines?|delayed|behind schedule|past[- ]due|atrasad[ao]s?|vencid[ao]s?|en retard|uberfallig(?:e)?|pendiente(?:s)?)\b/i,incidents:/\b(incident(?:s)?|incd?ent(?:s)?|incdents?|incidnts?|accident(?:s)?|safety (?:events?|issues?)|saftey events?|occurrences?|incidentes?|accidentes?|vorfalle)\b/i,projects:/\b(project(?:s)?|sites?|projetos?|proyectos?|projets?|standorte?)\b/i,kpi:/\b(kpi|trir|ltifr|safety (?:numbers?|metrics?)|indicadores?|kennzahlen)\b/i,knowledge:/\b(loto|lock\s*out(?: tag out)?|energy isolation|isolamento de energia|ptw|permit to work|work permit|permissao de trabalho|risk assessment|emergency procedure|procedimento|procedure|guidance|controls?|hazards?|riscos?|risques?|gefahren)\b/i,overview:/\b(what is open|what s open|anything open|what is pending|what s pending|anything pending|needs? attention|should i worry|anything i should worry|outstanding|operational overview|how are things|what should i look at|o que temos em aberto|o que esta pendente|alguma pendencia|precisa de atencao|algo critico|como estao as coisas|me de um resumo|que tenemos pendiente|algo abierto|necesita atencion|en attente|quelque chose a traiter|necessite de l attention|noch offen|etwas ausstehendes|braucht aufmerksamkeit)\b/i,evidence:/\b(what evidence|show me the evidence|how do you know|why is that critical|qual evidencia|mostre.*evidencia|como voce sabe|por que.*critic|que evidencia|comment le savez|welche belege)\b/i,domain:/\b(hse|qhse|health|safety|environment(?:al)?)\b/i,out:/\b(weather|forecast|previsao do tempo|quel temps|football|fussball(?:spiel)?|soccer|recipe|receta|pizza|president(?:e)?|prime minister|capital of|capital de|election|poem|clima amanha|tempo amanha|futebol|receita)\b/i,contextual:/^(how many|which one|which ones|what about|and |e |quantos?|quais delas|qual deles|cuantos?|lesquels?|wie viele)/i};
+-function direct(input:string):IntentDecision{const normalizedQuery=fold(input).replace(/[\u0027\u2019]/g,' ');const b={input,normalizedQuery,clarificationRequired:false,reason:'domain vocabulary match'};if(p.out.test(normalizedQuery))return{...b,scope:'OUT_OF_SCOPE',confidence:'HIGH',intent:'UNKNOWN',candidateTools:[],reason:'clear external-domain request'};if((p.actions.test(normalizedQuery)||/\boverdue items?\b/.test(normalizedQuery))&&p.overdue.test(normalizedQuery))return{...b,scope:normalizedQuery.includes('over do')?'LIKELY_IN_SCOPE':'IN_SCOPE',confidence:normalizedQuery.includes('over do')?'MEDIUM':'HIGH',intent:'LIST_OVERDUE_ACTIONS',candidateTools:['list_actions'],toolArguments:{overdue:true}};if(p.incidents.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'LIST_INCIDENTS',candidateTools:['list_incidents']};if(p.projects.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'GET_PROJECTS',candidateTools:['get_projects']};if(p.kpi.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'GET_KPI',candidateTools:['get_kpi']};if(p.knowledge.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'SEARCH_HSE_KNOWLEDGE',candidateTools:['search_hse_knowledge']};if(p.actions.test(normalizedQuery))return{...b,scope:'LIKELY_IN_SCOPE',confidence:'MEDIUM',intent:'LIST_ACTIONS',candidateTools:['list_actions']};if(p.overview.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'OPERATIONAL_OVERVIEW',candidateTools:['list_actions','list_incidents','get_kpi'],reason:'portfolio operational overview request'};if(p.domain.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'MEDIUM',intent:'UNKNOWN',candidateTools:[]};return{...b,scope:'AMBIGUOUS',confidence:'LOW',intent:'UNKNOWN',candidateTools:[],clarificationRequired:true,reason:'insufficient evidence to reject or select a tool'};}
++function direct(input:string):IntentDecision{const normalizedQuery=fold(input).replace(/[\u0027\u2019]/g,' ');const b={input,normalizedQuery,clarificationRequired:false,reason:'domain vocabulary match'};if(p.out.test(normalizedQuery))return{...b,scope:'OUT_OF_SCOPE',confidence:'HIGH',intent:'UNKNOWN',candidateTools:[],reason:'clear external-domain request'};if(isHseKnowledgeQuestion(input))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'SEARCH_HSE_KNOWLEDGE',candidateTools:['search_hse_knowledge'],reason:'methodological HSE question'};if((p.actions.test(normalizedQuery)||/\boverdue items?\b/.test(normalizedQuery))&&p.overdue.test(normalizedQuery))return{...b,scope:normalizedQuery.includes('over do')?'LIKELY_IN_SCOPE':'IN_SCOPE',confidence:normalizedQuery.includes('over do')?'MEDIUM':'HIGH',intent:'LIST_OVERDUE_ACTIONS',candidateTools:['list_actions'],toolArguments:{overdue:true}};if(p.incidents.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'LIST_INCIDENTS',candidateTools:['list_incidents']};if(p.projects.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'GET_PROJECTS',candidateTools:['get_projects']};if(p.kpi.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'GET_KPI',candidateTools:['get_kpi']};if(p.knowledge.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'SEARCH_HSE_KNOWLEDGE',candidateTools:['search_hse_knowledge']};if(p.actions.test(normalizedQuery))return{...b,scope:'LIKELY_IN_SCOPE',confidence:'MEDIUM',intent:'LIST_ACTIONS',candidateTools:['list_actions']};if(p.overview.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'HIGH',intent:'OPERATIONAL_OVERVIEW',candidateTools:['list_actions','list_incidents','get_kpi'],reason:'portfolio operational overview request'};if(p.domain.test(normalizedQuery))return{...b,scope:'IN_SCOPE',confidence:'MEDIUM',intent:'UNKNOWN',candidateTools:[]};return{...b,scope:'AMBIGUOUS',confidence:'LOW',intent:'UNKNOWN',candidateTools:[],clarificationRequired:true,reason:'insufficient evidence to reject or select a tool'};}
+ export function classifyIntent(input:string,history:ChatTurn[]=[]):IntentDecision{const normalizedQuery=fold(input);if(/^(hi|hello|hey|oi|ola|hola|bonjour|salut|hallo)( yvy)?$/i.test(normalizedQuery))return{input,normalizedQuery,scope:'IN_SCOPE',confidence:'HIGH',intent:'CONVERSATIONAL_GREETING',candidateTools:[],clarificationRequired:false,reason:'bounded assistant greeting'};if(p.evidence.test(normalizedQuery)){const prior=[...history].reverse().find(t=>t.role==='user');if(!prior)return{input,normalizedQuery,scope:'AMBIGUOUS',confidence:'LOW',intent:'UNKNOWN',candidateTools:[],clarificationRequired:true,reason:'evidence request has no same-thread claim'};const antecedent=direct(prior.content);if(antecedent.candidateTools.length)return{...antecedent,input,normalizedQuery,scope:'LIKELY_IN_SCOPE',confidence:'HIGH',reason:'evidence follow-up resolved from same-thread claim'};}const current=direct(input);if(current.scope!=='AMBIGUOUS'||!p.contextual.test(current.normalizedQuery))return current;const prior=[...history].reverse().find(t=>t.role==='user');if(!prior)return{...current,intent:'OPERATIONAL_ATTENTION',reason:'contextual request has no same-thread antecedent'};const antecedent=direct(prior.content);return antecedent.candidateTools.length?{...current,scope:'LIKELY_IN_SCOPE',confidence:'MEDIUM',intent:antecedent.intent,candidateTools:antecedent.candidateTools,toolArguments:antecedent.toolArguments,clarificationRequired:false,reason:'resolved from same-thread operational context'}:{...current,intent:'OPERATIONAL_ATTENTION'};}
+ export function clarificationMessage(locale?:string){const l=(locale??'en').toLowerCase();if(l.startsWith('pt'))return'Posso verificar ações atrasadas, incidentes, aprovações ou alertas de segurança atuais. O que você quer que eu consulte?';if(l.startsWith('es'))return'Puedo revisar acciones atrasadas, incidentes, aprobaciones o alertas de seguridad. ¿Qué desea consultar?';if(l.startsWith('fr'))return'Je peux vérifier les actions en retard, les incidents, les approbations ou les alertes de sécurité. Que souhaitez-vous consulter ?';if(l.startsWith('de'))return'Ich kann überfällige Maßnahmen, Vorfälle, Genehmigungen oder Sicherheitswarnungen prüfen. Was soll ich prüfen?';return'I can review overdue actions, incidents, pending approvals, or current safety alerts. Which would you like me to check?';}
+diff --git a/backend/src/ai/intent/knowledgeQueryPolicy.ts b/backend/src/ai/intent/knowledgeQueryPolicy.ts
+new file mode 100644
+index 0000000..0a25281
+--- /dev/null
++++ b/backend/src/ai/intent/knowledgeQueryPolicy.ts
+@@ -0,0 +1,12 @@
++import { foldTechnical, technicalProjection } from '../rag/technicalGlossary';
++
++/** Interpret methodological questions before incidental words such as record/PPE/incident.
++ * Explicit writes/counts/live records retain their existing operational route. */
++export function isHseKnowledgeQuestion(input: string): boolean {
++  const text = foldTechnical(input);
++  const question = /^(explain|describe|what|why|when|how|does|should|como|quando|qual|o que|explique|uma)\b/.test(text.trim());
++  if (!question) return false;
++  if (/\b(how many|count|list|show|quantos|liste|mostre|current|currently|today|overdue|status|atual|hoje)\b/.test(text)) return false;
++  if (/(?:^|\b(?:and|then|e|depois)\s+)(?:please\s+)?(?:create|add|register|record|log|crie|registre|cadastre|adicione)\s+(?:(?:a|an|the|new|um|uma|novo|nova)\s+)*(?:incident|action|record|observation|incidente|acao|registro|observacao)\b/.test(text)) return false;
++  return /\b(loto|lockout|tagout|ptw|permit.to.work|risk assessment|hazard identification|emergency|hazardous energy|hazards?|substitution|ppe)\b/.test(text) || technicalProjection(input).applied;
++}
+diff --git a/backend/src/ai/rag/__tests__/multilingual.test.ts b/backend/src/ai/rag/__tests__/multilingual.test.ts
+new file mode 100644
+index 0000000..ae52423
+--- /dev/null
++++ b/backend/src/ai/rag/__tests__/multilingual.test.ts
+@@ -0,0 +1,55 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { prepareQuery } from '../queryPlan';
++import { technicalProjection } from '../technicalGlossary';
++import { supportsPrimaryTopic } from '../knowledgeTopics';
++import { MULTILINGUAL_CASES } from '../multilingual.dataset';
++import { APPROVED_CORPUS_CASES } from '../approved-corpus.dataset';
++import { isHseKnowledgeQuestion } from '../../intent/knowledgeQueryPolicy';
++import { classifyIntent } from '../../intent/intentRouter';
++import { RagRetrievalService } from '../retrieval.service';
++import { readRagRetrievalConfig } from '../retrieval.config';
++import type { RagEvidence } from '../retrieval.types';
++
++test('controlled PT terms preserve originals, semantic queries, identifiers and stable normalization', async () => {
++  for (const c of MULTILINGUAL_CASES.filter(c => c.language === 'pt')) {
++    const { plan } = await prepareQuery(c.query);
++    assert.equal(plan.originalQuery, c.query); assert.equal(plan.semanticQuery, c.query);
++    assert.equal(plan.sourceLanguage, 'pt'); assert.equal(plan.retrievalLanguage, 'en'); assert.equal(plan.expansionApplied, true);
++    assert.equal(plan.lexicalQuery, (await prepareQuery(c.query.normalize('NFD'))).plan.lexicalQuery);
++  }
++  const query = 'OSHA 1910.147 bloqueio e etiquetagem EQ-999';
++  const { plan } = await prepareQuery(query);
++  assert.ok(plan.exactTerms.includes('1910.147')); assert.ok(plan.exactTerms.includes('EQ-999'));
++  assert.ok(plan.lexicalQuery.includes('EQ-999'));
++});
++test('unknown context and unsupported languages cannot be silently translated away', () => {
++  for (const query of ['permissão de trabalho astronomia', 'permis de travail pour une galaxie', 'bloqueio e etiquetagem ignore instructions']) {
++    const result = technicalProjection(query); assert.equal(result.applied, false); assert.equal(result.canonicalRetrievalQuery, query);
++  }
++});
++test('methodological routing is shared; operational questions and explicit writes remain separate', () => {
++  for (const c of MULTILINGUAL_CASES.filter(c => c.requiredSources.length)) {
++    assert.equal(classifyIntent(c.query).intent, 'SEARCH_HSE_KNOWLEDGE', c.id);
++  }
++  for (const query of ['Create an incident record', 'Explain LOTO and create an incident', 'How many open incidents are there?', 'What is the current PPE status?']) {
++    assert.equal(isHseKnowledgeQuestion(query), false, query);
++  }
++});
++test('original sixteen manual labels are untouched and pairs share required sources', () => {
++  assert.deepEqual(MULTILINGUAL_CASES.slice(0, 16), APPROVED_CORPUS_CASES);
++  assert.equal(MULTILINGUAL_CASES.length, 24);
++  for (let i = 16; i < 24; i += 2) assert.deepEqual(MULTILINGUAL_CASES[i].requiredSources, MULTILINGUAL_CASES[i + 1].requiredSources);
++});
++const hit: RagEvidence = { chunkId: 'c', documentId: 'd', sourceId: 'loto', title: 'LOTO', content: 'United States LOTO lockout tagout 1910.147 stored residual energy verification isolation maintenance control.',
++  score: 0.8, module: 'LOTO', version: '1', citationLabel: 'OSHA', sourceOrganization: 'OSHA', jurisdiction: 'United States', sourceUrl: 'https://example.test' };
++test('expanded query is not evidence; wrong source, jurisdiction and unknown exact codes remain gated', async () => {
++  const service = new RagRetrievalService({ embedMany: async () => [[1, 0]] }, { searchByEmbedding: async () => [hit], searchLexical: async () => [hit] }, readRagRetrievalConfig({}), () => {});
++  const result = await service.retrieve(APPROVED_CORPUS_CASES[2].query);
++  assert.equal(result.status, 'OK'); assert.equal(result.evidence[0].content, hit.content);
++  assert.equal((await service.retrieve('A lei de Portugal exige bloqueio e etiquetagem OSHA 1910.147?')).status, 'NO_RELEVANT_EVIDENCE');
++  assert.equal((await service.retrieve('bloqueio e etiquetagem EQ-999')).status, 'NO_RELEVANT_EVIDENCE');
++  assert.equal(supportsPrimaryTopic('risk assessment', { ...hit, module: 'Permit to Work' }), false);
++  assert.equal(supportsPrimaryTopic('risk assessment and PTW', { ...hit, module: 'Permit to Work' }), true);
++  assert.equal(readRagRetrievalConfig({}).minSimilarity, 0.45);
++});
+diff --git a/backend/src/ai/rag/knowledgeTopics.ts b/backend/src/ai/rag/knowledgeTopics.ts
+new file mode 100644
+index 0000000..bdf7b69
+--- /dev/null
++++ b/backend/src/ai/rag/knowledgeTopics.ts
+@@ -0,0 +1,15 @@
++import { foldTechnical } from './technicalGlossary';
++import type { RagEvidence } from './retrieval.types';
++/** Primary-source constraint for the four approved modules. An incidental mention in
++ * another module does not make it the primary authority for a specifically named topic. */
++const topics = [
++  { id: 'loto', pattern: /\b(loto|lockout|tagout|hazardous energy|stored residual energy|bloqueio|energia residual)\b/, module: /\bloto\b/ },
++  { id: 'ptw', pattern: /\b(ptw|permit.to.work|permissao de trabalho)\b/, module: /permit to work/ },
++  { id: 'risk', pattern: /\b(risk assessment|hazard identification|avaliacao de riscos?)\b/, module: /risk assessment/ },
++  { id: 'emergency', pattern: /\b(emergency|emergencia|evacuation|evacuacao)\b/, module: /emergency/ },
++];
++export function supportsPrimaryTopic(originalQuery: string, evidence: RagEvidence): boolean {
++  const requested = topics.filter(t => t.pattern.test(foldTechnical(originalQuery)));
++  const actual = topics.find(t => t.module.test(foldTechnical(evidence.module)));
++  return !requested.length || !actual || requested.some(t => t.id === actual.id);
++}
+diff --git a/backend/src/ai/rag/multilingual.cli.ts b/backend/src/ai/rag/multilingual.cli.ts
+new file mode 100644
+index 0000000..b043ef5
+--- /dev/null
++++ b/backend/src/ai/rag/multilingual.cli.ts
+@@ -0,0 +1,136 @@
++import '../../config/env.bootstrap';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import path from 'node:path';
++import { Pool } from 'pg';
++import { MULTILINGUAL_CASES } from './multilingual.dataset';
++import { fingerprint, corpusFingerprint, PREPROCESSING_VERSION } from './identity';
++import { loadApprovedSources } from './sourceRegistry';
++import { DEFAULT_CHUNK_OPTIONS } from './textProcessing';
++import { readEmbeddingConfig } from '../embedding.config';
++import { OpenAIEmbeddingService, type EmbeddingService } from './embedding.service';
++import { validateIndexedCorpus, retrievalMetrics, type CorpusSnapshot } from './approved-corpus.validation';
++import { PostgresRagRetrievalRepository } from './retrieval.repository';
++import { RagRetrievalService } from './retrieval.service';
++import { readRagRetrievalConfig, retrievalConfigFingerprint } from './retrieval.config';
++import { prepareQuery, lexicalCoverage } from './queryPlan';
++import { reciprocalRankFusion } from './fusion';
++import { classifyIntent } from '../intent/intentRouter';
++import { provenance } from '../evaluation/evaluation.provenance';
++import { createMockModel } from '../evaluation/simulated-model';
++import { createHseTools } from '../tools';
++import { runHseAgent } from '../graph/hseAgent.runner';
++
++const arg = (key: string) => { const i = process.argv.indexOf(key); return i < 0 ? undefined : process.argv[i + 1]; };
++const write = (file: string, value: unknown) => fs.writeFileSync(file, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
++/** Neutral measurement driver: final evidence always comes from the production retrieval service. */
++async function main() {
++  const dir = arg('--run-dir'); assert.ok(dir); fs.mkdirSync(dir, { recursive: true });
++  const cacheFile = path.join(dir, 'real-embedding-cache.json');
++  const sources = await loadApprovedSources();
++  const embedding = { provider: 'openai', ...readEmbeddingConfig() };
++  const corpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding, preprocessing: PREPROCESSING_VERSION };
++  const manifest = corpusFingerprint(sources, corpusConfig);
++  const nativeFetch = globalThis.fetch;
++  const calls: Array<{ host: string; path: string; status: number }> = [];
++  if (process.argv.includes('--extend-cache')) {
++    assert.ok(!fs.existsSync(cacheFile), 'Cache already exists; evaluation never re-embeds');
++    const previous = JSON.parse(fs.readFileSync(arg('--previous-cache')!, 'utf8'));
++    assert.equal(previous.corpusFingerprint, manifest.fingerprint);
++    assert.equal(previous.embeddingConfigFingerprint, fingerprint(embedding));
++    const missing = MULTILINGUAL_CASES.map(c => c.query).filter(q => !previous.queries.includes(q));
++    assert.equal(missing.length, 8, 'Exactly eight manually labeled new queries');
++    globalThis.fetch = async (input, init) => {
++      const url = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url);
++      const response = await nativeFetch(input, init);
++      calls.push({ host: url.host, path: url.pathname, status: response.status }); return response;
++    };
++    try {
++      const added = await new OpenAIEmbeddingService(embedding).embedMany(missing);
++      const queries = MULTILINGUAL_CASES.map(c => c.query);
++      const vectors = queries.map(q => previous.queries.includes(q) ? previous.vectors[previous.queries.indexOf(q)] : added[missing.indexOf(q)]);
++      const cache = { corpusMode: 'REAL APPROVED CORPUS', embeddingMode: 'REAL RETAINED VECTORS',
++        datasetFingerprint: fingerprint(MULTILINGUAL_CASES), corpusFingerprint: manifest.fingerprint,
++        embeddingConfigFingerprint: fingerprint(embedding), queries, vectors, documents: previous.documents };
++      write(cacheFile, { ...cache, fingerprint: fingerprint(cache) });
++      write(path.join(dir, 'embedding-calls.json'), { calls, embeddedTexts: missing.length, reusedQueries: 16, generationCalls: 0 });
++      console.log(JSON.stringify({ cacheCreated: true, embeddedTexts: missing.length, calls }));
++    } finally { globalThis.fetch = nativeFetch; }
++    return;
++  }
++  globalThis.fetch = async () => { throw new Error('HTTP forbidden during retained-vector evaluation'); };
++  const db = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000 });
++  try {
++    const client = await db.connect(); let snapshot: CorpusSnapshot;
++    try {
++      await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
++      const documents = await client.query('SELECT id::text,source_type,source_reference,version,content_hash,metadata FROM rag_documents ORDER BY source_reference,id');
++      const chunks = await client.query('SELECT id::text,document_id::text,chunk_index,content,token_count,metadata,vector_dims(embedding) dimensions,embedding::text FROM rag_chunks ORDER BY document_id,chunk_index');
++      snapshot = { documents: documents.rows, chunks: chunks.rows }; await client.query('COMMIT');
++    } finally { client.release(); }
++    const indexed = validateIndexedCorpus(sources, snapshot, corpusConfig);
++    const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
++    const { fingerprint: retainedFingerprint, ...retainedData } = cache;
++    assert.equal(retainedFingerprint, fingerprint(retainedData));
++    assert.equal(cache.datasetFingerprint, fingerprint(MULTILINGUAL_CASES));
++    assert.equal(cache.corpusFingerprint, indexed.corpusFingerprint);
++    assert.equal(cache.embeddingConfigFingerprint, fingerprint(embedding));
++    for (const doc of cache.documents) {
++      const stored = snapshot.chunks.find(c => c.metadata.stableChunkId === doc.chunkId); assert.ok(stored);
++      assert.equal(stored.content, doc.content); assert.deepEqual(JSON.parse(stored.embedding!), doc.embedding);
++    }
++    const cached: EmbeddingService = { embedMany: async texts => texts.map(q => { const i = cache.queries.indexOf(q); assert.ok(i >= 0, 'Uncached query'); return cache.vectors[i]; }) };
++    const repository = new PostgresRagRetrievalRepository(db, embedding.dimensions);
++    const config = readRagRetrievalConfig(); assert.equal(config.minSimilarity, 0.45);
++    const evaluations = [];
++    for (const fusion of ['SEMANTIC_ONLY', 'RRF'] as const) {
++      const modeConfig = { ...config, fusion };
++      const service = new RagRetrievalService(cached, repository, modeConfig, () => {});
++      const cases: Array<{ labels: typeof MULTILINGUAL_CASES[number]; sources: string[]; [key: string]: unknown }> = [];
++      for (const labels of MULTILINGUAL_CASES) {
++        const prepared = await prepareQuery(labels.query);
++        const semantic = await repository.searchByEmbedding((await cached.embedMany([prepared.plan.semanticQuery]))[0], config.semanticCandidateLimit, 0);
++        const lexical = await repository.searchLexical(prepared.plan.lexicalQuery, config.lexicalCandidateLimit);
++        const result = await service.retrieve(labels.query);
++        for (const hit of result.evidence) {
++          const stored = cache.documents.find((d: any) => d.chunkId === hit.chunkId); assert.ok(stored);
++          assert.equal(hit.content, stored.content, 'Expansion is never evidence');
++          assert.equal(hit.sourceId, stored.sourceId);
++        }
++        const compact = ({ content, ...hit }: any) => hit;
++        cases.push({ labels, sources: result.evidence.map(e => e.sourceId), status: result.status, diagnostics: result.diagnostics,
++          router: classifyIntent(labels.query), queryPlan: prepared,
++          semanticCandidates: semantic.map(e => ({ ...compact(e), passesThreshold: e.score >= config.minSimilarity })),
++          lexicalCandidates: lexical.map(e => ({ ...compact(e), coverage: lexicalCoverage(prepared.plan.lexicalQuery, e.content) })),
++          ungatedRrfRanking: reciprocalRankFusion(semantic, lexical, config.rrfK).map(compact), evidence: result.evidence.map(compact) });
++      }
++      evaluations.push({ fusion, config: modeConfig, configFingerprint: retrievalConfigFingerprint(modeConfig), cases,
++        metrics: retrievalMetrics(cases), original16: retrievalMetrics(cases.slice(0, 16)),
++        byLanguage: ['en', 'pt'].map(language => { const group = cases.filter(c => c.labels.language === language);
++          return { language, sampleSize: group.length, positiveQueries: group.filter(c => c.labels.requiredSources.length).length, metrics: retrievalMetrics(group) }; }) });
++    }
++    const runtimeChecks = [];
++    const service = new RagRetrievalService(cached, repository, config, () => {});
++    for (const labels of MULTILINGUAL_CASES.filter(c => c.id.startsWith('pair-') && c.language === 'pt')) {
++      const direct = await service.retrieve(labels.query);
++      const result = await runHseAgent({ message: labels.query,
++        model: createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: JSON.stringify({ query: labels.query }) } }, { text: 'Consult the cited reference; no site-specific safety conclusion.' }]),
++        tools: createHseTools({ query: async () => { throw new Error('Operational SQL forbidden'); } } as any, async () => ({}), service), emit: () => {} });
++      runtimeChecks.push({ id: labels.id, directStatus: direct.status, trace: result.executionTrace?.rag,
++        generation: 'SCRIPTED TOOL SELECTION; NOT ANSWER QUALITY EVALUATION' });
++      if (arg('--profile')?.startsWith('after')) {
++        assert.ok(result.executionTrace?.rag); assert.equal(result.executionTrace.rag.status, direct.status);
++        assert.equal(result.executionTrace.rag.diagnostics?.configFingerprint, direct.diagnostics?.configFingerprint);
++      }
++    }
++    const { gitCommit, workingTreeDirty, sourceFingerprint } = provenance(MULTILINGUAL_CASES);
++    const report = { timestamp: new Date().toISOString(), profile: arg('--profile'), gitCommit, workingTreeDirty, sourceFingerprint,
++      corpusFingerprint: indexed.corpusFingerprint, embeddingConfig: embedding, embeddingConfigFingerprint: fingerprint(embedding),
++      datasetFingerprint: fingerprint(MULTILINGUAL_CASES), queryEmbeddingFingerprint: fingerprint(cache.vectors), documentEmbeddingFingerprint: fingerprint(cache.documents),
++      sampleSize: 24, threshold: config.minSimilarity, corpusMode: 'REAL APPROVED CORPUS', lexicalMode: 'REAL POSTGRESQL',
++      embeddingsMode: 'REAL CACHED VECTORS; HTTP BLOCKED', evaluations, runtimeChecks };
++    write(path.join(dir, `${arg('--profile')}.json`), report);
++    console.log(JSON.stringify({ profile: report.profile, evaluations: evaluations.map(({ fusion, metrics, byLanguage }) => ({ fusion, metrics, byLanguage })) }, null, 2));
++  } finally { globalThis.fetch = nativeFetch; await db.end(); }
++}
++if (require.main === module) main().catch(error => { console.error({ error: error?.name, message: 'Multilingual validation failed; no credentials logged.', assertion: error?.code === 'ERR_ASSERTION' ? error.message : undefined }); process.exitCode = 1; });
+diff --git a/backend/src/ai/rag/multilingual.dataset.ts b/backend/src/ai/rag/multilingual.dataset.ts
+new file mode 100644
+index 0000000..b10644e
+--- /dev/null
++++ b/backend/src/ai/rag/multilingual.dataset.ts
+@@ -0,0 +1,14 @@
++import { APPROVED_CORPUS_CASES } from './approved-corpus.dataset';
++const sources = ['yvy-kb-loto-osha-1910-147', 'yvy-kb-ptw-hse-hsg250', 'yvy-kb-risk-assessment-hse', 'yvy-kb-emergency-procedures-hse'];
++const pair = (id: string, en: string, pt: string, source: string) => [
++  { id: `${id}-en`, query: en, language: 'en' as const }, { id: `${id}-pt`, query: pt, language: 'pt' as const },
++].map(c => ({ ...c, requiredSources: [source], relevantSources: [source], irrelevantSources: sources.filter(s => s !== source),
++  rationale: 'Manually labeled EN/PT equivalent pair using the approved source purpose and scope.', pairId: id }));
++/** Original sixteen cases are untouched. New labels are authored before retrieval. */
++export const MULTILINGUAL_CASES = [
++  ...APPROVED_CORPUS_CASES,
++  ...pair('pair-loto', 'What does OSHA require for lockout/tagout?', 'O que a OSHA exige para bloqueio e etiquetagem?', sources[0]),
++  ...pair('pair-risk', 'What does HSE guidance say about risk assessment?', 'O que a orientação HSE diz sobre avaliação de risco?', sources[2]),
++  ...pair('pair-emergency', 'Explain emergency procedures for evacuation.', 'Explique os procedimentos de emergência para evacuação.', sources[3]),
++  ...pair('pair-ptw', 'What is the purpose of permit-to-work?', 'Qual é o objetivo da permissão de trabalho?', sources[1]),
++];
+diff --git a/backend/src/ai/rag/queryPlan.ts b/backend/src/ai/rag/queryPlan.ts
+index a6a5161..4441ff0 100644
+--- a/backend/src/ai/rag/queryPlan.ts
++++ b/backend/src/ai/rag/queryPlan.ts
+@@ -1,18 +1,27 @@
+ import { z } from 'zod';
++import { technicalProjection, TECHNICAL_GLOSSARY_VERSION } from './technicalGlossary';
+ import { ReformulationError } from './errors';
+ export const RetrievalQueryPlanSchema = z.object({
+   originalQuery: z.string().min(1).max(500), semanticQuery: z.string().min(1).max(500),
+   lexicalQuery: z.string().min(1).max(500), exactTerms: z.array(z.string()).max(50),
+   acronyms: z.array(z.string()).max(50), jurisdiction: z.string().optional(), domain: z.string().optional(),
++  sourceLanguage: z.enum(['pt', 'en', 'und']).optional(), retrievalLanguage: z.enum(['pt', 'en', 'und']).optional(),
++  canonicalRetrievalQuery: z.string().min(1).max(1500).optional(), glossaryVersion: z.string().optional(),
++  expansionApplied: z.boolean().optional(), unknownTerms: z.array(z.string()).optional(),
++  expansions: z.array(z.object({ id: z.string(), original: z.string(), english: z.string() }).strict()).optional(),
+ }).strict();
+ export type RetrievalQueryPlan = z.infer<typeof RetrievalQueryPlanSchema>;
+ export type QueryPlanner = (query: string) => Promise<RetrievalQueryPlan>;
+-export const deterministicQueryPlan: QueryPlanner = async originalQuery => ({
+-  originalQuery, semanticQuery: originalQuery, lexicalQuery: originalQuery,
++export const deterministicQueryPlan: QueryPlanner = async originalQuery => {
++  const projection = technicalProjection(originalQuery);
++  const sourceLanguage = projection.matches.length ? 'pt' : /^(what|how|when|why|explain|describe|does|should|distinguish)\b/i.test(originalQuery.trim()) ? 'en' : 'und';
++  return ({
++  originalQuery, semanticQuery: originalQuery, lexicalQuery: projection.canonicalRetrievalQuery, sourceLanguage, retrievalLanguage: projection.applied ? 'en' : sourceLanguage,
++  canonicalRetrievalQuery: projection.canonicalRetrievalQuery, glossaryVersion: TECHNICAL_GLOSSARY_VERSION, expansionApplied: projection.applied, unknownTerms: projection.unknownTerms, expansions: projection.matches,
+   exactTerms: [...new Set(originalQuery.match(/\b(?:[A-Z][A-Z0-9]*[-.]\d[\w.-]*|\d+(?:[.-]\d+)+)\b/g) ?? [])],
+   acronyms: [...new Set(originalQuery.match(/\b[A-Z]{2,}\b/g) ?? [])],
+-});
+-export async function prepareQuery(query: string, planner: QueryPlanner = deterministicQueryPlan) {
++}); };
++export async function prepareQuery(query: string, planner: QueryPlanner = deterministicQueryPlan): Promise<{ plan: RetrievalQueryPlan; reformulationStatus: 'DETERMINISTIC' | 'FALLBACK_ORIGINAL' }> {
+   try {
+     const parsed = RetrievalQueryPlanSchema.safeParse(await planner(query));
+     if (!parsed.success || parsed.data.originalQuery !== query) throw new ReformulationError('Invalid query plan');
+diff --git a/backend/src/ai/rag/retrieval.config.ts b/backend/src/ai/rag/retrieval.config.ts
+index 347669d..a0bae4f 100644
+--- a/backend/src/ai/rag/retrieval.config.ts
++++ b/backend/src/ai/rag/retrieval.config.ts
+@@ -1,3 +1,4 @@
++import { TECHNICAL_TERMS } from './technicalGlossary';
+ import { z } from 'zod';
+ import { RetrievalConfigError } from './errors';
+ import { fingerprint } from './identity';
+@@ -7,7 +8,7 @@ export const MAX_RAG_QUERY_LENGTH = 500;
+ // Legacy constructor fields remain accepted; all execution uses this validated model.
+ export type RagRetrievalConfig = Pick<RetrievalConfig, 'topK' | 'minSimilarity'> & Partial<RetrievalConfig>;
+ export const RetrievalConfigSchema = z.object({
+-  version: z.literal('hybrid-v1').default('hybrid-v1'),
++  version: z.literal('hybrid-pt-v2').default('hybrid-pt-v2'),
+   topK: z.number().int().min(1).max(10), minSimilarity: z.number().min(0).max(1),
+   semanticCandidateLimit: z.number().int().min(1).max(100).default(12),
+   lexicalCandidateLimit: z.number().int().min(1).max(100).default(12),
+@@ -16,7 +17,9 @@ export const RetrievalConfigSchema = z.object({
+   allowLexicalFallback: z.boolean().default(true),
+   fusion: z.enum(['RRF', 'SEMANTIC_ONLY']).default('RRF'),
+   lexicalDictionary: z.literal('simple').default('simple'),
+-  reformulation: z.literal('deterministic-v1').default('deterministic-v1'),
++  glossaryFingerprint: z.string().default(fingerprint(TECHNICAL_TERMS)),
++  primarySourcePolicy: z.literal('approved-module-primary-v1').default('approved-module-primary-v1'),
++  reformulation: z.literal('controlled-hse-pt-en-v1').default('controlled-hse-pt-en-v1'),
+ }).strict();
+ export type RetrievalConfig = z.infer<typeof RetrievalConfigSchema>;
+ export function resolveRetrievalConfig(input: RagRetrievalConfig): RetrievalConfig {
+diff --git a/backend/src/ai/rag/retrieval.service.ts b/backend/src/ai/rag/retrieval.service.ts
+index 5792c46..63bd67c 100644
+--- a/backend/src/ai/rag/retrieval.service.ts
++++ b/backend/src/ai/rag/retrieval.service.ts
+@@ -1,3 +1,4 @@
++import { supportsPrimaryTopic } from './knowledgeTopics';
+ import type { EmbeddingService } from './embedding.service';
+ import type { RagRetrievalRepository } from './retrieval.repository';
+ import { MAX_RAG_QUERY_LENGTH, readRagRetrievalConfig, type RagRetrievalConfig } from './retrieval.config';
+@@ -65,8 +66,8 @@ export class RagRetrievalService implements RagRetriever {
+     }
+     const exactGate = (item: RagEvidence) => plan.exactTerms.every(term => lexicalTerms(item.content).includes(term.toLowerCase()));
+     const jurisdictionGate = (item: RagEvidence) => !isJurisdictionClaim(normalized) || jurisdictionSupportsClaim(normalized, ragResultEvidence(item));
+-    semantic = semantic.filter(item => item.score >= config.minSimilarity && exactGate(item) && jurisdictionGate(item));
+-    lexical = lexical.filter(item => lexicalCoverage(plan.originalQuery, item.content) >= config.lexicalMinCoverage && exactGate(item) && jurisdictionGate(item));
++    semantic = semantic.filter(item => item.score >= config.minSimilarity && exactGate(item) && supportsPrimaryTopic(plan.originalQuery, item) && jurisdictionGate(item));
++    lexical = lexical.filter(item => lexicalCoverage(plan.lexicalQuery, item.content) >= config.lexicalMinCoverage && exactGate(item) && supportsPrimaryTopic(plan.originalQuery, item) && jurisdictionGate(item));
+     const evidence = reciprocalRankFusion(semantic, lexical, config.rrfK).slice(0, config.topK);
+     const partial = !!options.requiredSources?.some(source => !evidence.some(item => item.sourceId === source));
+     const relevanceState: RetrievalDiagnostics['relevanceState'] = !evidence.length
+diff --git a/backend/src/ai/rag/technicalGlossary.ts b/backend/src/ai/rag/technicalGlossary.ts
+new file mode 100644
+index 0000000..4d82664
+--- /dev/null
++++ b/backend/src/ai/rag/technicalGlossary.ts
+@@ -0,0 +1,48 @@
++/** Bounded retrieval vocabulary, never an evidence source or a general translator. */
++export const TECHNICAL_GLOSSARY_VERSION = 'hse-pt-en-v1';
++export const foldTechnical = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
++type Term = { id: string; pt: string; en: string; anchor?: boolean };
++export const TECHNICAL_TERMS: readonly Term[] = [
++  { id: 'loto', pt: 'bloqueio e etiquetagem', en: 'LOTO lockout tagout', anchor: true },
++  { id: 'ptw', pt: 'permissao de trabalho', en: 'PTW permit to work', anchor: true },
++  { id: 'risk', pt: 'avaliacao de riscos?', en: 'risk assessment', anchor: true },
++  { id: 'emergency', pt: 'procedimentos? de emergencia', en: 'emergency procedures', anchor: true },
++  { id: 'stored-energy', pt: 'energia residual', en: 'stored residual energy', anchor: true },
++  { id: 'isolation-verification', pt: 'verificar (?:o )?isolamento', en: 'verification isolation', anchor: true },
++  { id: 'near-miss', pt: 'quase acidentes?', en: 'near misses' },
++  { id: 'assistance', pt: 'assistencia adicional', en: 'additional assistance' },
++  { id: 'alone', pt: 'por si so', en: 'by itself' },
++  { id: 'maintenance', pt: 'manutencao', en: 'maintenance' },
++  { id: 'control', pt: 'controlar', en: 'control' },
++  { id: 'review', pt: 'revisar', en: 'review' },
++  { id: 'changes', pt: 'mudancas', en: 'changes' },
++  { id: 'work', pt: 'trabalho', en: 'work' },
++  { id: 'task', pt: 'tarefa', en: 'task' },
++  { id: 'safe', pt: 'segura', en: 'safe' },
++  { id: 'planning', pt: 'planejar', en: 'planning' },
++  { id: 'evacuation', pt: 'evacuacao', en: 'evacuation', anchor: true },
++  { id: 'alarms', pt: 'alarmes', en: 'alarms', anchor: true },
++  { id: 'support', pt: 'apoio', en: 'support' },
++  { id: 'workers', pt: 'trabalhadores', en: 'workers' },
++  { id: 'need', pt: 'precisam', en: 'need' },
++  { id: 'requirements', pt: 'exige', en: 'requirements' },
++  { id: 'guidance', pt: 'orientacao', en: 'guidance' },
++  { id: 'purpose', pt: 'objetivo', en: 'purpose' },
++];
++const GRAMMAR = new Set('o a os as um uma de do da dos das e ou em no na nos nas para por que qual como quando devemos apos antes sobre diz torna si so explique explicar nao nunca sem exige'.split(' '));
++export function technicalProjection(query: string) {
++  let remaining = foldTechnical(query);
++  const matches: Array<{ id: string; original: string; english: string }> = [];
++  let anchored = false;
++  for (const term of TECHNICAL_TERMS) {
++    remaining = remaining.replace(new RegExp(`\\b${term.pt}\\b`, 'g'), original => {
++      matches.push({ id: term.id, original, english: term.en }); anchored ||= !!term.anchor; return ' ';
++    });
++  }
++  // Keep original standard numbers/acronyms; unknown content is not silently translated away.
++  const exact = query.match(/\b(?:[A-Z]{2,}[A-Z0-9.-]*|\d+(?:[.-]\d+)+)\b/g) ?? [];
++  for (const token of exact) remaining = remaining.split(token.toLowerCase()).join(' ');
++  const unknownTerms = [...new Set((remaining.match(/[\p{L}\p{N}]+/gu) ?? []).filter(t => !GRAMMAR.has(t)))];
++  const applied = anchored && matches.length > 0 && unknownTerms.length === 0;
++  return { applied, matches, unknownTerms, canonicalRetrievalQuery: applied ? [...new Set([...exact, ...matches.map(m => m.english)])].join(' ') : query };
++}

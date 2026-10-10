@@ -1,0 +1,14 @@
+// The SVG markup is built as a string and injected via [innerHTML] (see bar-chart.component.ts),
+// so it never passes through Angular's template compiler and isn't reached by emulated
+// view encapsulation. :host ::ng-deep keeps these rules scoped to this component's subtree
+// while still applying to that dynamically-injected markup.
+:host ::ng-deep {
+  .chart-empty {
+    padding: 8px 0;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: auto;
+  }
+}

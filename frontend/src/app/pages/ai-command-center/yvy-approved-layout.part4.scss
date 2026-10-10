@@ -1,0 +1,32 @@
+@use '../../shared/ai-chat-widget/markdown-layout' as markdown;
+
+
+// Attention belongs to the agent panel, separate from the message composer.
+.greeting .agent-attention{
+ display:grid;gap:10px;width:100%;max-width:290px;margin-top:22px;padding:16px;
+ font:inherit;text-align:left;line-height:1.45;cursor:pointer;color:#f3f6fa;
+ border:1px solid #d89032;border-left:4px solid #ffb547;border-radius:12px;
+ background:linear-gradient(120deg,#33271b,#142332 85%);box-shadow:0 5px 22px #0003;
+ transition:background .18s ease,border-color .18s ease;
+ span{font-family:inherit;letter-spacing:normal;text-transform:none}
+ .attention-heading{display:flex;align-items:center;gap:8px;color:#ffc366;font-size:13px;font-weight:700}
+ .attention-heading>span{font-size:13px;color:inherit}
+ .attention-heading b{margin-left:auto;min-width:30px;padding:2px 8px;border-radius:6px;background:#ffb547;color:#251a0c;text-align:center;font-size:16px;font-variant-numeric:tabular-nums}
+ .attention-description{font-size:14px;font-weight:600;overflow-wrap:normal}
+ .attention-link{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:#ffcd82}
+ .attention-link span{font-size:18px;color:inherit}
+ &:hover{background:linear-gradient(120deg,#44311e,#1a3041);border-color:#ffd08a}
+ &:focus-visible{outline:2px solid #ffe0a6;outline-offset:4px}
+}
+.workspace.conversation-active .greeting .agent-attention{margin-top:16px}
+@media(max-width:760px){
+ .hero .greeting{display:block;position:absolute;top:4px;left:0;width:68px}
+ .hero .greeting>span,.hero .greeting>h2,.hero .greeting>i,.hero .greeting>p{display:none}
+ .workspace.conversation-active .hero .greeting{position:static;width:100%}
+ .greeting .agent-attention,.workspace.conversation-active .greeting .agent-attention{margin:0;padding:8px 4px;border-left-width:2px;gap:0;text-align:center}
+ .greeting .agent-attention .attention-heading{display:flex;flex-direction:column;gap:5px}
+ .greeting .agent-attention .attention-heading b{margin:0;font-size:14px}
+ .greeting .agent-attention .attention-heading>span{display:block;font-size:9px}
+ .greeting .agent-attention .attention-description,.greeting .agent-attention .attention-link{display:none}
+}
+@media(prefers-reduced-motion:reduce){.greeting .agent-attention{transition:none}}

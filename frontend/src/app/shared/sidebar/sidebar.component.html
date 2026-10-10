@@ -1,0 +1,22 @@
+<div class="sb-backdrop"
+     *ngIf="state.panelOverlays()"
+     (click)="state.closePanel()"
+     aria-hidden="true"></div>
+
+<div class="sb-shell"
+     [class.is-panel-open]="state.isSecondaryPanelOpen()"
+     [class.is-overlay]="state.panelOverlays()"
+     [class.is-mobile]="state.viewport() === 'mobile'">
+  <app-primary-rail></app-primary-rail>
+
+  <!-- Lit vertical rule between the icon rail and the module panel. Its own
+       element rather than a border, so the glow is not clipped by the rail's
+       own overflow, and it stays put when the panel closes. -->
+  <span class="sb-vrule" aria-hidden="true"></span>
+
+  <div class="sb-panel-slot"
+       [style.width.px]="state.panelWidth()"
+       *ngIf="state.isSecondaryPanelOpen()">
+    <app-module-panel></app-module-panel>
+  </div>
+</div>

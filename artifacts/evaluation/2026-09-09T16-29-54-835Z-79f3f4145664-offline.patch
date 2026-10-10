@@ -1,0 +1,1115 @@
+diff --git a/backend/package.json b/backend/package.json
+index 9e058b6..4ebe9a4 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -9,6 +9,7 @@
+     "build": "tsc -p tsconfig.build.json",
+     "start": "node dist/index.js",
+     "test": "node --test --require ts-node/register/transpile-only \"src/**/*.test.ts\"",
++    "eval:retrieval": "node --require ts-node/register/transpile-only src/ai/rag/retrieval.evaluation.cli.ts",
+     "rag:ingest": "node --require ts-node/register/transpile-only src/ai/rag/ingest.cli.ts",
+     "rag:retrieve:smoke": "node --require ts-node/register/transpile-only src/ai/rag/retrieve.cli.ts",
+     "state:smoke": "node --require ts-node/register/transpile-only src/ai/graph/threadState.smoke.cli.ts",
+diff --git a/backend/src/ai/graph/evidence.contract.ts b/backend/src/ai/graph/evidence.contract.ts
+index ca54fa4..0fe70ca 100644
+--- a/backend/src/ai/graph/evidence.contract.ts
++++ b/backend/src/ai/graph/evidence.contract.ts
+@@ -26,7 +26,7 @@ export interface AgentEvidence {
+   resultStatus?: 'SUCCESS_WITH_DATA' | 'SUCCESS_NO_DATA' | 'ERROR';
+   recordCount?: number;
+   facts?: EvidenceFact[];
+-  rag?: Pick<RagEvidence, 'chunkId' | 'documentId' | 'sourceId' | 'citationLabel' | 'jurisdiction' | 'content'>;
++  rag?: Pick<RagEvidence, 'chunkId' | 'documentId' | 'sourceId' | 'citationLabel' | 'jurisdiction' | 'content'> & Partial<Pick<RagEvidence, 'version' | 'sourceUrl' | 'sourceOrganization'>>;
+ }
+ 
+ export const VerificationStatus = {
+@@ -106,6 +106,9 @@ export function ragResultEvidence(item: RagEvidence): AgentEvidence {
+       citationLabel: item.citationLabel,
+       jurisdiction: item.jurisdiction,
+       content: item.content,
++      version: item.version,
++      sourceUrl: item.sourceUrl,
++      sourceOrganization: item.sourceOrganization,
+     },
+   };
+ }
+diff --git a/backend/src/ai/graph/hseAgent.runner.ts b/backend/src/ai/graph/hseAgent.runner.ts
+index 92d4f1e..6be1828 100644
+--- a/backend/src/ai/graph/hseAgent.runner.ts
++++ b/backend/src/ai/graph/hseAgent.runner.ts
+@@ -209,7 +209,7 @@ export async function runHseAgent(input: RunAgentInput): Promise<AgentRunResult>
+         authenticatedUser: input.authenticatedFirstName,
+         route: final.executedRoute,
+         tools: final.toolTrace,
+-        rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length },
++        rag: { used: final.ragUsed, status: final.ragStatus, chunksRetrieved: final.ragEvidence.length, diagnostics: final.retrievalDiagnostics },
+         conversation: {
+           stateActive: Boolean(input.threadStore && (final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL)),
+           messageCount: messages.length + ((final.status === AgentStatus.COMPLETED || final.status === AgentStatus.AWAITING_HUMAN_APPROVAL) ? 1 : 0),
+diff --git a/backend/src/ai/graph/hseAgent.state.ts b/backend/src/ai/graph/hseAgent.state.ts
+index 2671061..88d89f8 100644
+--- a/backend/src/ai/graph/hseAgent.state.ts
++++ b/backend/src/ai/graph/hseAgent.state.ts
+@@ -5,6 +5,7 @@ import { EvidenceAuthority, EvidenceSourceType, VerificationStatus } from './evi
+ 
+ const ragEvidenceSchema = z.object({
+   chunkId: z.string(), documentId: z.string(), content: z.string(), score: z.number(),
++  semanticRank: z.number().int().positive().optional(), lexicalRank: z.number().int().positive().optional(), fusionScore: z.number().optional(),
+   sourceId: z.string(), title: z.string(), module: z.string(), version: z.string(),
+   citationLabel: z.string(), sourceOrganization: z.string(), jurisdiction: z.string(), sourceUrl: z.string(),
+ });
+@@ -15,7 +16,7 @@ const agentEvidenceSchema = z.object({
+   authority: z.enum([EvidenceAuthority.OPERATIONAL, EvidenceAuthority.APPROVED_KNOWLEDGE]),
+   toolName: z.string().optional(), resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA', 'ERROR']).optional(),
+   recordCount: z.number().int().min(0).optional(), facts: z.array(evidenceFactSchema).max(80).optional(),
+-  rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string() }).optional(),
++  rag: z.object({ chunkId:z.string(),documentId:z.string(),sourceId:z.string(),citationLabel:z.string(),jurisdiction:z.string(),content:z.string(),version:z.string().optional(),sourceUrl:z.string().optional(),sourceOrganization:z.string().optional() }).optional(),
+ });
+ const verificationResultSchema = z.object({
+   status: z.enum([VerificationStatus.VERIFIED,VerificationStatus.PARTIALLY_VERIFIED,VerificationStatus.INSUFFICIENT_EVIDENCE,VerificationStatus.CONTRADICTED,VerificationStatus.SAFETY_BLOCKED]),
+@@ -69,7 +70,8 @@ export const hseAgentStateSchema = z.object({
+     resultStatus: z.enum(['SUCCESS_WITH_DATA', 'SUCCESS_NO_DATA']).optional(),
+   })).default([]),
+   ragUsed: z.boolean().default(false),
+-  ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
++  retrievalDiagnostics: z.object({ retrievalMode: z.enum(['HYBRID', 'SEMANTIC_ONLY', 'LEXICAL_FALLBACK']), relevanceState: z.string(), reformulationStatus: z.string(), configFingerprint: z.string() }).optional(),
++  ragStatus: z.enum(['OK', 'NO_RELEVANT_EVIDENCE', 'RETRIEVAL_UNAVAILABLE', 'PARTIAL_REQUIRED_EVIDENCE', 'NOT_APPROPRIATE', 'NOT_USED', 'ERROR']).default('NOT_USED'),
+   ragEvidence: z.array(ragEvidenceSchema).default([]),
+   evidence: z.array(agentEvidenceSchema).default([]),
+   verificationResult: verificationResultSchema.optional(),
+diff --git a/backend/src/ai/graph/hseAgent.types.ts b/backend/src/ai/graph/hseAgent.types.ts
+index eb088e0..d947491 100644
+--- a/backend/src/ai/graph/hseAgent.types.ts
++++ b/backend/src/ai/graph/hseAgent.types.ts
+@@ -81,8 +81,9 @@ export interface AgentExecutionTrace {
+   tools: AgentToolTrace[];
+   rag: {
+     used: boolean;
+-    status: 'OK' | 'NO_RELEVANT_EVIDENCE' | 'NOT_APPROPRIATE' | 'NOT_USED' | 'ERROR';
++    status: 'OK' | 'NO_RELEVANT_EVIDENCE' | 'RETRIEVAL_UNAVAILABLE' | 'PARTIAL_REQUIRED_EVIDENCE' | 'NOT_APPROPRIATE' | 'NOT_USED' | 'ERROR';
+     chunksRetrieved: number;
++    diagnostics?: { retrievalMode: string; relevanceState: string; reformulationStatus: string; configFingerprint: string };
+   };
+   conversation: { stateActive: boolean; messageCount: number };
+   memory: {
+diff --git a/backend/src/ai/graph/nodes/agent.node.ts b/backend/src/ai/graph/nodes/agent.node.ts
+index 0d167cb..363d4be 100644
+--- a/backend/src/ai/graph/nodes/agent.node.ts
++++ b/backend/src/ai/graph/nodes/agent.node.ts
+@@ -106,6 +106,7 @@ export async function agentNode(
+   let toolErrorCount = 0;
+   let ragUsed = false;
+   let ragEvidence: RagEvidence[] = [];
++  let retrievalDiagnostics: HseAgentState['retrievalDiagnostics'];
+   let ragStatus: HseAgentState['ragStatus'] = 'NOT_USED';
+   const toolTrace: AgentToolTrace[] = [];
+   const evidence: AgentEvidence[] = [];
+@@ -187,6 +188,7 @@ export async function agentNode(
+           }
+           if (toolPart.toolName === 'search_hse_knowledge') {
+             ragUsed = true;
++            retrievalDiagnostics = output?.diagnostics;
+             ragStatus = output && typeof output.status === 'string' ? output.status : output?.error ? 'ERROR' : 'ERROR';
+             if (output?.status === 'OK') {
+               ragEvidence = output.evidence as RagEvidence[];
+@@ -217,6 +219,7 @@ export async function agentNode(
+       finalText: text,
+       ragUsed,
+       ragStatus,
++      retrievalDiagnostics,
+       ragEvidence,
+       evidence,
+       errorCode: timedOut ? AgentErrorCode.TIMEOUT : AgentErrorCode.MODEL_ERROR,
+@@ -237,6 +240,7 @@ export async function agentNode(
+     finalText: text,
+     ragUsed,
+     ragStatus,
++    retrievalDiagnostics,
+     ragEvidence,
+     evidence,
+     ...(toolFailed || overviewAllSourcesFailed ? { errorCode: AgentErrorCode.TOOL_FAILURE } : {}),
+diff --git a/backend/src/ai/rag/__tests__/hardening.test.ts b/backend/src/ai/rag/__tests__/hardening.test.ts
+new file mode 100644
+index 0000000..b06e91a
+--- /dev/null
++++ b/backend/src/ai/rag/__tests__/hardening.test.ts
+@@ -0,0 +1,167 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { chunkContent, DEFAULT_CHUNK_OPTIONS } from '../textProcessing';
++import { corpusFingerprint, stableChunkIdentity, type CorpusConfig } from '../identity';
++import { reciprocalRankFusion } from '../fusion';
++import { prepareQuery } from '../queryPlan';
++import { resolveRetrievalConfig, retrievalConfigFingerprint } from '../retrieval.config';
++import { RagRetrievalService } from '../retrieval.service';
++import { parseRetrievalRow, PostgresRagRetrievalRepository } from '../retrieval.repository';
++import { EmbeddingProviderError, ReformulationError, RetrievalConfigError, MalformedRetrievalRowError, VectorRetrievalError, LexicalRetrievalError, isInfrastructureError } from '../errors';
++import { OpenAIEmbeddingService } from '../embedding.service';
++import type { RagEvidence } from '../retrieval.types';
++import type { RagSourceDocument } from '../types';
++import { evaluateRetrieval, measureRetrieval, RETRIEVAL_DATASET } from '../retrieval.evaluation';
++import { withoutNetwork } from '../../evaluation/offline-network';
++import { runHseAgent } from '../../graph/hseAgent.runner';
++import { createHseTools } from '../../tools';
++import { createMockModel } from '../../evaluation/simulated-model';
++
++const source: RagSourceDocument = { sourceType: 'test', sourceReference: 'A', content: 'LOTO isolation controls',
++  title: 'Test', module: 'safety', version: '1', sensitivity: 'public-reference' };
++const config: CorpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding: { provider: 'mock', model: 'fixed', dimensions: 2 }, preprocessing: 'v1' };
++const hit = (id = 'A', content = 'LOTO isolation controls'): RagEvidence => ({ chunkId: id, documentId: id,
++  sourceId: id, title: id, content, score: 0.8, module: 'safety', version: '1', citationLabel: id,
++  sourceOrganization: 'test', jurisdiction: 'United States', sourceUrl: 'https://example.test/' });
++for (const [name, input] of Object.entries({ exactMax: 'x'.repeat(4000), maxPlusOne: 'x'.repeat(4001),
++  longParagraph: 'word '.repeat(3000), longSentence: 'x'.repeat(15000), paragraphs: 'a\n\nb\n\n'.repeat(1500),
++  overlap: 'abcd'.repeat(2400), unicode: '安全 atenção 🛠️\n'.repeat(1500) })) {
++  test(`canonical chunks: ${name}, bounded, lossless, deterministic`, () => {
++    const chunks = chunkContent(input); assert.deepEqual(chunks, chunkContent(input));
++    let reconstructed = '', covered = 0;
++    for (const c of chunks) {
++      assert.ok(c.tokenCount <= 1000); const start = Number(c.metadata.startOffset), end = Number(c.metadata.endOffset);
++      assert.ok(start <= covered); assert.equal(c.content, input.slice(start, end));
++      assert.ok(!/^[\uDC00-\uDFFF]/.test(c.content)); assert.ok(!/[\uD800-\uDBFF]$/.test(c.content));
++      reconstructed += c.content.slice(covered - start); covered = end;
++    }
++    assert.equal(reconstructed, input);
++  });
++}
++test('invalid chunk/config fails explicitly', () => {
++  assert.throws(() => chunkContent('x', { targetTokens: 2, maxTokens: 1, overlapTokens: 0 }), RetrievalConfigError);
++  assert.throws(() => resolveRetrievalConfig({ topK: 0, minSimilarity: 0.5 }), RetrievalConfigError);
++});
++
++test('provider configuration and nested transport failures stay distinct', async () => {
++  await assert.rejects(new OpenAIEmbeddingService({ model: 'unused', dimensions: 2 }, '').embedMany(['LOTO']), RetrievalConfigError);
++  assert.equal(isInfrastructureError({ cause: { code: 'ECONNRESET' } }), true);
++  assert.equal(isInfrastructureError({ lastError: { statusCode: 503 } }), true);
++  assert.equal(isInfrastructureError({ statusCode: 401 }), false);
++  assert.equal(isInfrastructureError(new TypeError('programming error')), false);
++});
++test('chunk and corpus identities track configuration, content, version; ignore ingestion order', () => {
++  const chunk = chunkContent(source.content)[0], id = stableChunkIdentity(source, chunk, config);
++  assert.equal(id, stableChunkIdentity(source, chunk, config));
++  for (const changed of [{ ...config, preprocessing: 'v2' }, { ...config, embedding: { ...config.embedding, model: 'other' } },
++    { ...config, chunking: { ...config.chunking, overlapTokens: 99 } }]) {
++    assert.notEqual(id, stableChunkIdentity(source, chunk, changed));
++    assert.notEqual(corpusFingerprint([source], config).fingerprint, corpusFingerprint([source], changed).fingerprint);
++  }
++  assert.notEqual(id, stableChunkIdentity({ ...source, content: 'changed' }, chunk, config));
++  const b = { ...source, sourceReference: 'B' };
++  assert.equal(corpusFingerprint([source, b], config).fingerprint, corpusFingerprint([b, source], config).fingerprint);
++  assert.notEqual(corpusFingerprint([source], config).fingerprint, corpusFingerprint([{ ...source, version: '2' }], config).fingerprint);
++  assert.notEqual(retrievalConfigFingerprint({ topK: 3, minSimilarity: 0.45 }), retrievalConfigFingerprint({ topK: 3, minSimilarity: 0.5 }));
++});
++test('RRF both lists, duplicates, distinct rankings, deterministic ties, empty inputs', () => {
++  const a = hit('A'), b = hit('B'), c = hit('C');
++  const fused = reciprocalRankFusion([a, a, b], [b, c, a], 60);
++  assert.equal(fused.length, 3); assert.equal(fused[0].chunkId, 'B');
++  assert.equal(fused[0].fusionScore, 1 / 62 + 1 / 61);
++  assert.equal(fused.find(x => x.chunkId === 'A')?.semanticRank, 1);
++  assert.equal(reciprocalRankFusion([b], [a], 60)[0].chunkId, 'A');
++  assert.equal(reciprocalRankFusion([a], [], 60)[0].fusionScore, 1 / 61);
++  assert.equal(reciprocalRankFusion([], [a], 60)[0].lexicalRank, 1);
++  assert.deepEqual(reciprocalRankFusion([], [], 60), []);
++});
++test('query schema and safe original fallback', async () => {
++  const query = 'LOTO EQ-123 controls';
++  const prepared = await prepareQuery(query);
++  assert.deepEqual(prepared.plan.exactTerms, ['EQ-123']); assert.ok(prepared.plan.acronyms.includes('LOTO'));
++  for (const planner of [async () => { throw new ReformulationError('timeout'); }, async () => ({} as any)]) {
++    const result = await prepareQuery(query, planner);
++    assert.equal(result.reformulationStatus, 'FALLBACK_ORIGINAL'); assert.equal(result.plan.semanticQuery, query); assert.equal(result.plan.lexicalQuery, query);
++  }
++  await assert.rejects(prepareQuery(query, async () => { throw new TypeError('bug'); }), TypeError);
++});
++test('hybrid relevance, fallback policy, abstention, required sources and programming errors', async () => {
++  const make = (semantic: () => Promise<number[][]>, lexical = [hit()], overrides = {}) => new RagRetrievalService(
++    { embedMany: semantic }, { searchByEmbedding: async () => [hit()], searchLexical: async () => lexical },
++    { ...resolveRetrievalConfig({ topK: 3, minSimilarity: 0.45 }), ...overrides }, () => {});
++  const outage = async () => { throw new EmbeddingProviderError('offline'); };
++  const normal = await make(async () => [[1, 0]]).retrieve('LOTO isolation controls');
++  assert.equal(normal.evidence.length, 1); assert.equal(normal.diagnostics?.retrievalMode, 'HYBRID');
++  const fallback = await make(outage).retrieve('LOTO isolation controls');
++  assert.equal(fallback.status, 'OK'); assert.equal(fallback.diagnostics?.retrievalMode, 'LEXICAL_FALLBACK');
++  assert.equal((await make(outage, [], { allowLexicalFallback: false }).retrieve('LOTO isolation controls')).status, 'RETRIEVAL_UNAVAILABLE');
++  assert.equal((await make(outage, [hit('B', 'unrelated holiday')]).retrieve('LOTO isolation controls')).status, 'RETRIEVAL_UNAVAILABLE');
++  assert.equal((await make(outage).retrieve('LOTO EQ-123 isolation controls')).status, 'RETRIEVAL_UNAVAILABLE');
++  assert.equal((await make(async () => [[1, 0]]).retrieve('LOTO isolation controls', { requiredSources: ['A', 'B'] })).status, 'PARTIAL_REQUIRED_EVIDENCE');
++  await assert.rejects(make(async () => { throw new TypeError('bug'); }).retrieve('LOTO isolation controls'), TypeError);
++});
++test('jurisdiction gate matches E.1: matching, wrong, unspecified, general principle', async () => {
++  const service = new RagRetrievalService({ embedMany: async () => [[1, 0]] },
++    { searchByEmbedding: async () => [hit('A', 'United States law isolation controls')] }, { topK: 3, minSimilarity: 0.45 }, () => {});
++  assert.equal((await service.retrieve('United States law isolation controls')).status, 'OK');
++  assert.equal((await service.retrieve('Portugal law isolation controls')).status, 'NO_RELEVANT_EVIDENCE');
++  assert.equal((await service.retrieve('law isolation controls')).status, 'NO_RELEVANT_EVIDENCE');
++  assert.equal((await service.retrieve('General isolation controls in Portugal')).status, 'OK');
++});
++test('lexical SQL parameters and malformed rows; narrow near-source errors', async () => {
++  let sql = '', parameters: any[] = [];
++  const repository = new PostgresRagRetrievalRepository({ query: async (s: string, p: any[]) => { sql = s; parameters = p; return { rows: [] }; } } as any, 2);
++  await repository.searchLexical("LOTO EQ-123 ' injected", 12);
++  assert.match(sql, /to_tsvector/); assert.match(sql, /\$1::text\[\]/); assert.ok(parameters[0].includes('eq-123')); assert.doesNotMatch(sql, /injected/);
++  for (const row of [{}, { score: 'NaN' }, { score: Infinity }]) assert.throws(() => parseRetrievalRow(row), MalformedRetrievalRowError);
++  const failed = new PostgresRagRetrievalRepository({ query: async () => { throw Object.assign(new Error('offline'), { code: 'ECONNREFUSED' }); } } as any, 2);
++  await assert.rejects(failed.searchLexical('LOTO', 3), LexicalRetrievalError);
++  await assert.rejects(failed.searchByEmbedding([1, 0], 3, 0.45), VectorRetrievalError);
++  const bug = new PostgresRagRetrievalRepository({ query: async () => { throw new TypeError('bug'); } } as any, 2);
++  await assert.rejects(bug.searchLexical('LOTO', 3), TypeError);
++});
++
++test('retrieval evaluation is hermetic; required A+B fails when only A is retrieved', async () => {
++  const multi = RETRIEVAL_DATASET.find(c => c.id === 'multi-source')!;
++  const partial = measureRetrieval(multi, ['loto']);
++  assert.equal(partial.passed, false); assert.equal(partial.requiredFound, 1); assert.equal(partial.requiredTotal, 2);
++  const result = await withoutNetwork(evaluateRetrieval);
++  assert.equal(result.modes.length, 2); assert.equal(result.corpus.documentCount, 3);
++  for (const mode of result.modes) {
++    assert.equal(mode.cases.find(c => c.id === 'wrong-jurisdiction')?.sources.length, 0);
++    assert.equal(mode.cases.find(c => c.id === 'no-evidence')?.sources.length, 0);
++    assert.equal(mode.metrics.requiredSourceRecall, 1);
++    assert.ok(mode.metrics.irrelevantRetrievalRate > 0, 'The fixture exposes false positives; do not hide them');
++  }
++  assert.equal(result.modes[0].metrics.irrelevantRetrievalRate, result.modes[1].metrics.irrelevantRetrievalRate);
++});
++
++test('corpus fingerprint excludes unknown metadata rather than serializing secrets', () => {
++  const dirty = { ...source, metadata: { apiKey: 'not-a-real-secret' } } as RagSourceDocument;
++  assert.equal(corpusFingerprint([dirty], config).fingerprint, corpusFingerprint([source], config).fingerprint);
++  assert.doesNotMatch(JSON.stringify(corpusFingerprint([dirty], config)), /apiKey|not-a-real-secret/);
++});
++
++test('lexical outage is explicit vector-only; disabled fallback never calls lexical', async () => {
++  const good = { embedMany: async () => [[1, 0]] };
++  const service = new RagRetrievalService(good, { searchByEmbedding: async () => [hit()],
++    searchLexical: async () => { throw new LexicalRetrievalError('offline'); } }, { topK: 3, minSimilarity: 0.45 }, () => {});
++  assert.equal((await service.retrieve('LOTO isolation')).diagnostics?.retrievalMode, 'SEMANTIC_ONLY');
++  let calls = 0;
++  const blocked = new RagRetrievalService({ embedMany: async () => { throw new EmbeddingProviderError('offline'); } },
++    { searchByEmbedding: async () => [], searchLexical: async () => { calls++; return [hit()]; } },
++    { ...resolveRetrievalConfig({ topK: 3, minSimilarity: 0.45 }), allowLexicalFallback: false }, () => {});
++  assert.equal((await blocked.retrieve('LOTO isolation')).status, 'RETRIEVAL_UNAVAILABLE'); assert.equal(calls, 0);
++});
++
++test('real graph exposes lexical fallback in Inspector diagnostics', async () => {
++  const retriever = new RagRetrievalService({ embedMany: async () => { throw new EmbeddingProviderError('offline'); } },
++    { searchByEmbedding: async () => [], searchLexical: async () => [hit()] }, { topK: 3, minSimilarity: 0.45 }, () => {});
++  const result = await withoutNetwork(() => runHseAgent({ message: 'Explain LOTO isolation controls',
++    model: createMockModel([{ toolCall: { name: 'search_hse_knowledge', input: JSON.stringify({ query: 'LOTO isolation controls' }) } },
++      { text: 'LOTO isolation controls [A].' }]),
++    tools: createHseTools({ query: async () => ({ rows: [] }) } as any, async () => ({}), retriever), emit: () => {},
++  }));
++  assert.equal(result.executionTrace?.rag.diagnostics?.retrievalMode, 'LEXICAL_FALLBACK');
++  assert.equal(result.executionTrace?.rag.diagnostics?.relevanceState, 'LEXICAL_FALLBACK');
++});
+diff --git a/backend/src/ai/rag/__tests__/rag-ingestion.test.ts b/backend/src/ai/rag/__tests__/rag-ingestion.test.ts
+index bf9a460..5ddb7ce 100644
+--- a/backend/src/ai/rag/__tests__/rag-ingestion.test.ts
++++ b/backend/src/ai/rag/__tests__/rag-ingestion.test.ts
+@@ -36,7 +36,7 @@ class FakeRepository implements RagRepository {
+     this.replaceCalls++;
+     this.receivedDocument = document;
+     const action = this.document ? 'updated' : 'created';
+-    this.document = { id: '1', sourceType: document.sourceType, sourceReference: document.sourceReference, version: document.version, contentHash: hash };
++    this.document = { id: '1', sourceType: document.sourceType, sourceReference: document.sourceReference, version: document.version, contentHash: hash, ingestionFingerprint: document.metadata?.ingestionFingerprint };
+     this.chunks = [...chunks];
+     return action;
+   }
+@@ -52,7 +52,7 @@ describe('RAG text processing', () => {
+     const text = Array.from({ length: 20 }, (_, i) => `Section ${i}\n${'word '.repeat(180)}`).join('\n\n');
+     const first = chunkContent(text); const second = chunkContent(text);
+     assert.ok(first.length > 1); assert.deepEqual(first, second);
+-    assert.ok(first.every((chunk) => chunk.tokenCount <= 1100));
++    assert.ok(first.every((chunk) => chunk.tokenCount <= 1000));
+   });
+   test('content hash is deterministic and normalization-aware', () => {
+     assert.equal(contentHash(normalizeContent('a\r\n b')), contentHash(normalizeContent('a\n b')));
+@@ -72,11 +72,11 @@ describe('RAG ingestion behavior', () => {
+     assert.equal(result.documents.length, 2); assert.equal(repo.findCalls, 0); assert.equal(repo.replaceCalls, 0); assert.equal(embeddings.calls, 0);
+     assert.deepEqual(result.documents.map((d) => d.chunks), [1, 1]);
+   });
+-  test('unchanged document is skipped without embedding', async () => {
++  test('legacy document is reindexed to establish configuration identity', async () => {
+     const repo = new FakeRepository(); const normalized = normalizeContent(source().content);
+     repo.document = { id: '1', sourceType: 'approved-test', sourceReference: 'test/reference', version: '1', contentHash: contentHash(normalized) };
+     const embeddings = new FakeEmbeddings(); const result = await new RagIngestionService(repo, embeddings, 3).ingest([source()], { dryRun: false });
+-    assert.equal(result.documentsSkipped, 1); assert.equal(embeddings.calls, 0); assert.equal(repo.replaceCalls, 0);
++    assert.equal(result.documentsUpdated, 1); assert.equal(embeddings.calls, 1); assert.equal(repo.replaceCalls, 1);
+   });
+   test('changed document reindexes and repeated ingestion creates no duplicate chunks', async () => {
+     const repo = new FakeRepository(); const embeddings = new FakeEmbeddings(); const service = new RagIngestionService(repo, embeddings, 3);
+@@ -88,7 +88,7 @@ describe('RAG ingestion behavior', () => {
+   test('mock embedding service is accepted and source metadata remains minimized', async () => {
+     const repo = new FakeRepository(); const input = { ...source(), workerName: 'must-not-persist', metadata: { language: 'en' } } as RagSourceDocument;
+     const result = await new RagIngestionService(repo, new FakeEmbeddings(), 3).ingest([input], { dryRun: false });
+-    assert.equal(result.embeddingsCreated, 1); assert.deepEqual(repo.receivedDocument?.metadata, { language: 'en' });
++    assert.equal(result.embeddingsCreated, 1); assert.equal(repo.receivedDocument?.metadata?.language, 'en'); assert.match(repo.receivedDocument?.metadata?.ingestionFingerprint ?? '', /^[a-f0-9]{64}$/);
+   });
+   test('invalid embedding dimension prevents persistence', async () => {
+     const repo = new FakeRepository(); const result = await new RagIngestionService(repo, new FakeEmbeddings(2), 3).ingest([source()], { dryRun: false });
+diff --git a/backend/src/ai/rag/__tests__/retrieval.test.ts b/backend/src/ai/rag/__tests__/retrieval.test.ts
+index 9fb605b..3b91fee 100644
+--- a/backend/src/ai/rag/__tests__/retrieval.test.ts
++++ b/backend/src/ai/rag/__tests__/retrieval.test.ts
+@@ -22,7 +22,7 @@ describe('RAG retrieval service', () => {
+     const result = await service.retrieve('How should LOTO be applied?');
+     assert.equal(result.status, 'OK');
+     assert.deepEqual(embedded, ['How should LOTO be applied?']);
+-    assert.deepEqual(args, [[1, 0], 3, 0.45]);
++    assert.deepEqual(args, [[1, 0], 12, 0.45]);
+     assert.equal(result.evidence[0].citationLabel, evidence.citationLabel);
+     assert.ok(!('embedding' in result.evidence[0]));
+   });
+@@ -32,7 +32,7 @@ describe('RAG retrieval service', () => {
+       { embedMany: async () => [[1, 0]] }, { searchByEmbedding: async () => [] },
+       { topK: 3, minSimilarity: 0.45 }, () => undefined
+     );
+-    assert.deepEqual(await service.retrieve('holiday policy'), { status: 'NO_RELEVANT_EVIDENCE', evidence: [] });
++    assert.equal((await service.retrieve('holiday policy')).status, 'NO_RELEVANT_EVIDENCE');
+   });
+ 
+   test('does not embed a structured operational query', async () => {
+diff --git a/backend/src/ai/rag/embedding.service.ts b/backend/src/ai/rag/embedding.service.ts
+index 62440a6..b299782 100644
+--- a/backend/src/ai/rag/embedding.service.ts
++++ b/backend/src/ai/rag/embedding.service.ts
+@@ -1,3 +1,4 @@
++import { EmbeddingProviderError, MalformedRetrievalRowError, RetrievalConfigError, isInfrastructureError } from './errors';
+ import { createOpenAI } from '@ai-sdk/openai';
+ import { embedMany } from 'ai';
+ import { readEmbeddingConfig, type EmbeddingConfig } from '../embedding.config';
+@@ -8,8 +9,8 @@ export interface EmbeddingService {
+ }
+ 
+ export function validateEmbedding(vector: readonly number[], dimensions: number): number[] {
+-  if (vector.length !== dimensions || vector.some((value) => !Number.isFinite(value))) {
+-    throw new Error(`Embedding must contain exactly ${dimensions} finite values`);
++  if (!Array.isArray(vector) || vector.length !== dimensions || vector.some((value) => !Number.isFinite(value))) {
++    throw new MalformedRetrievalRowError(`Embedding must contain exactly ${dimensions} finite values`);
+   }
+   return [...vector];
+ }
+@@ -22,9 +23,16 @@ export class OpenAIEmbeddingService implements EmbeddingService {
+ 
+   async embedMany(texts: readonly string[]): Promise<number[][]> {
+     if (texts.length === 0) return [];
++    if (!this.apiKey?.trim()) throw new RetrievalConfigError('OPENAI_API_KEY is required for embedding retrieval');
+     requireOpenAIConfiguration({ OPENAI_API_KEY: this.apiKey } as NodeJS.ProcessEnv);
+     const openai = createOpenAI({ apiKey: this.apiKey });
+-    const result = await embedMany({ model: openai.embedding(this.config.model as any), values: [...texts] });
++    let result;
++    try { result = await embedMany({ model: openai.embedding(this.config.model as any), values: [...texts] }); }
++    catch (error) {
++      if (isInfrastructureError(error)) throw new EmbeddingProviderError('Embedding provider unavailable', { cause: error });
++      throw error;
++    }
++    if (result.embeddings.length !== texts.length) throw new MalformedRetrievalRowError('Unexpected embedding count');
+     return result.embeddings.map((vector) => validateEmbedding(vector, this.config.dimensions));
+   }
+ }
+diff --git a/backend/src/ai/rag/errors.ts b/backend/src/ai/rag/errors.ts
+new file mode 100644
+index 0000000..6ca677e
+--- /dev/null
++++ b/backend/src/ai/rag/errors.ts
+@@ -0,0 +1,21 @@
++class RetrievalError extends Error {
++  readonly cause?: unknown;
++  constructor(message?: string, options?: { cause?: unknown }) { super(message); this.cause = options?.cause; }
++}
++export class RetrievalConfigError extends RetrievalError { readonly name = 'RetrievalConfigError'; }
++export class EmbeddingProviderError extends RetrievalError { readonly name = 'EmbeddingProviderError'; }
++export class LexicalRetrievalError extends RetrievalError { readonly name = 'LexicalRetrievalError'; }
++export class VectorRetrievalError extends RetrievalError { readonly name = 'VectorRetrievalError'; }
++export class MalformedRetrievalRowError extends RetrievalError { readonly name = 'MalformedRetrievalRowError'; }
++export class ReformulationError extends RetrievalError { readonly name = 'ReformulationError'; }
++
++/** Only transport/server failures qualify for degradation; programming errors propagate. */
++export function isInfrastructureError(error: unknown, depth = 0): boolean {
++  if (!error || typeof error !== 'object' || depth > 3) return false;
++  const code = (error as { code?: string })?.code;
++  const status = (error as { statusCode?: number })?.statusCode;
++  return ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', '57P01', '53300'].includes(code ?? '') ||
++    (typeof code === 'string' && code.startsWith('08')) || status === 429 || (typeof status === 'number' && status >= 500) ||
++    isInfrastructureError((error as { cause?: unknown }).cause, depth + 1) ||
++    isInfrastructureError((error as { lastError?: unknown }).lastError, depth + 1);
++}
+diff --git a/backend/src/ai/rag/fusion.ts b/backend/src/ai/rag/fusion.ts
+new file mode 100644
+index 0000000..63c28a3
+--- /dev/null
++++ b/backend/src/ai/rag/fusion.ts
+@@ -0,0 +1,23 @@
++import type { RagEvidence } from './retrieval.types';
++import { RetrievalConfigError } from './errors';
++export type FusedEvidence = RagEvidence & { semanticRank?: number; lexicalRank?: number; fusionScore: number };
++/** Each retriever contributes at most once per chunk. Scores are never added. */
++export function reciprocalRankFusion(semantic: RagEvidence[], lexical: RagEvidence[], k: number): FusedEvidence[] {
++  if (!Number.isInteger(k) || k < 1) throw new RetrievalConfigError('Invalid RRF k');
++  const results = new Map<string, FusedEvidence>();
++  for (const [items, field] of [[semantic, 'semanticRank'], [lexical, 'lexicalRank']] as const) {
++    const seen = new Set<string>();
++    let rank = 0;
++    for (const item of items) {
++      const key = `${item.documentId}:${item.chunkId}`;
++      if (seen.has(key)) continue;
++      seen.add(key); rank++;
++      const current = results.get(key) ?? { ...item, fusionScore: 0 };
++      current[field] = rank;
++      current.fusionScore += 1 / (k + rank);
++      results.set(key, current);
++    }
++  }
++  return [...results.values()].sort((a, b) => b.fusionScore - a.fusionScore ||
++    a.documentId.localeCompare(b.documentId, 'en') || a.chunkId.localeCompare(b.chunkId, 'en'));
++}
+diff --git a/backend/src/ai/rag/identity.ts b/backend/src/ai/rag/identity.ts
+new file mode 100644
+index 0000000..f5671df
+--- /dev/null
++++ b/backend/src/ai/rag/identity.ts
+@@ -0,0 +1,26 @@
++import { contentHash, DEFAULT_CHUNK_OPTIONS, normalizeContent } from './textProcessing';
++import type { RagSourceDocument, PreparedRagChunk } from './types';
++
++export const PREPROCESSING_VERSION = 'normalize-lines-v1/windows-v2/utf16-estimate-v1';
++export type CorpusConfig = {
++  chunking: typeof DEFAULT_CHUNK_OPTIONS;
++  embedding: { provider: string; model: string; dimensions: number };
++  preprocessing: string;
++};
++export function fingerprint(value: unknown): string {
++  const canonical = (v: any): any => Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object'
++    ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
++  return contentHash(JSON.stringify(canonical(value)));
++}
++export function corpusFingerprint(documents: readonly RagSourceDocument[], config: CorpusConfig) {
++  const entries = documents.map(d => ({ identity: [d.sourceType, d.sourceReference], version: d.version,
++    hash: contentHash(normalizeContent(d.content)), metadata: Object.fromEntries(['language', 'citationLabel', 'sourcePath', 'effectiveDate', 'revisionDate', 'sourceOrganization', 'jurisdiction', 'sourceUrl', 'secondarySourceUrl', 'contentStatus', 'accessedOn'].filter(key => (d.metadata as Record<string, unknown> | undefined)?.[key] !== undefined).map(key => [key, (d.metadata as Record<string, unknown>)[key]])) }))
++    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b), 'en'));
++  const manifest = { version: 'corpus-v1', documentCount: entries.length, documents: entries, config };
++  return { ...manifest, fingerprint: fingerprint(manifest) };
++}
++export function stableChunkIdentity(document: RagSourceDocument, chunk: PreparedRagChunk, config: CorpusConfig): string {
++  return fingerprint({ sourceType: document.sourceType, sourceReference: document.sourceReference,
++    version: document.version, documentHash: contentHash(normalizeContent(document.content)),
++    position: chunk.chunkIndex, content: chunk.content, config });
++}
+diff --git a/backend/src/ai/rag/ingestion.service.ts b/backend/src/ai/rag/ingestion.service.ts
+index 3ebc60e..e91e193 100644
+--- a/backend/src/ai/rag/ingestion.service.ts
++++ b/backend/src/ai/rag/ingestion.service.ts
+@@ -1,3 +1,5 @@
++import { corpusFingerprint, stableChunkIdentity, fingerprint, PREPROCESSING_VERSION, type CorpusConfig } from './identity';
++import { DEFAULT_CHUNK_OPTIONS } from './textProcessing';
+ import { validateEmbedding, type EmbeddingService } from './embedding.service';
+ import { readEmbeddingConfig } from '../embedding.config';
+ import type { RagRepository } from './rag.repository';
+@@ -9,11 +11,13 @@ export class RagIngestionService {
+   constructor(
+     private readonly repository: RagRepository,
+     private readonly embeddings: EmbeddingService,
+-    private readonly dimensions = readEmbeddingConfig().dimensions
++    private readonly dimensions = readEmbeddingConfig().dimensions,
++    private readonly corpusConfig: CorpusConfig = { chunking: DEFAULT_CHUNK_OPTIONS, embedding: { provider: 'openai', ...readEmbeddingConfig(), dimensions }, preprocessing: PREPROCESSING_VERSION }
+   ) {}
+ 
+   async ingest(sources: readonly RagSourceDocument[], options: { dryRun: boolean }): Promise<IngestionSummary> {
+     const summary: IngestionSummary = {
++      corpus: corpusFingerprint(sources, this.corpusConfig),
+       dryRun: options.dryRun, sourcesExamined: sources.length, sourcesExcluded: EXCLUDED_SOURCE_REGISTRY.length,
+       documentsCreated: 0, documentsUpdated: 0, documentsSkipped: 0, chunksCreated: 0,
+       embeddingsCreated: 0, warnings: [], errors: [], documents: [],
+@@ -24,11 +28,12 @@ export class RagIngestionService {
+         const normalized = normalizeContent(source.content);
+         if (!normalized) throw new Error('Source content is empty after normalization');
+         const hash = contentHash(normalized);
+-        const chunks = chunkContent(normalized);
++        const chunks = chunkContent(normalized, this.corpusConfig.chunking);
++        const ingestionFingerprint = fingerprint({ hash, version: source.version, config: this.corpusConfig, metadata: source.metadata ?? {} });
+         const suspicious = detectSuspiciousInstructions(normalized);
+         const flaggedChunks = chunks.map((chunk) => ({
+           ...chunk,
+-          metadata: { ...chunk.metadata, ...(suspicious.length ? { suspiciousInstructions: true } : {}) },
++          metadata: { ...chunk.metadata, stableChunkId: stableChunkIdentity(source, chunk, this.corpusConfig), ...(suspicious.length ? { suspiciousInstructions: true } : {}) },
+         }));
+         if (suspicious.length) summary.warnings.push(`${source.sourceReference}: suspicious instruction-like content flagged`);
+         summary.documents.push({ title: source.title, module: source.module, sourceReference: source.sourceReference,
+@@ -37,11 +42,11 @@ export class RagIngestionService {
+           sourceOrganization: source.metadata?.sourceOrganization, jurisdiction: source.metadata?.jurisdiction });
+         if (options.dryRun) continue;
+         const existing = await this.repository.findDocument(source.sourceType, source.sourceReference);
+-        if (existing?.contentHash === hash) { summary.documentsSkipped++; continue; }
++        if (existing?.contentHash === hash && existing.version === source.version && existing.ingestionFingerprint === ingestionFingerprint) { summary.documentsSkipped++; continue; }
+         const vectors = await this.embeddings.embedMany(chunks.map((chunk) => chunk.content));
+         if (vectors.length !== chunks.length) throw new Error('Embedding provider returned an unexpected vector count');
+         const stored = await this.repository.replaceDocument(
+-          { ...source, content: normalized }, hash,
++          { ...source, content: normalized, metadata: { ...source.metadata, ingestionFingerprint } }, hash,
+           flaggedChunks.map((chunk, index) => ({ ...chunk, embedding: validateEmbedding(vectors[index], this.dimensions) }))
+         );
+         if (stored === 'created') summary.documentsCreated++; else summary.documentsUpdated++;
+diff --git a/backend/src/ai/rag/queryPlan.ts b/backend/src/ai/rag/queryPlan.ts
+new file mode 100644
+index 0000000..a6a5161
+--- /dev/null
++++ b/backend/src/ai/rag/queryPlan.ts
+@@ -0,0 +1,35 @@
++import { z } from 'zod';
++import { ReformulationError } from './errors';
++export const RetrievalQueryPlanSchema = z.object({
++  originalQuery: z.string().min(1).max(500), semanticQuery: z.string().min(1).max(500),
++  lexicalQuery: z.string().min(1).max(500), exactTerms: z.array(z.string()).max(50),
++  acronyms: z.array(z.string()).max(50), jurisdiction: z.string().optional(), domain: z.string().optional(),
++}).strict();
++export type RetrievalQueryPlan = z.infer<typeof RetrievalQueryPlanSchema>;
++export type QueryPlanner = (query: string) => Promise<RetrievalQueryPlan>;
++export const deterministicQueryPlan: QueryPlanner = async originalQuery => ({
++  originalQuery, semanticQuery: originalQuery, lexicalQuery: originalQuery,
++  exactTerms: [...new Set(originalQuery.match(/\b(?:[A-Z][A-Z0-9]*[-.]\d[\w.-]*|\d+(?:[.-]\d+)+)\b/g) ?? [])],
++  acronyms: [...new Set(originalQuery.match(/\b[A-Z]{2,}\b/g) ?? [])],
++});
++export async function prepareQuery(query: string, planner: QueryPlanner = deterministicQueryPlan) {
++  try {
++    const parsed = RetrievalQueryPlanSchema.safeParse(await planner(query));
++    if (!parsed.success || parsed.data.originalQuery !== query) throw new ReformulationError('Invalid query plan');
++    return { plan: parsed.data, reformulationStatus: 'DETERMINISTIC' as const };
++  } catch (error) {
++    if (!(error instanceof ReformulationError)) throw error;
++    return { plan: { originalQuery: query, semanticQuery: query, lexicalQuery: query, exactTerms: [] as string[], acronyms: [] as string[] },
++      reformulationStatus: 'FALLBACK_ORIGINAL' as const };
++  }
++}
++
++const STOP = new Set('a an the how what should be is are for of to and in on do does when can explain describe please apply applied use used'.split(' '));
++export function lexicalTerms(query: string): string[] {
++  return [...new Set((query.toLowerCase().match(/[\p{L}\p{N}]+(?:[-.][\p{L}\p{N}]+)*/gu) ?? [])
++    .filter(t => t.length > 1 && !STOP.has(t)))];
++}
++export function lexicalCoverage(query: string, content: string): number {
++  const terms = lexicalTerms(query), words = new Set(lexicalTerms(content));
++  return terms.length ? terms.filter(t => words.has(t)).length / terms.length : 0;
++}
+diff --git a/backend/src/ai/rag/rag.repository.ts b/backend/src/ai/rag/rag.repository.ts
+index f107ac4..4a6c5e0 100644
+--- a/backend/src/ai/rag/rag.repository.ts
++++ b/backend/src/ai/rag/rag.repository.ts
+@@ -16,14 +16,14 @@ export class PostgresRagRepository implements RagRepository {
+ 
+   async findDocument(sourceType: string, sourceReference: string): Promise<StoredRagDocument | null> {
+     const result = await this.db.query(
+-      `SELECT id::text, source_type, source_reference, version, content_hash
++      `SELECT id::text, source_type, source_reference, version, content_hash, metadata
+        FROM rag_documents WHERE source_type = $1 AND source_reference = $2
+        ORDER BY updated_at DESC LIMIT 1`,
+       [sourceType, sourceReference]
+     );
+     if (!result.rowCount) return null;
+     const row = result.rows[0];
+-    return { id: row.id, sourceType: row.source_type, sourceReference: row.source_reference, version: row.version, contentHash: row.content_hash };
++    return { id: row.id, sourceType: row.source_type, sourceReference: row.source_reference, version: row.version, contentHash: row.content_hash, ingestionFingerprint: row.metadata?.ingestionFingerprint };
+   }
+ 
+   async replaceDocument(document: RagSourceDocument, hash: string, chunks: readonly EmbeddedRagChunk[]) {
+@@ -37,6 +37,7 @@ export class PostgresRagRepository implements RagRepository {
+       );
+       const minimizedMetadata = {
+         sensitivity: document.sensitivity,
++        ingestionFingerprint: document.metadata?.ingestionFingerprint,
+         ...(document.metadata?.language ? { language: document.metadata.language } : {}),
+         ...(document.metadata?.citationLabel ? { citationLabel: document.metadata.citationLabel } : {}),
+         ...(document.metadata?.sourcePath ? { sourcePath: document.metadata.sourcePath } : {}),
+diff --git a/backend/src/ai/rag/retrieval.config.ts b/backend/src/ai/rag/retrieval.config.ts
+index 6a735a7..347669d 100644
+--- a/backend/src/ai/rag/retrieval.config.ts
++++ b/backend/src/ai/rag/retrieval.config.ts
+@@ -1,16 +1,33 @@
++import { z } from 'zod';
++import { RetrievalConfigError } from './errors';
++import { fingerprint } from './identity';
+ export const DEFAULT_RAG_TOP_K = 3;
+ export const DEFAULT_RAG_MIN_SIMILARITY = 0.45;
+ export const MAX_RAG_QUERY_LENGTH = 500;
+-
+-export interface RagRetrievalConfig {
+-  topK: number;
+-  minSimilarity: number;
++// Legacy constructor fields remain accepted; all execution uses this validated model.
++export type RagRetrievalConfig = Pick<RetrievalConfig, 'topK' | 'minSimilarity'> & Partial<RetrievalConfig>;
++export const RetrievalConfigSchema = z.object({
++  version: z.literal('hybrid-v1').default('hybrid-v1'),
++  topK: z.number().int().min(1).max(10), minSimilarity: z.number().min(0).max(1),
++  semanticCandidateLimit: z.number().int().min(1).max(100).default(12),
++  lexicalCandidateLimit: z.number().int().min(1).max(100).default(12),
++  rrfK: z.number().int().min(1).max(1000).default(60),
++  lexicalMinCoverage: z.number().min(0.5).max(1).default(0.6),
++  allowLexicalFallback: z.boolean().default(true),
++  fusion: z.enum(['RRF', 'SEMANTIC_ONLY']).default('RRF'),
++  lexicalDictionary: z.literal('simple').default('simple'),
++  reformulation: z.literal('deterministic-v1').default('deterministic-v1'),
++}).strict();
++export type RetrievalConfig = z.infer<typeof RetrievalConfigSchema>;
++export function resolveRetrievalConfig(input: RagRetrievalConfig): RetrievalConfig {
++  const result = RetrievalConfigSchema.safeParse(input);
++  if (!result.success) throw new RetrievalConfigError('Invalid retrieval configuration');
++  if (result.data.semanticCandidateLimit < result.data.topK || result.data.lexicalCandidateLimit < result.data.topK)
++    throw new RetrievalConfigError('Candidate limits must cover final topK');
++  return result.data;
+ }
+-
+-export function readRagRetrievalConfig(env: NodeJS.ProcessEnv = process.env): RagRetrievalConfig {
+-  const topK = Number(env.RAG_TOP_K ?? DEFAULT_RAG_TOP_K);
+-  const minSimilarity = Number(env.RAG_MIN_SIMILARITY ?? DEFAULT_RAG_MIN_SIMILARITY);
+-  if (!Number.isInteger(topK) || topK < 1 || topK > 10) throw new Error('RAG_TOP_K must be an integer from 1 to 10');
+-  if (!Number.isFinite(minSimilarity) || minSimilarity < 0 || minSimilarity > 1) throw new Error('RAG_MIN_SIMILARITY must be between 0 and 1');
+-  return { topK, minSimilarity };
++export function retrievalConfigFingerprint(config: RagRetrievalConfig) { return fingerprint(resolveRetrievalConfig(config)); }
++export function readRagRetrievalConfig(env: NodeJS.ProcessEnv = process.env): RetrievalConfig {
++  return resolveRetrievalConfig({ topK: Number(env.RAG_TOP_K ?? DEFAULT_RAG_TOP_K),
++    minSimilarity: Number(env.RAG_MIN_SIMILARITY ?? DEFAULT_RAG_MIN_SIMILARITY) });
+ }
+diff --git a/backend/src/ai/rag/retrieval.evaluation.cli.ts b/backend/src/ai/rag/retrieval.evaluation.cli.ts
+new file mode 100644
+index 0000000..1b799fe
+--- /dev/null
++++ b/backend/src/ai/rag/retrieval.evaluation.cli.ts
+@@ -0,0 +1,17 @@
++import { writeFileSync, mkdirSync } from 'node:fs';
++import path from 'node:path';
++import { evaluateRetrieval } from './retrieval.evaluation';
++import { provenance } from '../evaluation/evaluation.provenance';
++import { withoutNetwork } from '../evaluation/offline-network';
++
++async function main() {
++  const result = await evaluateRetrieval();
++  const metadata = provenance(result.dataset, 'SIMULATED', null, null, 1);
++  const artifact = { ...result, provenance: { ...metadata, corpusFingerprint: result.corpus.fingerprint,
++    retrievalConfigVersion: result.comparisonConfigFingerprint } };
++  const folder = path.resolve(__dirname, '../../../../artifacts/evaluation'); mkdirSync(folder, { recursive: true });
++  const filename = path.join(folder, `${metadata.timestamp.replace(/[:.]/g, '-')}-${metadata.gitCommit.slice(0, 12)}-retrieval.json`);
++  writeFileSync(filename, JSON.stringify(artifact, null, 2) + '\n', { flag: 'wx' });
++  console.log(JSON.stringify({ artifact: filename, modes: result.modes.map(m => ({ mode: m.mode, metrics: m.metrics })) }, null, 2));
++}
++withoutNetwork(main).catch(error => { console.error(error); process.exitCode = 1; });
+diff --git a/backend/src/ai/rag/retrieval.evaluation.ts b/backend/src/ai/rag/retrieval.evaluation.ts
+new file mode 100644
+index 0000000..95b4c34
+--- /dev/null
++++ b/backend/src/ai/rag/retrieval.evaluation.ts
+@@ -0,0 +1,71 @@
++import { z } from 'zod';
++import { RagRetrievalService } from './retrieval.service';
++import { lexicalCoverage } from './queryPlan';
++import { corpusFingerprint, fingerprint, PREPROCESSING_VERSION } from './identity';
++import { DEFAULT_CHUNK_OPTIONS } from './textProcessing';
++import { resolveRetrievalConfig, retrievalConfigFingerprint } from './retrieval.config';
++import type { RagEvidence } from './retrieval.types';
++import type { RagSourceDocument } from './types';
++
++export const RetrievalCaseSchema = z.object({ id: z.string(), query: z.string(), requiredSources: z.array(z.string()),
++  relevantSources: z.array(z.string()), irrelevantSources: z.array(z.string()), jurisdiction: z.string().optional() }).strict();
++export type RetrievalCase = z.infer<typeof RetrievalCaseSchema>;
++export const RETRIEVAL_DATASET: RetrievalCase[] = [
++  { id: 'loto-code', query: 'LOTO EQ-123 isolation', requiredSources: ['loto'], relevantSources: ['loto'], irrelevantSources: ['ptw', 'fire'] },
++  { id: 'permit', query: 'PTW permit authorization', requiredSources: ['ptw'], relevantSources: ['ptw'], irrelevantSources: ['fire', 'loto'] },
++  { id: 'fire', query: 'fire evacuation assembly', requiredSources: ['fire'], relevantSources: ['fire'], irrelevantSources: ['loto', 'ptw'] },
++  { id: 'multi-source', query: 'LOTO PTW isolation authorization', requiredSources: ['loto', 'ptw'], relevantSources: ['loto', 'ptw'], irrelevantSources: ['fire'] },
++  { id: 'wrong-jurisdiction', query: 'Portugal law LOTO isolation', requiredSources: [], relevantSources: [], irrelevantSources: ['loto', 'ptw', 'fire'], jurisdiction: 'Portugal' },
++  { id: 'no-evidence', query: 'astronomy telescope', requiredSources: [], relevantSources: [], irrelevantSources: ['loto', 'ptw', 'fire'] },
++];
++export const RETRIEVAL_CORPUS: RagSourceDocument[] = [
++  ['loto', 'LOTO EQ-123 isolation United States law'], ['ptw', 'PTW permit authorization United Kingdom'], ['fire', 'fire evacuation assembly United Kingdom'],
++].map(([id, content]) => ({ sourceType: 'synthetic', sourceReference: id, module: 'safety', title: id,
++  version: '1', sensitivity: 'public-reference', content, metadata: { jurisdiction: id === 'loto' ? 'United States' : 'United Kingdom' } }));
++const mockVector = (text: string) => [Number(/LOTO|PTW|isolation|permit|authorization/i.test(text)), Number(/fire|evacuation|assembly/i.test(text))];
++const cosine = (a: number[], b: number[]) => a.reduce((s, x, i) => s + x * b[i], 0) / (Math.hypot(...a) * Math.hypot(...b) || 1);
++
++export function measureRetrieval(testCase: RetrievalCase, sourceIds: string[]) {
++  const ids = [...new Set(sourceIds)];
++  const requiredFound = testCase.requiredSources.filter(id => ids.includes(id)).length;
++  const relevantFound = testCase.relevantSources.filter(id => ids.includes(id)).length;
++  const firstRelevant = ids.findIndex(id => testCase.relevantSources.includes(id));
++  return { requiredFound, requiredTotal: testCase.requiredSources.length, relevantFound, relevantTotal: testCase.relevantSources.length,
++    irrelevantFound: ids.filter(id => testCase.irrelevantSources.includes(id)).length, retrieved: ids.length,
++    reciprocalRank: firstRelevant < 0 ? 0 : 1 / (firstRelevant + 1), top1: firstRelevant === 0 ? 1 : 0,
++    passed: requiredFound === testCase.requiredSources.length && !ids.some(id => testCase.irrelevantSources.includes(id)) };
++}
++export async function evaluateRetrieval() {
++  const config = resolveRetrievalConfig({ topK: 3, minSimilarity: 0.45 });
++  const manifest = corpusFingerprint(RETRIEVAL_CORPUS, { chunking: DEFAULT_CHUNK_OPTIONS,
++    embedding: { provider: 'mock', model: 'two-dimensional-collision-v1', dimensions: 2 }, preprocessing: PREPROCESSING_VERSION });
++  const evidence: RagEvidence[] = RETRIEVAL_CORPUS.map(d => ({ chunkId: d.sourceReference, documentId: d.sourceReference,
++    sourceId: d.sourceReference, title: d.title, content: d.content, score: 0, module: d.module, version: d.version,
++    citationLabel: d.title, sourceOrganization: 'synthetic', jurisdiction: d.metadata!.jurisdiction!, sourceUrl: 'https://example.test/' }));
++  const modes = [];
++  for (const fusion of ['SEMANTIC_ONLY', 'RRF'] as const) {
++    const modeConfig = { ...config, fusion };
++    const retriever = new RagRetrievalService({ embedMany: async texts => texts.map(mockVector) }, {
++      searchByEmbedding: async (vector, limit, threshold) => evidence.map(e => ({ ...e, score: cosine([...vector], mockVector(e.content)) }))
++        .filter(e => e.score >= threshold).sort((a, b) => b.score - a.score || a.chunkId.localeCompare(b.chunkId)).slice(0, limit),
++      searchLexical: async (query, limit) => evidence.map(e => ({ ...e, score: lexicalCoverage(query, e.content) }))
++        .filter(e => e.score > 0).sort((a, b) => b.score - a.score || a.chunkId.localeCompare(b.chunkId)).slice(0, limit),
++    }, modeConfig, () => {});
++    const cases: Array<ReturnType<typeof measureRetrieval> & { id: string; sources: string[]; status: string; diagnostics: unknown }> = [];
++    for (const raw of RETRIEVAL_DATASET) {
++      const c = RetrievalCaseSchema.parse(raw), result = await retriever.retrieve(c.query);
++      const sources = result.evidence.map(e => e.sourceId);
++      cases.push({ id: c.id, sources, status: result.status, diagnostics: result.diagnostics, ...measureRetrieval(c, sources) });
++    }
++    const sum = (key: 'requiredFound' | 'requiredTotal' | 'relevantFound' | 'relevantTotal' | 'irrelevantFound' | 'retrieved') => cases.reduce((n, c) => n + c[key], 0);
++    const positive = cases.filter(c => c.relevantTotal > 0);
++    modes.push({ mode: fusion, config: modeConfig, configFingerprint: retrievalConfigFingerprint(modeConfig), cases,
++      metrics: { requiredSourceRecall: sum('requiredFound') / sum('requiredTotal'), relevantRecallAtK: sum('relevantFound') / sum('relevantTotal'),
++        irrelevantRetrievalRate: sum('irrelevantFound') / (sum('retrieved') || 1),
++        mrr: positive.reduce((n, c) => n + c.reciprocalRank, 0) / positive.length,
++        top1SourceAccuracy: positive.reduce((n, c) => n + c.top1, 0) / positive.length } });
++  }
++  return { schemaVersion: 1, datasetFingerprint: fingerprint(RETRIEVAL_DATASET), dataset: RETRIEVAL_DATASET,
++    corpusMode: 'SYNTHETIC CORPUS', embeddingsMode: 'MOCK EMBEDDINGS', lexicalMode: 'INJECTED TOKEN COVERAGE FAKE, NOT POSTGRESQL',
++    corpus: manifest, comparisonConfigFingerprint: retrievalConfigFingerprint(config), modes };
++}
+diff --git a/backend/src/ai/rag/retrieval.repository.ts b/backend/src/ai/rag/retrieval.repository.ts
+index e124429..744bac5 100644
+--- a/backend/src/ai/rag/retrieval.repository.ts
++++ b/backend/src/ai/rag/retrieval.repository.ts
+@@ -1,8 +1,12 @@
+ import type { Pool } from 'pg';
+ import { validateEmbedding } from './embedding.service';
++import { z } from 'zod';
++import { isInfrastructureError, VectorRetrievalError, LexicalRetrievalError, MalformedRetrievalRowError } from './errors';
++import { lexicalTerms } from './queryPlan';
+ import type { RagEvidence } from './retrieval.types';
+ 
+ export interface RagRetrievalRepository {
++  searchLexical?(query: string, topK: number): Promise<RagEvidence[]>;
+   searchByEmbedding(embedding: readonly number[], topK: number, minSimilarity: number): Promise<RagEvidence[]>;
+ }
+ 
+@@ -15,9 +19,9 @@ export class PostgresRagRetrievalRepository implements RagRetrievalRepository {
+ 
+   async searchByEmbedding(embedding: readonly number[], topK: number, minSimilarity: number): Promise<RagEvidence[]> {
+     const vector = vectorLiteral(validateEmbedding(embedding, this.dimensions));
+-    const result = await this.db.query(
++    const result = await this.queryVector(
+       `WITH ranked AS (
+-         SELECT c.id::text AS chunk_id, d.id::text AS document_id, c.content,
++         SELECT COALESCE(c.metadata->>'stableChunkId', c.id::text) AS chunk_id, d.id::text AS document_id, c.content,
+                 1 - (c.embedding <=> $1::vector) AS score,
+                 d.source_reference, d.title, d.module, d.version, d.metadata
+          FROM rag_chunks c
+@@ -34,12 +38,55 @@ export class PostgresRagRetrievalRepository implements RagRetrievalRepository {
+        LIMIT $3`,
+       [vector, minSimilarity, topK]
+     );
+-    return result.rows.map((row) => ({
+-      chunkId: row.chunk_id, documentId: row.document_id, content: row.content,
+-      score: Number(row.score), sourceId: row.source_reference, title: row.title,
+-      module: row.module, version: row.version, citationLabel: row.citation_label ?? row.title,
+-      sourceOrganization: row.source_organization ?? '', jurisdiction: row.jurisdiction ?? '',
+-      sourceUrl: row.source_url ?? '',
+-    }));
++    return result.rows.map(parseRetrievalRow);
+   }
++
++  private async queryVector(sql: string, parameters: unknown[]) {
++    try { return await this.db.query(sql, parameters); }
++    catch (error) {
++      if (isInfrastructureError(error)) throw new VectorRetrievalError('Vector retrieval unavailable', { cause: error });
++      throw error;
++    }
++  }
++
++  async searchLexical(query: string, topK: number): Promise<RagEvidence[]> {
++    const terms = lexicalTerms(query);
++    if (!terms.length) return [];
++    // plainto_tsquery receives each term as data; OR supports partial candidate recall.
++    // Exact token matching is additionally enforced by the service relevance gate.
++    let result;
++    try {
++      result = await this.db.query(`WITH q AS (
++        SELECT to_tsquery('simple', string_agg(plainto_tsquery('simple', term)::text, ' | ')) AS query
++        FROM unnest($1::text[]) AS term
++      )
++      SELECT COALESCE(c.metadata->>'stableChunkId', c.id::text) AS chunk_id,
++        d.id::text AS document_id, c.content, ts_rank_cd(to_tsvector('simple', c.content), q.query) AS score,
++        d.source_reference, d.title, d.module, d.version,
++        d.metadata->>'citationLabel' AS citation_label, d.metadata->>'sourceOrganization' AS source_organization,
++        d.metadata->>'jurisdiction' AS jurisdiction, d.metadata->>'sourceUrl' AS source_url
++      FROM rag_chunks c JOIN rag_documents d ON d.id=c.document_id CROSS JOIN q
++      WHERE to_tsvector('simple', c.content) @@ q.query
++      ORDER BY score DESC, chunk_id ASC LIMIT $2`, [terms, topK]);
++    } catch (error) {
++      if (isInfrastructureError(error)) throw new LexicalRetrievalError('Lexical retrieval unavailable', { cause: error });
++      throw error;
++    }
++    return result.rows.map(parseRetrievalRow);
++  }
++}
++const RowSchema = z.object({
++  chunk_id: z.string().min(1), document_id: z.string().min(1), content: z.string().min(1),
++  score: z.union([z.number(), z.string().regex(/^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i)]).transform(Number).pipe(z.number().finite()),
++  source_reference: z.string().min(1), title: z.string().min(1), module: z.string().min(1), version: z.string().min(1),
++  citation_label: z.string().nullish(), source_organization: z.string().nullish(), jurisdiction: z.string().nullish(), source_url: z.string().nullish(),
++});
++export function parseRetrievalRow(value: unknown): RagEvidence {
++  const parsed = RowSchema.safeParse(value);
++  if (!parsed.success) throw new MalformedRetrievalRowError('Malformed retrieval row');
++  const row = parsed.data;
++  return { chunkId: row.chunk_id, documentId: row.document_id, content: row.content,
++    score: row.score, sourceId: row.source_reference, title: row.title, module: row.module, version: row.version,
++    citationLabel: row.citation_label ?? row.title, sourceOrganization: row.source_organization ?? '',
++    jurisdiction: row.jurisdiction ?? '', sourceUrl: row.source_url ?? '' };
+ }
+diff --git a/backend/src/ai/rag/retrieval.service.ts b/backend/src/ai/rag/retrieval.service.ts
+index 926c03a..5792c46 100644
+--- a/backend/src/ai/rag/retrieval.service.ts
++++ b/backend/src/ai/rag/retrieval.service.ts
+@@ -2,6 +2,13 @@ import type { EmbeddingService } from './embedding.service';
+ import type { RagRetrievalRepository } from './retrieval.repository';
+ import { MAX_RAG_QUERY_LENGTH, readRagRetrievalConfig, type RagRetrievalConfig } from './retrieval.config';
+ import type { RagRetriever, RagRetrievalResult } from './retrieval.types';
++import { EmbeddingProviderError, VectorRetrievalError, LexicalRetrievalError, MalformedRetrievalRowError } from './errors';
++import { prepareQuery, lexicalCoverage, lexicalTerms, type QueryPlanner, deterministicQueryPlan } from './queryPlan';
++import { reciprocalRankFusion } from './fusion';
++import { resolveRetrievalConfig, retrievalConfigFingerprint } from './retrieval.config';
++import { isJurisdictionClaim, jurisdictionSupportsClaim } from '../graph/jurisdiction.contract';
++import { ragResultEvidence } from '../graph/evidence.contract';
++import type { RagEvidence, RetrievalDiagnostics } from './retrieval.types';
+ import { classifyIntent } from '../intent/intentRouter';
+ 
+ const OPERATIONAL_TERMS = '(incidents?|incidentes?|permits?|actions?|ac(?:ao|oes)|records?|projects?|audits?|inspections?|trainings?|kpis?|indicado(?:r|res)|trir|ltifr)';
+@@ -19,10 +26,11 @@ export class RagRetrievalService implements RagRetriever {
+     private readonly embeddings: EmbeddingService,
+     private readonly repository: RagRetrievalRepository,
+     private readonly config: RagRetrievalConfig = readRagRetrievalConfig(),
+-    private readonly log: (entry: Record<string, unknown>) => void = (entry) => console.info(JSON.stringify(entry))
++    private readonly log: (entry: Record<string, unknown>) => void = (entry) => console.info(JSON.stringify(entry)),
++    private readonly planner: QueryPlanner = deterministicQueryPlan
+   ) {}
+ 
+-  async retrieve(query: string): Promise<RagRetrievalResult> {
++  async retrieve(query: string, options: { requiredSources?: string[] } = {}): Promise<RagRetrievalResult> {
+     const started = Date.now();
+     const normalized = query.trim();
+     if (!normalized || normalized.length > MAX_RAG_QUERY_LENGTH) return { status: 'NO_RELEVANT_EVIDENCE', evidence: [] };
+@@ -30,10 +38,43 @@ export class RagRetrievalService implements RagRetriever {
+       this.log({ event: 'rag_retrieval', used: false, result: 'NOT_APPROPRIATE', count: 0, latencyMs: Date.now() - started });
+       return { status: 'NOT_APPROPRIATE', reason: 'STRUCTURED_OPERATIONAL_QUERY', evidence: [] };
+     }
+-    const [embedding] = await this.embeddings.embedMany([normalized]);
+-    const evidence = await this.repository.searchByEmbedding(embedding, this.config.topK, this.config.minSimilarity);
+-    const status = evidence.length ? 'OK' : 'NO_RELEVANT_EVIDENCE';
+-    this.log({ event: 'rag_retrieval', used: true, result: status, count: evidence.length, sourceIds: evidence.map((item) => item.sourceId), latencyMs: Date.now() - started });
+-    return evidence.length ? { status: 'OK', evidence } : { status: 'NO_RELEVANT_EVIDENCE', evidence: [] };
++    const config = resolveRetrievalConfig(this.config);
++    const { plan, reformulationStatus } = await prepareQuery(normalized, this.planner);
++    let semantic: RagEvidence[] = [], lexical: RagEvidence[] = [];
++    let unavailable = false;
++    let retrievalMode: RetrievalDiagnostics['retrievalMode'] = config.fusion === 'RRF' && this.repository.searchLexical ? 'HYBRID' : 'SEMANTIC_ONLY';
++    try {
++      const vectors = await this.embeddings.embedMany([plan.semanticQuery]);
++      if (vectors.length !== 1 || !vectors[0]?.length || vectors[0].some(v => !Number.isFinite(v)))
++        throw new MalformedRetrievalRowError('Malformed query embedding');
++      semantic = await this.repository.searchByEmbedding(vectors[0], config.semanticCandidateLimit, config.minSimilarity);
++    } catch (error) {
++      if (!(error instanceof EmbeddingProviderError || error instanceof VectorRetrievalError)) throw error;
++      unavailable = true;
++      if (config.allowLexicalFallback && config.fusion === 'RRF' && this.repository.searchLexical) retrievalMode = 'LEXICAL_FALLBACK';
++      else retrievalMode = 'SEMANTIC_ONLY';
++    }
++    if (retrievalMode !== 'SEMANTIC_ONLY') {
++      try { lexical = await this.repository.searchLexical!(plan.lexicalQuery, config.lexicalCandidateLimit); }
++      catch (error) {
++        if (!(error instanceof LexicalRetrievalError)) throw error;
++        unavailable = true;
++        // Never label a degraded vector-only execution hybrid.
++        retrievalMode = 'SEMANTIC_ONLY';
++      }
++    }
++    const exactGate = (item: RagEvidence) => plan.exactTerms.every(term => lexicalTerms(item.content).includes(term.toLowerCase()));
++    const jurisdictionGate = (item: RagEvidence) => !isJurisdictionClaim(normalized) || jurisdictionSupportsClaim(normalized, ragResultEvidence(item));
++    semantic = semantic.filter(item => item.score >= config.minSimilarity && exactGate(item) && jurisdictionGate(item));
++    lexical = lexical.filter(item => lexicalCoverage(plan.originalQuery, item.content) >= config.lexicalMinCoverage && exactGate(item) && jurisdictionGate(item));
++    const evidence = reciprocalRankFusion(semantic, lexical, config.rrfK).slice(0, config.topK);
++    const partial = !!options.requiredSources?.some(source => !evidence.some(item => item.sourceId === source));
++    const relevanceState: RetrievalDiagnostics['relevanceState'] = !evidence.length
++      ? (unavailable ? 'RETRIEVAL_UNAVAILABLE' : 'NO_RELEVANT_EVIDENCE')
++      : partial ? 'PARTIAL_REQUIRED_EVIDENCE' : retrievalMode === 'LEXICAL_FALLBACK' ? 'LEXICAL_FALLBACK' : 'RELEVANT_EVIDENCE';
++    const diagnostics = { retrievalMode, relevanceState, reformulationStatus, configFingerprint: retrievalConfigFingerprint(config) };
++    this.log({ event: 'rag_retrieval', ...diagnostics, count: evidence.length, sourceIds: evidence.map(i => i.sourceId), latencyMs: Date.now() - started });
++    if (relevanceState === 'PARTIAL_REQUIRED_EVIDENCE' || relevanceState === 'RETRIEVAL_UNAVAILABLE') return { status: relevanceState, evidence: [], diagnostics };
++    return evidence.length ? { status: 'OK', evidence, diagnostics } : { status: 'NO_RELEVANT_EVIDENCE', evidence: [], diagnostics };
+   }
+ }
+diff --git a/backend/src/ai/rag/retrieval.types.ts b/backend/src/ai/rag/retrieval.types.ts
+index 80deba1..0e11a68 100644
+--- a/backend/src/ai/rag/retrieval.types.ts
++++ b/backend/src/ai/rag/retrieval.types.ts
+@@ -3,6 +3,9 @@ export interface RagEvidence {
+   documentId: string;
+   content: string;
+   score: number;
++  semanticRank?: number;
++  lexicalRank?: number;
++  fusionScore?: number;
+   sourceId: string;
+   title: string;
+   module: string;
+@@ -13,10 +16,18 @@ export interface RagEvidence {
+   sourceUrl: string;
+ }
+ 
+-export type RagRetrievalResult =
++export type RetrievalDiagnostics = {
++  retrievalMode: 'HYBRID' | 'SEMANTIC_ONLY' | 'LEXICAL_FALLBACK';
++  relevanceState: 'RELEVANT_EVIDENCE' | 'NO_RELEVANT_EVIDENCE' | 'RETRIEVAL_UNAVAILABLE' | 'LEXICAL_FALLBACK' | 'PARTIAL_REQUIRED_EVIDENCE';
++  reformulationStatus: 'DETERMINISTIC' | 'FALLBACK_ORIGINAL';
++  configFingerprint: string;
++};
++export type RagRetrievalResult = (
+   | { status: 'OK'; evidence: RagEvidence[] }
+   | { status: 'NO_RELEVANT_EVIDENCE'; evidence: [] }
+-  | { status: 'NOT_APPROPRIATE'; evidence: []; reason: 'STRUCTURED_OPERATIONAL_QUERY' };
++  | { status: 'NOT_APPROPRIATE'; evidence: []; reason: 'STRUCTURED_OPERATIONAL_QUERY' }
++  | { status: 'RETRIEVAL_UNAVAILABLE' | 'PARTIAL_REQUIRED_EVIDENCE'; evidence: [] }
++) & { diagnostics?: RetrievalDiagnostics };
+ 
+ export interface RagRetriever {
+   retrieve(query: string): Promise<RagRetrievalResult>;
+diff --git a/backend/src/ai/rag/textProcessing.ts b/backend/src/ai/rag/textProcessing.ts
+index c87c3fc..edef90f 100644
+--- a/backend/src/ai/rag/textProcessing.ts
++++ b/backend/src/ai/rag/textProcessing.ts
+@@ -1,8 +1,10 @@
++import { RetrievalConfigError } from './errors';
+ import { createHash } from 'node:crypto';
+ import type { PreparedRagChunk } from './types';
+ 
+ export const TOKEN_ESTIMATE_METHOD = 'estimated:ceil(characters/4)';
+-export const DEFAULT_CHUNK_OPTIONS = Object.freeze({ targetTokens: 750, maxTokens: 1000, overlapTokens: 100 });
++export type ChunkOptions = { targetTokens: number; maxTokens: number; overlapTokens: number };
++export const DEFAULT_CHUNK_OPTIONS: Readonly<ChunkOptions> = Object.freeze({ targetTokens: 750, maxTokens: 1000, overlapTokens: 100 });
+ 
+ export function estimateTokens(text: string): number {
+   return Math.max(1, Math.ceil(text.length / 4));
+@@ -22,57 +24,29 @@ export function contentHash(normalizedContent: string): string {
+   return createHash('sha256').update(normalizedContent, 'utf8').digest('hex');
+ }
+ 
+-function splitOversized(text: string, maxChars: number, overlapChars: number): string[] {
+-  const words = text.split(' ');
+-  const parts: string[] = [];
+-  let current = '';
+-  for (const word of words) {
+-    const candidate = current ? `${current} ${word}` : word;
+-    if (candidate.length <= maxChars || !current) {
+-      current = candidate;
+-      continue;
+-    }
+-    parts.push(current);
+-    const overlap = current.slice(-overlapChars).replace(/^\S*\s/, '');
+-    current = overlap ? `${overlap} ${word}` : word;
++/** Canonical UTF-16 windows. Offsets allow exact reconstruction, including whitespace.
++ * The bound is the declared character-based estimate, not a provider tokenizer. */
++export function chunkContent(normalizedContent: string, options = DEFAULT_CHUNK_OPTIONS): PreparedRagChunk[] {
++  const { targetTokens, maxTokens, overlapTokens } = options;
++  if (![targetTokens, maxTokens, overlapTokens].every(Number.isInteger) ||
++      targetTokens < 1 || maxTokens < targetTokens || overlapTokens < 0 || overlapTokens >= targetTokens) {
++    throw new RetrievalConfigError('Invalid chunk configuration');
+   }
+-  if (current) parts.push(current);
+-  return parts;
+-}
+-
+-export function chunkContent(
+-  normalizedContent: string,
+-  options = DEFAULT_CHUNK_OPTIONS
+-): PreparedRagChunk[] {
+-  if (!normalizedContent) return [];
+-  if (estimateTokens(normalizedContent) <= options.maxTokens) {
+-    return [{ chunkIndex: 0, content: normalizedContent, tokenCount: estimateTokens(normalizedContent), metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD } }];
+-  }
+-
+-  const targetChars = options.targetTokens * 4;
+-  const maxChars = options.maxTokens * 4;
+-  const overlapChars = options.overlapTokens * 4;
+-  const paragraphs = normalizedContent.split(/\n\n+/).flatMap((paragraph) =>
+-    paragraph.length > maxChars ? splitOversized(paragraph, maxChars, overlapChars) : [paragraph]
+-  );
+-  const chunks: string[] = [];
+-  let current = '';
+-  for (const paragraph of paragraphs) {
+-    const candidate = current ? `${current}\n\n${paragraph}` : paragraph;
+-    if (candidate.length <= targetChars || !current) current = candidate;
+-    else {
+-      chunks.push(current);
+-      const overlap = current.slice(-overlapChars).replace(/^\S*\s/, '').trim();
+-      current = overlap ? `${overlap}\n\n${paragraph}` : paragraph;
+-    }
++  const chunks: PreparedRagChunk[] = [];
++  let start = 0;
++  while (start < normalizedContent.length) {
++    let end = Math.min(normalizedContent.length, start + (normalizedContent.length - start <= maxTokens * 4 ? maxTokens : targetTokens) * 4);
++    // Never separate a UTF-16 surrogate pair.
++    if (end < normalizedContent.length && /[\uD800-\uDBFF]/.test(normalizedContent[end - 1])) end--;
++    const content = normalizedContent.slice(start, end);
++    chunks.push({ chunkIndex: chunks.length, content, tokenCount: estimateTokens(content),
++      metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD, startOffset: start, endOffset: end, chunkingVersion: 'windows-v2' } });
++    if (end === normalizedContent.length) break;
++    let next = end - overlapTokens * 4;
++    if (/[\uDC00-\uDFFF]/.test(normalizedContent[next])) next--;
++    start = Math.max(start + 1, next);
+   }
+-  if (current) chunks.push(current);
+-  return chunks.map((content, chunkIndex) => ({
+-    chunkIndex,
+-    content,
+-    tokenCount: estimateTokens(content),
+-    metadata: { tokenCountMethod: TOKEN_ESTIMATE_METHOD },
+-  }));
++  return chunks;
+ }
+ 
+ const SUSPICIOUS_PATTERNS = [
+diff --git a/backend/src/ai/rag/types.ts b/backend/src/ai/rag/types.ts
+index ee8566e..7e5f3b3 100644
+--- a/backend/src/ai/rag/types.ts
++++ b/backend/src/ai/rag/types.ts
+@@ -20,6 +20,7 @@ export type RagSourceDocument = {
+     secondarySourceUrl?: string;
+     contentStatus?: string;
+     accessedOn?: string;
++    ingestionFingerprint?: string;
+   }>;
+ };
+ 
+@@ -38,6 +39,7 @@ export type StoredRagDocument = {
+   sourceReference: string;
+   version: string;
+   contentHash: string;
++  ingestionFingerprint?: string;
+ };
+ 
+ export type RagSourceDefinition = {
+@@ -64,6 +66,7 @@ export type RagSourceDefinition = {
+ export type IngestionError = { sourceReference: string; message: string };
+ 
+ export type IngestionSummary = {
++  corpus?: ReturnType<typeof import('./identity').corpusFingerprint>;
+   dryRun: boolean;
+   sourcesExamined: number;
+   sourcesExcluded: number;
+diff --git a/backend/src/ai/responseStatus.ts b/backend/src/ai/responseStatus.ts
+index d4b07e8..6721b8d 100644
+--- a/backend/src/ai/responseStatus.ts
++++ b/backend/src/ai/responseStatus.ts
+@@ -22,8 +22,8 @@ export function resolveResponseStatus(input: {
+   if (input.approvalStatus === 'APPROVED') return ResponseStatus.APPROVED;
+   if (input.approvalStatus === 'REJECTED') return ResponseStatus.REJECTED;
+   if (input.status === AgentStatus.REFUSED) return ResponseStatus.REFUSED;
+-  if (input.status === AgentStatus.FAILED || input.errorCode || input.ragStatus === 'ERROR' || input.tools?.some((tool) => tool.status === 'ERROR')) return ResponseStatus.ERROR;
++  if (input.status === AgentStatus.FAILED || input.errorCode || (input.ragStatus === 'ERROR' || input.ragStatus === 'RETRIEVAL_UNAVAILABLE') || input.tools?.some((tool) => tool.status === 'ERROR')) return ResponseStatus.ERROR;
+   if (input.status === AgentStatus.AWAITING_HUMAN_APPROVAL || input.approvalStatus === 'PENDING') return ResponseStatus.PENDING;
+-  if (input.ragStatus === 'NO_RELEVANT_EVIDENCE' || input.tools?.some((tool) => tool.resultStatus === 'SUCCESS_NO_DATA')) return ResponseStatus.NO_DATA;
++  if ((input.ragStatus === 'NO_RELEVANT_EVIDENCE' || input.ragStatus === 'PARTIAL_REQUIRED_EVIDENCE') || input.tools?.some((tool) => tool.resultStatus === 'SUCCESS_NO_DATA')) return ResponseStatus.NO_DATA;
+   return ResponseStatus.SUCCESS;
+ }

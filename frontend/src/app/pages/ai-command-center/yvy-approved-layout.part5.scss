@@ -1,0 +1,25 @@
+@use '../../shared/ai-chat-widget/markdown-layout' as markdown;
+
+
+// A restrained, consistent type scale for the attention drawer.
+.attention-drawer{
+ font-family:inherit;font-size:13px;line-height:1.55;
+ .alert-summary{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding:0 0 16px;border-bottom:1px solid #203b4d}
+ .alert-summary>strong{font-size:20px;font-weight:600;line-height:1.2}
+ .alert-summary>span{font-size:13px;font-weight:400;line-height:1.55;color:#b6c9d5}
+ .alert-item{margin:0 0 12px;padding:16px;border:1px solid #244052;border-left:2px solid #408595;border-radius:10px;background:rgba(12,32,46,.65);font:inherit;overflow-wrap:anywhere}
+ .alert-item>header{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin:0;padding:0;border:0}
+ .alert-item>header>strong{flex:1 1 230px;font-size:14px;font-weight:600;line-height:1.5;color:#dbe8f0}
+ .alert-item>header>span{flex:0 0 auto;font-family:inherit;font-size:11px;font-weight:500;line-height:1.5;color:#a8c0cf;padding:3px 7px;border-radius:5px;background:#172f40;letter-spacing:.02em}
+ .alert-item>p{margin:10px 0 12px;font-size:13px;font-weight:400;line-height:1.6;color:#bacdd9}
+ .alert-item>ul{margin:0 0 14px;padding-left:18px;font-family:inherit;font-size:12px;line-height:1.6;color:#a7bfce}
+ .alert-item>ul>li{margin:3px 0;font-size:12px;line-height:1.6}
+ .alert-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+ .alert-actions>button{font-family:inherit;font-size:12px;font-weight:500;line-height:1.4;min-height:34px;padding:8px 12px;color:#c9e2eb;background:#153344;border:1px solid #315368;border-radius:7px;cursor:pointer}
+ .alert-actions>button:hover{background:#1c4154;border-color:#528296}
+}
+:host ::ng-deep .attention-drawer aside>header small{font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.06em;color:#8faebf}
+:host ::ng-deep .attention-drawer aside>header h2{font-family:inherit;font-size:18px;font-weight:600;line-height:1.4;margin-top:5px}
+:host ::ng-deep .attention-drawer aside>header{padding-bottom:16px}
+
+.shared-context,.shared-attachments{font-size:12px;color:#9fbdce;line-height:1.5;margin-bottom:8px}.shared-context button{font:inherit;padding:4px 8px;margin-left:8px}

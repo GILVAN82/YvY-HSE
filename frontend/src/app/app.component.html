@@ -1,0 +1,94 @@
+<router-outlet *ngIf="isLoginPage()"></router-outlet>
+<div class="shell" [class.command-center-shell]="isCommandCenter()" *ngIf="!isLoginPage()">
+  <app-sidebar></app-sidebar>
+
+  <div class="main">
+    <div id="topbar">
+      <div class="tape"></div>
+      <div class="inner">
+        <button type="button"
+                class="menubtn"
+                title="Menu"
+                (click)="openMobileNav($event)"
+                [attr.aria-label]="i18n.t('Open menu')">
+          <lucide-icon [img]="menuIcon" [size]="20"></lucide-icon>
+        </button>
+        <div class="crumbbox">
+          <span class="crumb-title">{{ crumbTitle() }}</span>
+          <span id="crumb">
+            {{ crumbTrail() }}<ng-container *ngIf="crumbPage()"><span class="sep">›</span>{{ crumbPage() }}</ng-container>
+          </span>
+        </div>
+        <div class="topbar-actions">
+          <div class="userblock">
+            <button type="button"
+                    class="userbtn"
+                    (click)="toggleUserMenu()"
+                    [title]="userName()"
+                    [attr.aria-label]="userName()"
+                    aria-haspopup="menu"
+                    [attr.aria-expanded]="userMenuOpen()">
+              <span class="avatar">
+                <img *ngIf="userAvatar; else initials" [src]="userAvatar" alt="">
+                <ng-template #initials>{{ userInitials() }}</ng-template>
+              </span>
+              <span class="uname">{{ userName() }}</span>
+              <lucide-icon class="uchev" [class.is-open]="userMenuOpen()" [img]="chevronIcon" [size]="15"></lucide-icon>
+            </button>
+
+            <div class="usermenu" *ngIf="userMenuOpen()" role="menu">
+              <div class="usermenu-head">
+                <strong>{{ userName() }}</strong>
+                <span>{{ auth.user()?.email }} · {{ auth.user()?.role }}</span>
+              </div>
+              <button type="button" class="usermenu-item" role="menuitem" (click)="toggleTheme()">
+                <lucide-icon [img]="theme() === 'dark' ? sunIcon : moonIcon" [size]="16"></lucide-icon>
+                <span>{{ theme() === 'dark' ? i18n.t('Light mode') : i18n.t('Dark mode') }}</span>
+              </button>
+              <a class="usermenu-item" role="menuitem" routerLink="/instructions" (click)="userMenuOpen.set(false)">
+                <lucide-icon [img]="instructionsIcon" [size]="16"></lucide-icon>
+                <span>{{ i18n.t('Instructions') }}</span>
+              </a>
+              <button type="button" class="usermenu-item" role="menuitem" (click)="logout()">Sign out</button>
+            </div>
+          </div>
+
+          <div class="langpick">
+            <button type="button"
+                    id="langbtn"
+                    class="langbtn"
+                    (click)="toggleLangMenu()"
+                    [title]="i18n.t('Select language')"
+                    [attr.aria-label]="i18n.t('Current language') + ': ' + currentLang().name + '. ' + i18n.t('Select language')"
+                    aria-haspopup="menu"
+                    [attr.aria-expanded]="langMenuOpen()"
+                    aria-controls="langmenu">
+              <span class="lp-label">{{ compact() ? currentLang().short : currentLang().label }}</span>
+              <lucide-icon class="lp-chev" [class.is-open]="langMenuOpen()" [img]="chevronIcon" [size]="14"></lucide-icon>
+            </button>
+
+            <div class="langmenu" id="langmenu" *ngIf="langMenuOpen()" role="menu" [attr.aria-label]="i18n.t('Language')">
+              <p class="langmenu-head">{{ i18n.t('Select language') }}</p>
+              <button type="button"
+                      class="langitem"
+                      *ngFor="let l of langs"
+                      role="menuitemradio"
+                      [attr.aria-checked]="l.value === i18n.lang()"
+                      [class.is-active]="l.value === i18n.lang()"
+                      (click)="pickLang(l.value)">
+                <span class="lang-code">{{ l.short }}</span>
+                <span class="lang-name">{{ l.name }}</span>
+                <lucide-icon class="lang-check" *ngIf="l.value === i18n.lang()" [img]="checkIcon" [size]="15"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="page">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
+
+<app-ai-chat-widget *ngIf="!isLoginPage() && !isCommandCenter() && auth.user()"></app-ai-chat-widget>

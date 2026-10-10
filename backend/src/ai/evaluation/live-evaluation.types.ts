@@ -1,0 +1,5 @@
+export type LiveCategory='TOOL'|'RAG'|'HITL'|'GUARDRAIL'|'AUTHORIZATION'|'NO_DATA'|'GENERAL_HSE';
+export interface LiveCase { id:string; version:number; category:LiveCategory; prompt:string; expected:{tool?:string;status?:string;responseStatus?:string;rag?:boolean;citation?:boolean;forbiddenText?:string[]}; }
+export interface LiveObservation {status:string;responseStatus?:string;tools:string[];rag:boolean;citations:number;text:string;latencyMs:number;inputTokens?:number;outputTokens?:number;}
+export interface LiveCaseResult {id:string;category:LiveCategory;result:'PASS'|'FAIL';reason:string;observed:Omit<LiveObservation,'text'>;}
+export interface LiveSummary {schemaVersion:1;datasetVersion:1;executionMode:'LIVE_OPENAI_SYNTHETIC_DEPENDENCIES';provider:'openai';model:string;runs:number;total:number;passed:number;failed:number;passRate:number;metrics:Record<string,{passed:number;total:number;percentage:number}>;latency:{minimumMs:number;medianMs:number;averageMs:number;maximumMs:number};tokens:{input:number|null;output:number|null;total:number|null};cost:'NOT_CALCULATED';infrastructureFailures:string[];results:LiveCaseResult[];}

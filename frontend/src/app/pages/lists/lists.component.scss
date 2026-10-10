@@ -1,0 +1,22 @@
+.range-cell {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.list-group {
+  margin-bottom: 14px;
+}
+
+.list-group-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink2);
+  margin-bottom: 6px;
+}
+
+.list-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

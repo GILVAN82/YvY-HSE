@@ -1,0 +1,104 @@
+import { timed, observeFailure } from '../observability/context';
+import { DomainError } from '../observability/errors';
+import { z } from 'zod';
+
+export const voiceLocale = z.enum(['pt-PT','pt-BR','en','es','fr','de']);
+export const preferenceSchema = z.object({
+  engine:z.enum(['ELEVENLABS','BROWSER']), languageLocale:voiceLocale,
+  voiceResponseMode:z.enum(['OFF','VOICE_INPUT_ONLY','ALL_RESPONSES']),
+  genderProfile:z.enum(['FEMALE','MALE','UNKNOWN']), voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/).nullable(),
+  voiceName:z.string().max(120).nullable(), speed:z.number().min(0.7).max(1.2),
+}).strict();
+export type VoicePreference = z.infer<typeof preferenceSchema>;
+export const defaultPreference:VoicePreference = {engine:'ELEVENLABS',languageLocale:'en',voiceResponseMode:'VOICE_INPUT_ONLY',genderProfile:'UNKNOWN',voiceId:null,voiceName:null,speed:1};
+export const synthesisSchema = z.object({text:z.string().trim().min(1).max(1200).refine(text=>!/[|{}]|```|https?:\/\//.test(text),'Use spoken summary only'),voiceId:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),locale:voiceLocale,speed:z.number().min(0.7).max(1.2),preview:z.boolean().optional()}).strict().refine(body=>!body.preview || body.text.length<=240);
+export type Voice = {id:string;name:string;language:string|null;locale:string|null;accent:string|null;profile:'FEMALE'|'MALE'|'UNKNOWN';previewUrl:string|null;category:string|null;source:'ACCOUNT'|'LIBRARY';publicOwnerId:string|null;verifiedLocales:string[]};
+export type VoiceDiscovery = {locale:z.infer<typeof voiceLocale>;gender?:'FEMALE'|'MALE'};
+export class VoiceFailure extends Error {
+  constructor(public code:string,public fallbackAllowed=true,public status=503){super(code);}
+}
+const CatalogResponse = z.object({voices:z.array(z.record(z.string(),z.unknown())),has_more:z.boolean().optional(),next_page_token:z.string().nullable().optional()}).passthrough();
+const AddedVoiceResponse = z.object({voice_id:z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/)}).passthrough();
+async function validatedVoiceJson(response:Response, kind:'catalog'|'voice'):Promise<any> {
+  let data:unknown; try { data=await response.json(); } catch { throw new VoiceFailure('INVALID_RESPONSE'); }
+  const parsed=(kind==='catalog'?CatalogResponse:AddedVoiceResponse).safeParse(data);
+  if(!parsed.success)throw new VoiceFailure('INVALID_RESPONSE');
+  return parsed.data;
+}
+export class ElevenLabsAdapter {
+  readonly model:string;
+  readonly available:boolean;
+  private readonly discoveryCache=new Map<string,{expires:number;voices:Voice[]}>();
+  constructor(private readonly env:NodeJS.ProcessEnv=process.env,private readonly request:typeof fetch=fetch,private readonly timeoutMs=20000){
+    this.model=env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
+    this.available=!!env.ELEVENLABS_API_KEY && env.ELEVENLABS_ENABLED!=='false';
+  }
+  private async call<T>(path:string,init:RequestInit,consume:(response:Response)=>Promise<T>,signal?:AbortSignal):Promise<T>{
+    return timed('voice.provider', async () => { try { return await this.callInternal(path,init,consume,signal); } catch (error) { if (error instanceof VoiceFailure) observeFailure(new DomainError('VOICE',error.code,error.fallbackAllowed),'voice.provider'); throw error; } }, 'VOICE');
+  }
+  private async callInternal<T>(path:string,init:RequestInit,consume:(response:Response)=>Promise<T>,signal?:AbortSignal):Promise<T>{
+    if(!this.available)throw new VoiceFailure('UNAVAILABLE');
+    const controller=new AbortController();
+    const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});
+    if(signal?.aborted)controller.abort();
+    const timer=setTimeout(abort,this.timeoutMs);
+    try {
+      const response=await this.request(`https://api.elevenlabs.io${path}`,{...init,redirect:'error',headers:{'xi-api-key':this.env.ELEVENLABS_API_KEY!,'Content-Type':'application/json',...init.headers},signal:controller.signal});
+      if(!response.ok){
+        // 402 means the authenticated account cannot synthesize with its current
+        // plan/quota. It is an engine availability failure, so browser TTS may
+        // safely take over; the spoken content itself was not rejected.
+        const technical=[401,402,403,404,408,429].includes(response.status)||response.status>=500;
+        throw new VoiceFailure(technical ? `UPSTREAM_${response.status}` : 'CONTENT_REJECTED',technical,technical?503:422);
+      }
+      return await consume(response);
+    } catch(error){if(error instanceof VoiceFailure)throw error;throw new VoiceFailure(signal?.aborted?'CANCELLED':controller.signal.aborted?'TIMEOUT':'NETWORK_ERROR');}
+    finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
+  }
+  async voices(signal?:AbortSignal):Promise<Voice[]>{
+    const voices:Voice[]=[];let cursor:string|undefined;
+    for(let page=0;page<20;page++){
+      const body=await this.call<{voices?:Array<{voice_id?:unknown;name?:unknown;labels?:Record<string,unknown>;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>;has_more?:boolean;next_page_token?:unknown}>(`/v2/voices?page_size=100${cursor?`&next_page_token=${encodeURIComponent(cursor)}`:''}`,{},r=>validatedVoiceJson(r,'catalog'),signal);
+      for(const v of body.voices??[]){
+        if(typeof v.voice_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id))continue;
+        const label=(key:string)=>{const value=v.labels?.[key];return typeof value==='string'?value.slice(0,120):null;};
+        const gender=label('gender')?.toLowerCase();
+        let previewUrl:string|null=null;
+        try{const url=new URL(String(v.preview_url));if(url.protocol==='https:'&&!url.username&&!url.password&&url.href.length<2000)previewUrl=url.href;}catch{/* optional official metadata */}
+        const verified=this.verifiedLocales(v.verified_languages);const locale=verified[0]??null;
+        voices.push({id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:label('language')??locale?.split('-')[0]??null,locale,accent:label('accent'),profile:gender==='female'?'FEMALE':gender==='male'?'MALE':'UNKNOWN',previewUrl,category:typeof v.category==='string'?v.category.slice(0,80):null,source:'ACCOUNT',publicOwnerId:null,verifiedLocales:verified});
+      }
+      if(!body.has_more)return voices;
+      if(typeof body.next_page_token!=='string')throw new VoiceFailure('INVALID_RESPONSE');
+      cursor=body.next_page_token;
+    }
+    throw new VoiceFailure('VOICE_CATALOG_LIMIT');
+  }
+  async discover(input:VoiceDiscovery,signal?:AbortSignal):Promise<Voice[]> {
+    const key=`${input.locale}:${input.gender??'ALL'}`,cached=this.discoveryCache.get(key);if(cached&&cached.expires>Date.now())return cached.voices;
+    const account=await this.voices(signal),language=input.locale.split('-')[0],query=new URLSearchParams({page_size:'50',language,sort:'usage_character_count_1y'});if(input.locale.startsWith('pt-'))query.set('locale',input.locale);if(input.gender)query.set('gender',input.gender.toLowerCase());
+    const body=await this.call<{voices?:Array<{voice_id?:unknown;public_owner_id?:unknown;name?:unknown;language?:unknown;accent?:unknown;gender?:unknown;category?:unknown;preview_url?:unknown;verified_languages?:unknown}>}>(`/v1/shared-voices?${query}`,{},r=>validatedVoiceJson(r,'catalog'),signal);
+    const shared=(body.voices??[]).flatMap(v=>{if(typeof v.voice_id!=='string'||typeof v.public_owner_id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.voice_id)||!/^[a-zA-Z0-9_-]{1,100}$/.test(v.public_owner_id))return[];const gender=typeof v.gender==='string'?v.gender.toLowerCase():'';const verified=this.verifiedLocales(v.verified_languages);return[{id:v.voice_id,name:String(v.name??'Voice').slice(0,120),language:typeof v.language==='string'?v.language.slice(0,20):null,locale:verified[0]??null,accent:typeof v.accent==='string'?v.accent.slice(0,120):null,profile:gender==='female'?'FEMALE' as const:gender==='male'?'MALE' as const:'UNKNOWN' as const,previewUrl:this.safeUrl(v.preview_url),category:typeof v.category==='string'?v.category.slice(0,80):null,source:'LIBRARY' as const,publicOwnerId:v.public_owner_id,verifiedLocales:verified}];});
+    const merged=[...account,...shared.filter(v=>!account.some(a=>a.id===v.id))];this.discoveryCache.set(key,{expires:Date.now()+5*60_000,voices:merged});return merged;
+  }
+  async addShared(publicOwnerId:string,voiceId:string,name:string,signal?:AbortSignal){
+    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(publicOwnerId)||!/^[a-zA-Z0-9_-]{1,100}$/.test(voiceId))throw new VoiceFailure('INVALID_VOICE',false,400);
+    const result=await this.call<{voice_id?:unknown}>(`/v1/voices/add/${encodeURIComponent(publicOwnerId)}/${encodeURIComponent(voiceId)}`,{method:'POST',body:JSON.stringify({new_name:name.slice(0,120),bookmarked:true})},r=>validatedVoiceJson(r,'voice'),signal);if(typeof result.voice_id!=='string')throw new VoiceFailure('INVALID_RESPONSE');this.discoveryCache.clear();return result.voice_id;
+  }
+  private verifiedLocales(value:unknown){return Array.isArray(value)?value.flatMap(item=>item&&typeof item==='object'&&typeof (item as any).locale==='string'?[(item as any).locale.slice(0,20)]:[]):[];}
+  private safeUrl(value:unknown){try{const url=new URL(String(value));return url.protocol==='https:'&&!url.username&&!url.password&&url.href.length<2000?url.href:null;}catch{return null;}}
+  async synthesize(input:z.infer<typeof synthesisSchema>,signal?:AbortSignal):Promise<Buffer>{
+    const parsed=synthesisSchema.safeParse(input);if(!parsed.success)throw new VoiceFailure('INVALID_CONTENT',false,400);
+    const voices=await this.voices(signal);
+    if(!voices.some(v=>v.id===input.voiceId))throw new VoiceFailure('VOICE_NOT_FOUND');
+    return this.call(`/v1/text-to-speech/${encodeURIComponent(input.voiceId)}/stream?output_format=mp3_44100_128`,{method:'POST',body:JSON.stringify({text:input.text,model_id:this.model,...(this.model==='eleven_multilingual_v2'?{}:{language_code:input.locale.split('-')[0]}),voice_settings:{speed:input.speed,stability:0.5,similarity_boost:0.75}})},async response=>{
+      if(response.headers.get('content-type')?.split(';')[0]!=='audio/mpeg')throw new VoiceFailure('INVALID_AUDIO');
+      const reader=response.body?.getReader();if(!reader)throw new VoiceFailure('INVALID_AUDIO');
+      const chunks:Buffer[]=[];let length=0;
+      try{while(true){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>4*1024*1024)throw new VoiceFailure('AUDIO_LIMIT');chunks.push(Buffer.from(part.value));}}
+      finally{await reader.cancel();}
+      if(!length)throw new VoiceFailure('INVALID_AUDIO');
+      return Buffer.concat(chunks);
+    },signal);
+  }
+}

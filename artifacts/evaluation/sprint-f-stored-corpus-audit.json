@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-09-09T16:30:19.233Z",
+  "version": "legacy-stored-corpus-audit-v1",
+  "rows": [
+    {
+      "sourceId": "yvy-kb-emergency-procedures-hse",
+      "sourceType": "official_guidance_summary",
+      "version": "YvY-curated-summary-v1.0",
+      "documentHash": "1a512b43ce16b744cd0d052f895a008125c446789d0942cfbe1d3ca5458077cd",
+      "chunkIndex": 0,
+      "chunkHash": "1a512b43ce16b744cd0d052f895a008125c446789d0942cfbe1d3ca5458077cd",
+      "dimensions": 1536,
+      "jurisdiction": "United Kingdom",
+      "stableChunkId": null
+    },
+    {
+      "sourceId": "yvy-kb-loto-osha-1910-147",
+      "sourceType": "regulatory_reference_summary",
+      "version": "YvY-curated-summary-v1.0",
+      "documentHash": "65e3f6ed954ed586607edb10805114d487df04013b8eb0ee0b7090fbf80845cc",
+      "chunkIndex": 0,
+      "chunkHash": "65e3f6ed954ed586607edb10805114d487df04013b8eb0ee0b7090fbf80845cc",
+      "dimensions": 1536,
+      "jurisdiction": "United States - Federal General Industry",
+      "stableChunkId": null
+    },
+    {
+      "sourceId": "yvy-kb-ptw-hse-hsg250",
+      "sourceType": "official_guidance_summary",
+      "version": "YvY-curated-summary-v1.0",
+      "documentHash": "cca4826ef5527a73651ebf6ff1b119e84f77b17fb62262c32085ffc7a02823b9",
+      "chunkIndex": 0,
+      "chunkHash": "cca4826ef5527a73651ebf6ff1b119e84f77b17fb62262c32085ffc7a02823b9",
+      "dimensions": 1536,
+      "jurisdiction": "United Kingdom",
+      "stableChunkId": null
+    },
+    {
+      "sourceId": "yvy-kb-risk-assessment-hse",
+      "sourceType": "official_guidance_summary",
+      "version": "YvY-curated-summary-v1.0",
+      "documentHash": "507b6fdb24c96fe7a8fa5f7aa89e6d5545db6ea360ebb1fb64d9705d76ed9ff8",
+      "chunkIndex": 0,
+      "chunkHash": "507b6fdb24c96fe7a8fa5f7aa89e6d5545db6ea360ebb1fb64d9705d76ed9ff8",
+      "dimensions": 1536,
+      "jurisdiction": "United Kingdom",
+      "stableChunkId": null
+    }
+  ],
+  "embeddingProvider": "UNKNOWN_LEGACY",
+  "embeddingModel": "UNKNOWN_LEGACY",
+  "chunkConfig": "UNKNOWN_LEGACY",
+  "preprocessing": "UNKNOWN_LEGACY",
+  "fingerprint": "c941499736d71057009dfe948fa0262ea2fc8f3b3854d8ef7aa203724e728ff2",
+  "note": "Stored text hashes are internally consistent but all four differ from registered source content; intentional reingestion required. No vectors generated."
+}

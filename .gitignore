@@ -1,0 +1,50 @@
+# Dependências
+node_modules/
+
+# Builds e artefactos
+dist/
+build/
+out-tsc/
+coverage/
+.angular/
+.cache/
+
+# Segredos — nunca versionar
+.env
+.env.demo
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Local databases, dumps and uploads
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+uploads/
+
+# Traces and evaluation artifacts containing data
+traces/
+*.trace.json
+eval-runs/
+
+# Temporary and system files
+tmp/
+temp/
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local development-agent configuration
+.claude/
+backups/
+backend/.tmp/

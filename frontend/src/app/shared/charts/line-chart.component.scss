@@ -1,0 +1,31 @@
+// See bar-chart.component.scss for why :host ::ng-deep is needed here: this component's
+// SVG/legend markup is built as a string and injected via [innerHTML], bypassing Angular's
+// template compiler and its emulated view encapsulation.
+:host ::ng-deep {
+  .chart-empty {
+    padding: 8px 0;
+  }
+
+  .chart-legend {
+    margin-bottom: 6px;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .legend-item {
+    font-size: 11px;
+    color: var(--ink2);
+    margin-right: 14px;
+  }
+
+  .legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    vertical-align: -1px;
+  }
+}

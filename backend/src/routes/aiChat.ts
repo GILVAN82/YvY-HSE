@@ -1,0 +1,254 @@
+import { isPendingApprovalQuery } from '../ai/intent/pendingApprovalIntent';
+import { pendingApprovalsResponse, pendingApprovalError, pendingApprovalProject } from '../ai/hitl/pending-approvals';
+import { randomUUID } from 'node:crypto';
+import { explainAttention, type AttentionReader } from '../ai/attention/attention-explanation';
+import { AuthorizationError } from '../auth/authorization';
+import { Router, Request, Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
+import { z } from 'zod';
+import { listProvidersForClient, ProviderUnavailableError } from '../ai/providers';
+import { MAX_MESSAGE_LENGTH, MAX_HISTORY_TURNS } from '../ai/config';
+import { resumeHumanApproval, runHseAgent } from '../ai/graph/hseAgent.runner';
+import { AgentErrorCode, type AgentEvent } from '../ai/graph/hseAgent.types';
+import { ApprovalResolutionError } from '../ai/hitl/hitl.repository';
+import type { LanguageModel, ToolSet } from 'ai';
+import type { ThreadStateStore } from '../ai/graph/threadState.repository';
+import type { MemoryService } from '../ai/memory/memory.types';
+import type { ApprovalService } from '../ai/hitl/hitl.types';
+import multer from 'multer';
+import { attachmentConfig } from '../ai/attachments/attachment.config';
+import { AttachmentError } from '../ai/attachments/attachment.types';
+import type { TemporaryAttachmentService } from '../ai/attachments/attachment.service';
+import { resolveResponseStatus } from '../ai/responseStatus';
+import { safeFirstName } from '../ai/personalization';
+import type { AuthenticatedRequest } from '../auth/auth.types';
+import { hasPermission } from '../auth/authorization';
+
+export interface AiChatDependencies {
+  attentionReader?: AttentionReader;
+  attentionRag?: import('../ai/rag/retrieval.types').RagRetriever;
+  resolveModel: (provider: string, model: string) => LanguageModel;
+  readOrchestrator: () => 'legacy' | 'langgraph';
+  runHseAgent: typeof runHseAgent;
+  runLegacyAgent: (input: Parameters<typeof import('../ai/legacyRunner').runLegacyAgent>[0]) => ReturnType<typeof import('../ai/legacyRunner').runLegacyAgent>;
+  threadStateStore: ThreadStateStore;
+  longTermMemoryService: MemoryService;
+  memoryServiceFactory?: (userId:string)=>MemoryService;
+  humanApprovalService: ApprovalService;
+  tools?: ToolSet;
+  toolFactory?: (allowMemoryWrite:boolean,principal?:import('../auth/auth.types').RequestPrincipal)=>ToolSet;
+  attachmentService: TemporaryAttachmentService;
+}
+// Basic abuse protection. This is a local, single-user app today, but the chat endpoint
+// calls billed third-party APIs, so a stuck frontend loop or a stray script should not be
+// able to run up an unbounded bill.
+/** Request contract. Validated before anything reaches the model. */
+const chatRequestSchema = z.object({
+  pageContext: z.string().max(5000).optional(),
+  approvalProject: z.string().trim().min(1).max(160).optional(),
+  attentionAlertId: z.string().uuid().optional(),
+  message: z.string().min(1, 'message is required').max(MAX_MESSAGE_LENGTH),
+  history: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() }))
+    .max(MAX_HISTORY_TURNS * 2)
+    .optional(),
+  conversationId: z.string().uuid().optional(),
+  threadId: z.string().uuid().optional(),
+  provider: z.string().min(1, 'provider is required'),
+  model: z.string().min(1, 'model is required'),
+  attachmentIds: z.array(z.string().uuid()).max(3).optional(),
+  locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
+  voiceMetadata: z.object({
+    detectedLanguage: z.enum(['en','pt','es','fr','de']), languageConfidence: z.number().min(0).max(1).optional(),
+    transcript: z.string().min(1).max(MAX_MESSAGE_LENGTH), inputMode: z.literal('voice'),
+    requestedResponseLanguage: z.enum(['en','pt','es','fr','de']).optional(), effectiveResponseLanguage: z.enum(['en','pt','es','fr','de']),
+  }).optional(),
+});
+
+const approvalDecisionSchema = z.object({
+  threadId: z.string().uuid(),
+  resolutionNote: z.string().trim().max(500).optional(),
+  locale: z.enum(['en', 'pt', 'es', 'fr', 'de']).optional(),
+});
+
+export function createAiChatRouter(dependencies: AiChatDependencies) {
+const router = Router();
+const chatLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: true, legacyHeaders: false });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: attachmentConfig.maxFileBytes, files: 1 } });
+
+const sendAttachmentError = (res: Response, error: unknown) => {
+  if (error instanceof AttachmentError) return res.status(error.code === 'ATTACHMENT_WRONG_THREAD' ? 403 : error.code === 'ATTACHMENT_NOT_FOUND' ? 404 : 400).json({ code: error.code, error: error.message });
+  if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ code: 'ATTACHMENT_TOO_LARGE', error: 'The attachment exceeds the configured file-size limit.' });
+  return res.status(400).json({ code: 'ATTACHMENT_PARSE_FAILED', error: 'The attachment could not be processed.' });
+};
+
+const receiveAttachment: import('express').RequestHandler = (req, res, next) => upload.single('file')(req, res, (error) => error ? void sendAttachmentError(res, error) : next());
+
+router.post('/ai/attachments', receiveAttachment, async (req: Request, res: Response) => {
+  try {
+    const threadId = z.string().uuid().parse(req.body?.threadId);
+    if (!req.file) throw new AttachmentError('ATTACHMENT_NOT_FOUND', 'No attachment was supplied.');
+    const metadata = await dependencies.attachmentService.create(req.file, threadId, (req as AuthenticatedRequest).principal.userId);
+    const { attachmentId, filename, kind, mimeType, size, expiresAt } = metadata;
+    res.status(201).json({ attachmentId, filename, kind, mimeType, size, expiresAt });
+  } catch (error) { sendAttachmentError(res, error); }
+});
+
+router.delete('/ai/attachments/:attachmentId', async (req: Request, res: Response) => {
+  try {
+    const attachmentId = z.string().uuid().parse(req.params.attachmentId);
+    const threadId = z.string().uuid().parse(req.query.threadId);
+    await dependencies.attachmentService.remove(attachmentId, threadId, (req as AuthenticatedRequest).principal.userId);
+    res.status(204).end();
+  } catch (error) { sendAttachmentError(res, error); }
+});
+
+// GET /api/ai/providers -> which providers/models are usable, WITHOUT ever exposing API keys.
+router.get('/ai/providers', (_req: Request, res: Response) => {
+  res.json(listProvidersForClient());
+});
+
+const resolveApproval = (decision: 'APPROVE' | 'REJECT'): import('express').RequestHandler => async (req, res) => {
+  const principal=(req as AuthenticatedRequest).principal;
+  if(!hasPermission(principal,'HITL_APPROVE')){res.status(403).json({error:'Access denied.',code:'AUTHORIZATION_DENIED'});return;}
+  const approvalId = z.string().uuid().safeParse(req.params.approvalId);
+  const body = approvalDecisionSchema.safeParse(req.body);
+  if (!approvalId.success || !body.success) {
+    res.status(400).json({ error: 'Invalid approval request.', code: 'AI_INVALID_APPROVAL_REQUEST' });
+    return;
+  }
+  try {
+    const result = await resumeHumanApproval({
+      approvalId: approvalId.data, threadId: body.data.threadId, decision,
+      userId: principal.userId,
+      resolutionNote: body.data.resolutionNote, locale: body.data.locale,
+      approvalService: dependencies.humanApprovalService.forPrincipal?.(principal)??dependencies.humanApprovalService, threadStore: dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore,
+    });
+    res.json({ approval: result.approval, text: result.text, responseStatus: result.responseStatus });
+  } catch (error) {
+    if(error instanceof AuthorizationError){res.status(error.code==='RESOURCE_NOT_FOUND'?404:403).json({code:error.code,error:'The approval is not available to this user.'});return;}
+    if (error instanceof ApprovalResolutionError) {
+      res.status(409).json({ error: 'Approval is unavailable or no longer pending for this thread.', code: 'AI_APPROVAL_NOT_PENDING' });
+      return;
+    }
+    res.status(500).json({ error: 'The approval decision could not be recorded.', code: 'AI_APPROVAL_RESOLUTION_FAILED' });
+  }
+};
+
+router.post('/ai/approvals/:approvalId/approve', resolveApproval('APPROVE'));
+router.post('/ai/approvals/:approvalId/reject', resolveApproval('REJECT'));
+
+router.post('/ai/chat', chatLimiter, async (req: Request, res: Response) => {
+  const parsed = chatRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? 'Invalid request',
+      code: 'AI_INVALID_REQUEST',
+    });
+    return;
+  }
+  const { attentionAlertId, message, history, conversationId, threadId, provider, model, attachmentIds = [], locale, voiceMetadata } = parsed.data;
+  if (voiceMetadata && voiceMetadata.transcript !== message) {
+    res.status(400).json({ error: 'Voice transcript must match the agent message.', code: 'AI_INVALID_VOICE_TRANSCRIPT' }); return;
+  }
+  if (threadId && conversationId && threadId !== conversationId) {
+    res.status(400).json({ error: 'threadId and conversationId must match', code: 'AI_INVALID_THREAD' });
+    return;
+  }
+  if (attachmentIds.length && !threadId) {
+    res.status(400).json({ error: 'threadId is required when attachments are used', code: 'AI_INVALID_THREAD' });
+    return;
+  }
+
+  let attachments = [] as Awaited<ReturnType<TemporaryAttachmentService['resolve']>>;
+  const principal = (req as AuthenticatedRequest).principal;
+  if(!hasPermission(principal,'AI_USE')){res.status(403).json({error:'Access denied.',code:'AUTHORIZATION_DENIED'});return;}
+  const memoryAllowed=hasPermission(principal,'MEMORY_USE');
+  const memoryService=memoryAllowed ? (dependencies.memoryServiceFactory?.(principal.userId)??dependencies.longTermMemoryService) : undefined;
+  const scopedToolFactory=dependencies.toolFactory ? (allow:boolean)=>dependencies.toolFactory!(allow&&memoryAllowed,principal) : undefined;
+  try { if (attachmentIds.length) attachments = await dependencies.attachmentService.resolve(attachmentIds, threadId!, principal.userId); }
+  catch (error) { sendAttachmentError(res, error); return; }
+  const attachmentContext = attachments.length ? dependencies.attachmentService.buildContext(attachments, message) : undefined;
+
+  if(!attentionAlertId && isPendingApprovalQuery(message)){
+    const pendingThreadId=threadId??conversationId??randomUUID();
+    try{
+      const store=dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore;
+      await store.load(pendingThreadId,principal.userId);
+      const result=await pendingApprovalsResponse({principal,service:dependencies.humanApprovalService,message,threadId:pendingThreadId,locale,project:pendingApprovalProject(parsed.data.approvalProject,parsed.data.pageContext,message)});
+      res.setHeader('Content-Type','text/event-stream');res.setHeader('Cache-Control','no-cache');
+      res.write(`data: ${JSON.stringify({type:'tool_use',name:'list_pending_approvals'})}\n\n`);
+      res.write(`data: ${JSON.stringify({type:'text',text:result.text})}\n\n`);
+      res.write(`data: ${JSON.stringify({...result,type:'done',threadId:pendingThreadId,orchestrator:'approval-read',responseStatus:result.pendingApprovals.length?'SUCCESS':'NO_DATA'})}\n\n`);res.end();
+    }catch(error){const failure=pendingApprovalError(error,locale);res.status(error instanceof AuthorizationError?error.code==='RESOURCE_NOT_FOUND'?404:403:503).json(failure);}
+    return;
+  }
+  if(attentionAlertId){
+    const attentionThread=threadId??conversationId??randomUUID();
+    // Structured explain is read-only. Ignore UI descriptions/history as authority.
+    try{
+      if(dependencies.threadStateStore.forPrincipal)await dependencies.threadStateStore.forPrincipal(principal).load(attentionThread,principal.userId);
+    }catch{res.status(403).json({error:'Conversation context is unavailable.',code:'AUTHORIZATION_DENIED'});return;}
+    const result=await explainAttention({principal,alertId:attentionAlertId,threadId:attentionThread,locale,reader:dependencies.attentionReader??{get:async()=>null},rag:dependencies.attentionRag});
+    res.setHeader('Content-Type','text/event-stream');res.setHeader('Cache-Control','no-cache');
+    res.write(`data: ${JSON.stringify({type:'tool_use',name:'get_attention_alert'})}\n\n`);
+    res.write(`data: ${JSON.stringify({type:'text',text:result.text})}\n\n`);
+    res.write(`data: ${JSON.stringify({...result,type:'done',threadId:attentionThread,orchestrator:'attention',responseStatus:result.attention?'SUCCESS':'NO_DATA'})}\n\n`);res.end();return;
+  }
+  let languageModel;
+  try {
+    languageModel = dependencies.resolveModel(provider, model);
+  } catch (err: any) {
+    // A provider with no key configured is a server-side gap, not a bad request:
+    // 503 so the client can tell "you asked wrong" from "the server cannot serve this".
+    if (err instanceof ProviderUnavailableError) {
+      res.status(503).json({ error: err.message, code: AgentErrorCode.PROVIDER_UNAVAILABLE });
+      return;
+    }
+    res.status(400).json({ error: err.message, code: 'AI_INVALID_MODEL' });
+    return;
+  }
+
+  if(dependencies.threadStateStore.forPrincipal && (threadId||conversationId)){
+    try{await dependencies.threadStateStore.forPrincipal(principal).load((threadId||conversationId)!,principal.userId);}
+    catch(error){res.status(error instanceof AuthorizationError?403:503).json({code:error instanceof AuthorizationError?error.code:'THREAD_UNAVAILABLE',error:'Conversation context is unavailable. Start a new conversation.'});return;}
+  }
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (payload: unknown) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  const emit = (event: AgentEvent) => send(event);
+
+  const orchestrator = dependencies.readOrchestrator();
+  const run =
+    orchestrator === 'langgraph'
+      ? dependencies.runHseAgent({message,userId:principal.userId,authenticatedFirstName:safeFirstName(principal.displayName),history,conversationId,threadId,model:languageModel,emit,threadStore:dependencies.threadStateStore.forPrincipal?.(principal)??dependencies.threadStateStore,memoryService,approvalService:dependencies.humanApprovalService.forPrincipal?.(principal,message)??dependencies.humanApprovalService,tools:dependencies.tools,toolFactory:scopedToolFactory,attachments,attachmentContext,locale,voiceLanguage:voiceMetadata?.detectedLanguage})
+      : dependencies.runLegacyAgent({message,history,conversationId,model:languageModel,emit,tools:dependencies.tools??scopedToolFactory?.(false)});
+
+  const result = await run;
+
+  // Extra fields are additive: the widget reads `type`, everything else is optional
+  // metadata for future UI (run tracing, conversation continuity).
+  send({
+    type: 'done',
+    runId: result.runId,
+    conversationId: result.conversationId,
+    threadId: result.conversationId,
+    status: result.status,
+    responseStatus: result.responseStatus ?? resolveResponseStatus({ status: result.status, errorCode: result.errorCode, approvalStatus: result.approvalRequest?.status, tools: result.executionTrace?.tools, ragStatus: result.executionTrace?.rag.status }),
+    toolsUsed: result.toolsUsed,
+    stepCount: result.stepCount,
+    ragUsed: result.ragUsed ?? false,
+    citations: result.citations ?? [],
+    evidencePresentation: result.evidencePresentation,
+    errorCode: result.errorCode,
+    orchestrator,
+    approvalRequest: result.approvalRequest,
+    executionTrace: result.executionTrace,
+  });
+  res.end();
+});
+return router;
+}

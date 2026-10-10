@@ -1,0 +1,20 @@
+{
+  "files": [
+    "README.md",
+    "docs/architecture.md",
+    "docs/limitations.md",
+    "docs/turing-code-map/YVY_HSE_COMPLETE_CODE_MAP.md",
+    "docs\\capstone\\DEFENCE_NOTES.md",
+    "docs\\capstone\\PRESENTATION_EVIDENCE_MATRIX.md",
+    "docs\\capstone\\REVIEW_COMPLIANCE_MATRIX.md",
+    "docs\\capstone\\SPRINT_H_FINAL_COMPLIANCE.md",
+    "docs\\capstone\\TEST_STRATEGY.md",
+    "docs\\capstone\\TURING_DEMO_CONTENT_PLAN.md",
+    "docs\\capstone\\TURING_QA.md",
+    "docs\\capstone\\TURING_REQUIREMENTS_MATRIX.md"
+  ],
+  "localLinksChecked": 161,
+  "brokenLinks": [],
+  "consolidatedEthicsSections": 1,
+  "showcasePlaceholderNearTop": true
+}
